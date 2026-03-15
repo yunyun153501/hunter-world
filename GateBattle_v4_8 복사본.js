@@ -1116,7 +1116,7 @@ const RARE_FAMILY_PRESETS = {
     tripleShot: {
       id:'tripleShot', name:'트리플샷', grade:'E', rarity:'rare', category:'singleAttack', target:'singleEnemy',
       statTypes:['agi'], damageType:'physical', element:'none',
-      byRank:{ E:{ coef:1.5, costs:{ mp:15, sp:15 } }, D:{ coef:2.0, costs:{ mp:20, sp:20 } }, C:{ coef:2.8, costs:{ mp:20, sp:20 } }, B:{ coef:4.6, costs:{ mp:25, sp:25 } }, A:{ coef:7.0, costs:{ mp:35, sp:35 } }, S:{ coef:10.5, costs:{ mp:45, sp:45 } } },
+      byRank:{ E:{ coef:1.5, costs:{ mp:15, sp:15 } }, D:{ coef:2.4, costs:{ mp:15, sp:15 } }, C:{ coef:3.6, costs:{ mp:18, sp:18 } }, B:{ coef:6.0, costs:{ mp:25, sp:25 } }, A:{ coef:9.6, costs:{ mp:30, sp:30 } }, S:{ coef:14.4, costs:{ mp:40, sp:40 } } },
       desc:'성장형 3연타. 총계수만 적용.'
     },
     quickThrow: { id:'quickThrow', name:'퀵스로', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:0, sp:40 }, coef:1.5, statTypes:['agi','sense'], damageType:'physical', element:'none', desc:'투척 단일 공격.' },
@@ -1141,12 +1141,12 @@ const RARE_FAMILY_PRESETS = {
 
   function buildSampleCharacters() {
     return [
-      { id:'char_bran', name:'브란', job:'크루세이더', position:'탱커', row:'front', rank:'D', stats:{ str:13, con:15, int:4, agi:7, sense:8 }, hp:289, mp:140, sp:170, atk:20, pdef:18, mdef:10, damageType:'physical', attackStat:'con', skills:['shieldBash','steelAnvil','shieldProficiency','shockwave','taunt'], note:'전열 탱커' },
-      { id:'char_doyun', name:'도윤', job:'무투가', position:'근거리물리', row:'front', rank:'E', stats:{ str:14, con:12, int:3, agi:11, sense:9 }, hp:262, mp:130, sp:210, atk:11, pdef:8, mdef:3, skills:['fistStrike','hiddenMight'], note:'전열 근딜' },
-      { id:'char_lin', name:'린', job:'궁수', position:'원거리물리', row:'mid', rank:'E', stats:{ str:7, con:9, int:4, agi:15, sense:13 }, hp:211, mp:140, sp:250, atk:11, pdef:4, mdef:2, skills:['quickShot','powerShot','preciseAim','tripleShot'] },
-      { id:'char_kain', name:'카인', job:'투척가', position:'원거리물리', row:'mid', rank:'E', stats:{ str:8, con:9, int:4, agi:14, sense:14 }, hp:214, mp:140, sp:240, atk:11, pdef:4, mdef:3, skills:['quickThrow','knifeRecall','daggerHandling'] },
-      { id:'char_ibel', name:'이벨', job:'마법사', position:'원거리마법', row:'back', rank:'E', stats:{ str:4, con:7, int:16, agi:9, sense:10 }, hp:182, mp:260, sp:190, atk:12, pdef:3, mdef:7, damageType:'magic', attackStat:'int', skills:['energyBolt','energyShower','haste'] },
-      { id:'char_sera', name:'세라', job:'클레릭', position:'힐러', row:'back', rank:'D', stats:{ str:5, con:9, int:16, agi:8, sense:11 }, hp:205, mp:260, sp:180, atk:22, pdef:5, mdef:8, damageType:'magic', attackStat:'int', skills:['heal','pray','blessingOfLight','smallGarden'] }
+      { id:'char_bran', name:'브란', job:'크루세이더', position:'탱커', row:'front', rank:'D', stats:{ str:13, con:15, int:4, agi:7, sense:8 }, hp:289, mp:140, sp:194, atk:20, pdef:18, mdef:10, damageType:'physical', attackStat:'con', skills:['shieldBash','steelAnvil','shieldProficiency','shockwave','taunt'], note:'전열 탱커' },
+      { id:'char_doyun', name:'도윤', job:'무투가', position:'근거리물리', row:'front', rank:'E', stats:{ str:14, con:12, int:3, agi:11, sense:9 }, hp:262, mp:130, sp:237, atk:11, pdef:8, mdef:3, skills:['fistStrike','hiddenMight'], note:'전열 근딜' },
+      { id:'char_lin', name:'린', job:'궁수', position:'원거리물리', row:'mid', rank:'E', stats:{ str:7, con:9, int:4, agi:15, sense:13 }, hp:211, mp:140, sp:289, atk:11, pdef:4, mdef:2, skills:['quickShot','powerShot','preciseAim','tripleShot'] },
+      { id:'char_kain', name:'카인', job:'투척가', position:'원거리물리', row:'mid', rank:'E', stats:{ str:8, con:9, int:4, agi:14, sense:14 }, hp:214, mp:140, sp:282, atk:11, pdef:4, mdef:3, skills:['quickThrow','knifeRecall','daggerHandling'] },
+      { id:'char_ibel', name:'이벨', job:'마법사', position:'원거리마법', row:'back', rank:'E', stats:{ str:4, con:7, int:16, agi:9, sense:10 }, hp:182, mp:260, sp:220, atk:12, pdef:3, mdef:7, damageType:'magic', attackStat:'int', skills:['energyBolt','energyShower','haste'] },
+      { id:'char_sera', name:'세라', job:'클레릭', position:'힐러', row:'back', rank:'D', stats:{ str:5, con:9, int:16, agi:8, sense:11 }, hp:205, mp:260, sp:213, atk:22, pdef:5, mdef:8, damageType:'magic', attackStat:'int', skills:['heal','pray','blessingOfLight','smallGarden'] }
     ];
   }
   function buildSampleMonsters() {
@@ -1428,7 +1428,7 @@ function buildDefaultState() {
     const monsterProfile = isMonster ? monsterProfileForEntry(entry) : null;
     const baseHp = Number(isMonster ? monsterProfile.hp : (entry.hp || (100 + stats.con * 10 + stats.str * 3)));
     const defaultMp = isMonster ? monsterProfile.mp : (100 + stats.int * 10);
-    const defaultSp = isMonster ? monsterProfile.sp : (100 + stats.agi * 10);
+    const defaultSp = isMonster ? monsterProfile.sp : (100 + stats.agi * 10 + stats.sense * 3);
     const allSkillMap = getAllSkillMap();
     const hasMagicSkill = Array.isArray(entry.skills) && entry.skills.some(id => {
       const sk = allSkillMap[String(id || '').trim()];
@@ -6739,7 +6739,7 @@ function renderCommandPanel(runtime) {
     ensureSelections();
     const item = deepClone(getCharById(model.state.selected.characters) || {
       id:'', name:'', job:'', position:'', row:'mid', rank:'E',
-      stats:{ str:5, con:5, int:5, agi:5, sense:5 }, hp:165, mp:150, sp:150, atk:9, pdef:3, mdef:3,
+      stats:{ str:5, con:5, int:5, agi:5, sense:5 }, hp:165, mp:150, sp:165, atk:9, pdef:3, mdef:3,
       damageType:'physical', attackStat:'str', skills:[], note:'',
       level:1, exp:0, totalExp:0
     });
