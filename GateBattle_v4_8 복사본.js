@@ -17,6 +17,8 @@ try {
   const MAX_PARTY = 8;
   const MAX_ENEMIES = 10;
   const GRADE_ORDER = ['E','D','C','B','A','S'];
+  // 등급별 주스탯 상한선
+  const STAT_CAP_BY_RANK = { E:25, D:40, C:60, B:80, A:100, S:150 };
   const DAMAGE_ELEMENTS = ['none', 'water', 'fire', 'ice', 'earth', 'wind', 'electric', 'dark', 'light'];
   const STATUS_KEYS = ['stun', 'bind', 'sleep', 'poison', 'bleed', 'burn', 'curse'];
   const STATUS_DOT_KEYS = ['poison', 'bleed', 'burn'];
@@ -71,8 +73,8 @@ const GATE_COMBO_PLACES = {
   'elemental+slime':['범람하는 수로','청람의 습지','미끌거리는 균열','출렁이는 핵실'],
   'demon+undead':['타락한 묘역','지옥의 안치소','불타는 골목','암흑 납골당'],
   'demon+ghost':['사악한 장막','불타는 영안실','저주의 회랑','암흑 빈터'],
-  'frost+elemental':['서리 균열','냉기 핵심부','동결된 파편역','빙하 심장부'],
-  'frost+construct':['얼어붙은 격납고','냉기 송전실','동결 기계묘지','서리 철탑군'],
+  'elemental+frost':['서리 균열','냉기 핵심부','동결된 파편역','빙하 심장부'],
+  'construct+frost':['얼어붙은 격납고','냉기 송전실','동결 기계묘지','서리 철탑군'],
   'celestial+elemental':['빛나는 균열','성광 핵심부','신성한 파편역','축복의 심장부'],
   'celestial+ghost':['정화의 장막','빛의 영안실','성스러운 회랑','신성한 빈터']
 };
@@ -432,6 +434,9 @@ const PARTY_BAGS = {
 };
 const INVENTORY_BASE_SLOTS = 8;
 const INVENTORY_BASE_MAX_WEIGHT_G = 6000;
+const PERSONAL_INV_BASE_SLOTS = 8;
+const PERSONAL_INV_BASE_MAX_WEIGHT_G = 6000;
+const SHARED_INV_BAG_RATIO = 0.20; // 가방 보너스의 20%만 공용인벤에 적용
 const NORMAL_MATERIAL_WEIGHT_G = { E:20, D:25, C:30, B:35, A:40, S:50 };
 const RARE_MATERIAL_WEIGHT_G = 100;
 const MANA_STONE_WEIGHT_G = { E:50, D:80, C:120, B:180, A:300, S:500 };
@@ -2251,8 +2256,9 @@ function getPartyCharBags() {
 }
 function inventoryCapacity() {
   const bags = getPartyCharBags();
-  const totalSlotBonus = bags.reduce((s, b) => s + Number(b.slotBonus || 0), 0);
-  const totalWeightBonus = bags.reduce((s, b) => s + Number(b.maxWeightBonusG || 0), 0);
+  // 공용인벤은 가방 보너스의 20%만 적용 (나머지 80%는 개인 짐)
+  const totalSlotBonus = Math.floor(bags.reduce((s, b) => s + Number(b.slotBonus || 0), 0) * SHARED_INV_BAG_RATIO);
+  const totalWeightBonus = Math.floor(bags.reduce((s, b) => s + Number(b.maxWeightBonusG || 0), 0) * SHARED_INV_BAG_RATIO);
   const bestWeightMul = bags.length > 0 ? Math.min(...bags.map(b => Number(b.weightMul || 1))) : 1.0;
   return { slots: INVENTORY_BASE_SLOTS + totalSlotBonus, maxWeightG: INVENTORY_BASE_MAX_WEIGHT_G + totalWeightBonus, weightMul: bestWeightMul, bags };
 }
@@ -5412,6 +5418,7 @@ const SHOP_CATEGORIES = [
 ];
 const HUNTER_STREET_SUBS = [
   { id:'vehicle',    label:'헌터 차량 판매점', desc:'전술 차량, 오토바이, 장갑차 등. (예정)' },
+  { id:'equip',      label:'⚔️ 장비상점',     desc:'무기, 방어구, 헌터 전용 장비 구매·판매.' },
   { id:'repair',     label:'수리점',           desc:'무기/방어구 내구도 회복. E등급 무료. 수리마다 최대내구도 -1 (최소 80).' },
   { id:'forge',      label:'대장간',           desc:'같은 등급 마정석(순도 80~100%)으로 장비 강화. 실패 시 마정석 소멸, 장비 유지.' },
   { id:'potion',     label:'물약 상점',        desc:'회복약, 마나포션, 버프 아이템. (예정)' },
@@ -6306,12 +6313,13 @@ function renderShopView() {
     if (hunterSub === 'material')   itemsHtml = renderMaterialShopHtml();
     if (hunterSub === 'repair')     itemsHtml = renderRepairShopHtml();
     if (hunterSub === 'forge')      itemsHtml = renderForgeShopHtml();
+    if (hunterSub === 'equip')      itemsHtml = renderEquipShopHtml();
     return `
       <div class="gb-panel">
         <div class="gb-section-title">${escapeHtml(title)}</div>
         ${goldLine}
       </div>
-      ${(hunterSub === 'material' || hunterSub === 'repair' || hunterSub === 'forge') ? itemsHtml : `<div class="gb-panel">${itemsHtml}</div>`}
+      ${(hunterSub === 'material' || hunterSub === 'repair' || hunterSub === 'forge' || hunterSub === 'equip') ? itemsHtml : `<div class="gb-panel">${itemsHtml}</div>`}
       <div class="gb-btn-row"><button class="gb-btn" data-shop-hunter-sub="">← 헌터거리로</button> <button class="gb-btn" data-go="hub">← 허브로</button></div>`;
   }
 
@@ -6808,7 +6816,7 @@ function renderInventoryView() {
         <div class="gb-section-title">🎒 공용 인벤토리</div>
         <label>소지금<input class="gb-input" id="gb-inv-gold" type="number" value="${Number(inv.gold||0)}"></label>
         <div class="gb-sub">파티 가방: ${escapeHtml(partyBagSummary)}</div>
-        <div class="gb-sub">기본 ${INVENTORY_BASE_SLOTS}칸 / ${formatWeightG(INVENTORY_BASE_MAX_WEIGHT_G)}. 파티원 가방에 따라 칸과 최대 무게가 늘어난다.</div>
+        <div class="gb-sub">기본 ${INVENTORY_BASE_SLOTS}칸 / ${formatWeightG(INVENTORY_BASE_MAX_WEIGHT_G)}. 파티원 가방 보너스의 <strong>20%</strong>만 공용인벤에 적용 (나머지는 개인 짐).</div>
         <div class="gb-sub">모든 아이템이 슬롯을 차지한다. 같은 종류(stackable)는 1칸에 합산된다.</div>
         <div class="gb-sub">사용 슬롯 <strong>${usedSlots}/${cap.slots}</strong> / 사용 무게 ${formatWeightG(usedWeight)} / 최대 ${formatWeightG(cap.maxWeightG)}</div>
         <div class="gb-sub">야영 보급: 텐트 ${supply.tent} / 식량 ${supply.ration} / 물 ${supply.water}</div>
@@ -6877,16 +6885,28 @@ function renderPartyView() {
     const curExp = Number(u.exp || 0);
     const needed = expNeededForLevel(lv);
     const expPct = Math.min(100, Math.round((curExp / needed) * 100));
+    const statCap = STAT_CAP_BY_RANK[u.rank || 'E'] || STAT_CAP_BY_RANK.E;
 
     const statNames = { str:'근력', con:'체력', int:'지능', agi:'민첩', sense:'감각' };
     const statRows = Object.entries(statNames).map(([key, label]) => {
       const val = Number(stats[key] || 0);
+      const atCap = val >= statCap;
       return `<div style="display:flex;align-items:center;gap:6px;padding:2px 0;">
         <span style="width:40px;font-size:12px;">${label}</span>
-        <span style="width:30px;text-align:right;font-weight:600;">${val}</span>
-        ${freePoints > 0 ? `<button class="gb-btn tiny" data-party-statup="${escapeHtml(u.id)}:${key}" style="padding:1px 6px;font-size:11px;">+1</button>` : ''}
+        <span style="width:30px;text-align:right;font-weight:600;${atCap?'color:#ef4444;':''}">${val}</span>
+        <span class="gb-sub" style="font-size:10px;">/${statCap}</span>
+        ${freePoints > 0 && !atCap ? `<button class="gb-btn tiny" data-party-statup="${escapeHtml(u.id)}:${key}" style="padding:1px 6px;font-size:11px;">+1</button>` : ''}
       </div>`;
     }).join('');
+
+    // 장비 요약
+    const pInv = getPersonalInv(allChars.find(c=>c.id===u.id) ? 'character' : 'persona', u.id);
+    const eqSummary = pInv ? EQUIP_PARTS.map(p => {
+      const eq = pInv.equipped[p];
+      return eq ? `${EQUIP_PART_LABELS[p]}: ${escapeHtml(eq.name||eq.id)}${eq.enhance>0?` +${eq.enhance}`:''}` : null;
+    }).filter(Boolean).join(' / ') || '장착 장비 없음' : '장비정보 없음';
+    const personalGold = Number(u.gold || 0);
+    const fmtG = n => n >= 1e8 ? `${(n/1e8).toFixed(2)}억` : n >= 10000 ? `${Math.round(n/10000)}만` : n.toLocaleString('en-US');
 
     return `<div class="gb-panel">
       <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -6903,8 +6923,11 @@ function renderPartyView() {
         </div>
       </div>
       <div class="gb-sub" style="margin:4px 0;">HP:${Number(u.hp||0)} MP:${Number(u.mp||0)} SP:${Number(u.sp||0)} ATK:${Number(u.atk||0)}</div>
+      <div class="gb-sub" style="margin:2px 0;">💰 소지금: ${fmtG(personalGold)}원</div>
       ${freePoints > 0 ? `<div style="color:#34d399;font-weight:600;font-size:13px;margin:4px 0;">🌟 배분 가능 스탯포인트: ${freePoints}</div>` : ''}
+      <div class="gb-sub" style="font-size:11px;margin:2px 0;">스탯 상한: ${statCap} (${u.rank || 'E'}등급)</div>
       <div style="margin-top:4px;">${statRows}</div>
+      <div class="gb-sub" style="margin-top:4px;font-size:11px;">⚔️ ${eqSummary}</div>
       <div class="gb-sub" style="margin-top:4px;">스킬: ${(u.skills || []).map(s => {
         const sk = getAllSkillMap()[s];
         return sk ? sk.name : s;
@@ -6966,13 +6989,16 @@ function renderCharacterView() {
       int: '마법공격력 +0.3, MP +10',
       sense: 'SP +3, MP +3'
     };
+    const statCap = STAT_CAP_BY_RANK[u.rank || 'E'] || STAT_CAP_BY_RANK.E;
     const statRows = Object.entries(statNames).map(([key, label]) => {
       const val = Number(stats[key] || 0);
+      const atCap = val >= statCap;
       return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(148,163,184,0.1);">
         <span style="width:100px;font-size:13px;font-weight:600;">${label}</span>
-        <span style="width:35px;text-align:right;font-size:15px;font-weight:700;">${val}</span>
+        <span style="width:35px;text-align:right;font-size:15px;font-weight:700;${atCap?'color:#ef4444;':''}">${val}</span>
+        <span class="gb-sub" style="font-size:10px;">/${statCap}</span>
         <span class="gb-sub" style="flex:1;font-size:11px;">(${statEffects[key]})</span>
-        ${freePoints > 0 ? `<button class="gb-btn tiny" data-charview-statup="${escapeHtml(u.id)}:${key}" style="padding:2px 8px;">+1</button>` : ''}
+        ${freePoints > 0 && !atCap ? `<button class="gb-btn tiny" data-charview-statup="${escapeHtml(u.id)}:${key}" style="padding:2px 8px;">+1</button>` : ''}
       </div>`;
     }).join('');
 
@@ -7006,7 +7032,7 @@ function renderCharacterView() {
       </div>
       ${freePoints > 0 ? `<div style="color:#34d399;font-weight:700;font-size:14px;margin:8px 0;padding:6px;background:rgba(52,211,153,0.1);border-radius:6px;">🌟 배분 가능 스탯포인트: ${freePoints}</div>` : ''}
       <div style="margin:8px 0;">
-        <div class="gb-section-title" style="font-size:13px;">스탯</div>
+        <div class="gb-section-title" style="font-size:13px;">스탯 <span class="gb-sub" style="font-size:11px;">(상한: ${statCap} / ${u.rank || 'E'}등급)</span></div>
         ${statRows}
       </div>
       <div style="margin:8px 0;">
@@ -7837,6 +7863,7 @@ function renderApp() {
           <button class="gb-btn ${view==='gate'?'primary':''}" data-go="gate">게이트</button>
           <button class="gb-btn ${view==='battle'?'primary':''}" data-go="battle">전투</button>
           <button class="gb-btn ${view==='party'?'primary':''}" data-go="party">파티</button>
+          <button class="gb-btn ${view==='inventory'?'primary':''}" data-go="inventory">공용인벤</button>
           <button class="gb-btn ${view==='character'?'primary':''}" data-go="character">캐릭터</button>
           <button class="gb-btn ${view==='db'?'primary':''}" data-go="db">DB</button>
           <button class="gb-btn" id="gb-close-ui">닫기</button>
@@ -9463,6 +9490,8 @@ async function saveMaterialTraitFromForm() {
       if (!unit) { toast('캐릭터를 찾을 수 없습니다.', true); return; }
       if (!unit.freeStatPoints || unit.freeStatPoints <= 0) { toast('배분 가능한 스탯포인트가 없습니다.', true); return; }
       if (!unit.stats) unit.stats = { str:0, con:0, int:0, agi:0, sense:0 };
+      const cap = STAT_CAP_BY_RANK[unit.rank || 'E'] || STAT_CAP_BY_RANK.E;
+      if ((unit.stats[statKey] || 0) >= cap) { toast(`${statKey} 스탯이 상한(${cap})에 도달했습니다.`, true); return; }
       unit.stats[statKey] = (unit.stats[statKey] || 0) + 1;
       unit.freeStatPoints -= 1;
       // 스탯 효과 자동 반영
@@ -9497,6 +9526,8 @@ async function saveMaterialTraitFromForm() {
       if (!unit) { toast('캐릭터를 찾을 수 없습니다.', true); return; }
       if (!unit.freeStatPoints || unit.freeStatPoints <= 0) { toast('배분 가능한 스탯포인트가 없습니다.', true); return; }
       if (!unit.stats) unit.stats = { str:0, con:0, int:0, agi:0, sense:0 };
+      const cap = STAT_CAP_BY_RANK[unit.rank || 'E'] || STAT_CAP_BY_RANK.E;
+      if ((unit.stats[statKey] || 0) >= cap) { toast(`${statKey} 스탯이 상한(${cap})에 도달했습니다.`, true); return; }
       unit.stats[statKey] = (unit.stats[statKey] || 0) + 1;
       unit.freeStatPoints -= 1;
       // 스탯 효과 자동 반영
