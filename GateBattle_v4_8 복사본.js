@@ -1804,7 +1804,8 @@ function buildGatePreviewEncounter(gate) {
   const preview = [];
   const normalCount = randInt(sizeMeta.previewNormal[0], sizeMeta.previewNormal[1]);
   const eliteCount = randInt(sizeMeta.previewElite[0], sizeMeta.previewElite[1]);
-  const bossCount = chance(sizeMeta.previewBossChance || 0) && gradeIndex(gate.rank) >= 2 ? 1 : 0;
+  // 보스는 게이트 마지막방에 무조건 등장
+  const bossCount = randInt(sizeMeta.boss[0], sizeMeta.boss[1]);
   for (let i = 0; i < normalCount; i += 1) {
     const species = chooseSpeciesWeighted(gate.primarySpecies, gate.secondarySpecies, 0.7);
     const pool = findMonsterCandidates([species], gate.rank, 'Normal');
