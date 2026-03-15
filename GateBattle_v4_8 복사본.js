@@ -23,7 +23,7 @@ try {
   const ELEMENT_CHAIN = ['dark', 'light', 'ice', 'fire', 'water', 'earth', 'wind', 'electric'];
 
 const ELEMENTS = DAMAGE_ELEMENTS;
-const SPECIES_LABELS = { undead:'언데드', ghost:'고스트', beast:'야수', plant:'식물', slime:'슬라임', construct:'구조체', elemental:'정령' };
+const SPECIES_LABELS = { undead:'언데드', ghost:'고스트', beast:'야수', plant:'식물', slime:'슬라임', construct:'구조체', elemental:'정령', demon:'악마', frost:'빙정', celestial:'천사체' };
 const SPECIES_KEY_BY_LABEL = Object.fromEntries(Object.entries(SPECIES_LABELS).map(([k,v]) => [v, k]));
 const PICKAXE_WEIGHT_G = 2500;
 const EQUIP_WEIGHT_G = { weapon:1000, subweapon:1000, armor:1000, accessory:200 };
@@ -44,7 +44,10 @@ const GATE_SPECIES_COMPAT = {
   plant:['slime','elemental','beast'],
   slime:['plant','elemental'],
   construct:['elemental'],
-  elemental:['construct','beast','plant','slime','ghost']
+  elemental:['construct','beast','plant','slime','ghost'],
+  demon:['undead','ghost'],
+  frost:['elemental','construct'],
+  celestial:['elemental','ghost']
 };
 const GATE_NAME_PARTS = {
   undead:{ adjectives:['썩은','장송의','침잠한','무너진','흑빛의'], places:['골목','묘역','회랑','납골당','안치소'] },
@@ -53,7 +56,10 @@ const GATE_NAME_PARTS = {
   plant:{ adjectives:['뒤틀린','뿌리내린','가시돋친','포자 낀','메마른'], places:['온실','정원','수림','회랑','습지'] },
   slime:{ adjectives:['끈적한','젖은','출렁이는','탁한','미끌거리는'], places:['수로','늪지','웅덩이','습지','저수실'] },
   construct:{ adjectives:['과충전된','녹슨','경보 울리는','비정상 가동의','벼락 새긴'], places:['송전실','정거장','격납고','기계묘지','철탑군'] },
-  elemental:{ adjectives:['갈라진','타오르는','서리 맺힌','범람하는','번쩍이는'], places:['균열','핵심부','심장부','파편역','층계'] }
+  elemental:{ adjectives:['갈라진','타오르는','서리 맺힌','범람하는','번쩍이는'], places:['균열','핵심부','심장부','파편역','층계'] },
+  demon:{ adjectives:['타락한','암흑의','불타는','저주받은','사악한'], places:['화염구','지옥문','마계','암흑사원','불의제단'] },
+  frost:{ adjectives:['얼어붙은','냉혹한','동결된','서리내린','극한의'], places:['빙궁','동토','설산','빙하','냉기굴'] },
+  celestial:{ adjectives:['성스러운','빛나는','정화의','축복받은','신성한'], places:['신전','광명탑','성역','천상문','빛의성소'] }
 };
 const GATE_COMBO_PLACES = {
   'ghost+undead':['썩은 골목','영곡 회랑','침잠한 안치소','묘역 틈새'],
@@ -62,7 +68,13 @@ const GATE_COMBO_PLACES = {
   'beast+elemental':['울부짖는 초원','폭풍 수렵장','갈라진 능선','재해 사냥터'],
   'beast+plant':['가시 수렵장','피비린내 나는 수림','뒤틀린 초원','뿌리 돋은 사냥터'],
   'elemental+ghost':['얼어붙은 예배당','비명 핵심부','그림자 파편역','서리 장막'],
-  'elemental+slime':['범람하는 수로','청람의 습지','미끌거리는 균열','출렁이는 핵실']
+  'elemental+slime':['범람하는 수로','청람의 습지','미끌거리는 균열','출렁이는 핵실'],
+  'demon+undead':['타락한 묘역','지옥의 안치소','불타는 골목','암흑 납골당'],
+  'demon+ghost':['사악한 장막','불타는 영안실','저주의 회랑','암흑 빈터'],
+  'frost+elemental':['서리 균열','냉기 핵심부','동결된 파편역','빙하 심장부'],
+  'frost+construct':['얼어붙은 격납고','냉기 송전실','동결 기계묘지','서리 철탑군'],
+  'celestial+elemental':['빛나는 균열','성광 핵심부','신성한 파편역','축복의 심장부'],
+  'celestial+ghost':['정화의 장막','빛의 영안실','성스러운 회랑','신성한 빈터']
 };
 const ROOM_UNIT_LIMITS = { small:[3,5], medium:[4,7], large:[6,10] };
 const GATE_STAGE_TEMPLATES = {
@@ -980,7 +992,10 @@ const RARE_FAMILY_PRESETS = {
     plant: { speciesLabel:'식물', defaultElement:'earth', immunities:['bleed'], regenPct:0.03, regenBlockedBy:['burn'] },
     slime: { speciesLabel:'슬라임', defaultElement:'water', immunities:['bleed'], damageTakenMods:{ physical:0.70, magic:1.10 } },
     construct: { speciesLabel:'구조체', defaultElement:'electric', immunities:['poison','bleed','sleep'], damageTakenMods:{ magic:0.80, physical:1.15 } },
-    elemental: { speciesLabel:'정령', defaultElement:'none' }
+    elemental: { speciesLabel:'정령', defaultElement:'none' },
+    demon: { speciesLabel:'악마', defaultElement:'fire', immunities:['burn'], damageTakenMods:{ dark:0.70 } },
+    frost: { speciesLabel:'빙정', defaultElement:'ice', immunities:['sleep'], damageTakenMods:{ physical:0.80 } },
+    celestial: { speciesLabel:'천사체', defaultElement:'light', immunities:['curse'], damageTakenMods:{ magic:0.80 } }
   };
   function inferSpecies(raw) {
     const s = String(raw || '').toLowerCase();
@@ -992,6 +1007,9 @@ const RARE_FAMILY_PRESETS = {
     if (s.includes('슬라임') || s.includes('slime')) return 'slime';
     if (s.includes('구조체') || s.includes('construct')) return 'construct';
     if (s.includes('정령') || s.includes('elemental')) return 'elemental';
+    if (s.includes('악마') || s.includes('demon')) return 'demon';
+    if (s.includes('빙정') || s.includes('frost') || s.includes('얼음아인')) return 'frost';
+    if (s.includes('천사체') || s.includes('celestial')) return 'celestial';
     return '';
   }
   function createDefaultMeta() {
@@ -1061,6 +1079,13 @@ const RARE_FAMILY_PRESETS = {
     while ((m = reduceRe.exec(note))) {
       meta.damageTakenMods[m[1] === '물리' ? 'physical' : 'magic'] = 1 - (Number(m[2]) / 100);
     }
+    // 속성별 받는데미지 반감 (예: 어둠속성 받는데미지 30%반감)
+    const elemReduceRe = /(어둠|빛|불|물|얼음|대지|바람|전기)\s*속성\s*받는\s*데미지\s*(\d+)%\s*반감/g;
+    const elemNameMap = {'어둠':'dark','빛':'light','불':'fire','물':'water','얼음':'ice','대지':'earth','바람':'wind','전기':'electric'};
+    while ((m = elemReduceRe.exec(note))) {
+      const eKey = elemNameMap[m[1]];
+      if (eKey) meta.damageTakenMods[eKey] = 1 - (Number(m[2]) / 100);
+    }
     const bleedBonus = note.match(/출혈\s*상태의\s*적\s*공격\s*시\s*(\d+)%\s*피해\s*증가/);
     if (bleedBonus) meta.bonusVsBleeding = 1 + (Number(bleedBonus[1]) / 100);
     const aloneInc = note.match(/혼자\s*남았을\s*때\s*받는\s*피해\s*(\d+)%\s*증가/);
@@ -1078,12 +1103,12 @@ const RARE_FAMILY_PRESETS = {
   function getStatusDefaultProfile(type) {
     const st = normStatus(type);
     const map = {
-      poison:{ turns:2, chance:0.28, power:0.04 },
-      bleed:{ turns:2, chance:0.28, power:0.05 },
-      burn:{ turns:2, chance:0.28, power:0.03 },
-      curse:{ turns:2, chance:0.24, power:0 },
-      bind:{ turns:1, chance:0.18, power:0 },
-      sleep:{ turns:1, chance:0.16, power:0 },
+      poison:{ turns:3, chance:0.28, power:0 },
+      bleed:{ turns:3, chance:0.28, power:0 },
+      burn:{ turns:5, chance:0.28, power:0 },
+      curse:{ turns:3, chance:0.24, power:0 },
+      bind:{ turns:2, chance:0.18, power:0 },
+      sleep:{ turns:2, chance:0.16, power:0 },
       stun:{ turns:1, chance:0.16, power:0 }
     };
     return Object.assign({ turns:2, chance:0.2, power:0 }, map[st] || {});
@@ -1141,12 +1166,12 @@ const RARE_FAMILY_PRESETS = {
 
   function buildSampleCharacters() {
     return [
-      { id:'char_bran', name:'브란', job:'크루세이더', position:'탱커', row:'front', rank:'D', stats:{ str:13, con:15, int:4, agi:7, sense:8 }, hp:289, mp:140, sp:194, atk:20, pdef:18, mdef:10, damageType:'physical', attackStat:'con', skills:['shieldBash','steelAnvil','shieldProficiency','shockwave','taunt'], note:'전열 탱커' },
-      { id:'char_doyun', name:'도윤', job:'무투가', position:'근거리물리', row:'front', rank:'E', stats:{ str:14, con:12, int:3, agi:11, sense:9 }, hp:262, mp:130, sp:237, atk:11, pdef:8, mdef:3, skills:['fistStrike','hiddenMight'], note:'전열 근딜' },
-      { id:'char_lin', name:'린', job:'궁수', position:'원거리물리', row:'mid', rank:'E', stats:{ str:7, con:9, int:4, agi:15, sense:13 }, hp:211, mp:140, sp:289, atk:11, pdef:4, mdef:2, skills:['quickShot','powerShot','preciseAim','tripleShot'] },
-      { id:'char_kain', name:'카인', job:'투척가', position:'원거리물리', row:'mid', rank:'E', stats:{ str:8, con:9, int:4, agi:14, sense:14 }, hp:214, mp:140, sp:282, atk:11, pdef:4, mdef:3, skills:['quickThrow','knifeRecall','daggerHandling'] },
-      { id:'char_ibel', name:'이벨', job:'마법사', position:'원거리마법', row:'back', rank:'E', stats:{ str:4, con:7, int:16, agi:9, sense:10 }, hp:182, mp:260, sp:220, atk:12, pdef:3, mdef:7, damageType:'magic', attackStat:'int', skills:['energyBolt','energyShower','haste'] },
-      { id:'char_sera', name:'세라', job:'클레릭', position:'힐러', row:'back', rank:'D', stats:{ str:5, con:9, int:16, agi:8, sense:11 }, hp:205, mp:260, sp:213, atk:22, pdef:5, mdef:8, damageType:'magic', attackStat:'int', skills:['heal','pray','blessingOfLight','smallGarden'] }
+      { id:'char_bran', name:'브란', job:'크루세이더', position:'탱커', row:'front', rank:'D', stats:{ str:13, con:15, int:4, agi:7, sense:8 }, hp:289, mp:164, sp:194, atk:20, pdef:18, mdef:10, damageType:'physical', attackStat:'con', skills:['shieldBash','steelAnvil','shieldProficiency','shockwave','taunt'], note:'전열 탱커' },
+      { id:'char_doyun', name:'도윤', job:'무투가', position:'근거리물리', row:'front', rank:'E', stats:{ str:14, con:12, int:3, agi:11, sense:9 }, hp:262, mp:157, sp:237, atk:11, pdef:8, mdef:3, skills:['fistStrike','hiddenMight'], note:'전열 근딜' },
+      { id:'char_lin', name:'린', job:'궁수', position:'원거리물리', row:'mid', rank:'E', stats:{ str:7, con:9, int:4, agi:15, sense:13 }, hp:211, mp:179, sp:289, atk:11, pdef:4, mdef:2, skills:['quickShot','powerShot','preciseAim','tripleShot'] },
+      { id:'char_kain', name:'카인', job:'투척가', position:'원거리물리', row:'mid', rank:'E', stats:{ str:8, con:9, int:4, agi:14, sense:14 }, hp:214, mp:182, sp:282, atk:11, pdef:4, mdef:3, skills:['quickThrow','knifeRecall','daggerHandling'] },
+      { id:'char_ibel', name:'이벨', job:'마법사', position:'원거리마법', row:'back', rank:'E', stats:{ str:4, con:7, int:16, agi:9, sense:10 }, hp:182, mp:290, sp:220, atk:12, pdef:3, mdef:7, damageType:'magic', attackStat:'int', skills:['energyBolt','energyShower','haste'] },
+      { id:'char_sera', name:'세라', job:'클레릭', position:'힐러', row:'back', rank:'D', stats:{ str:5, con:9, int:16, agi:8, sense:11 }, hp:205, mp:293, sp:213, atk:22, pdef:5, mdef:8, damageType:'magic', attackStat:'int', skills:['heal','pray','blessingOfLight','smallGarden'] }
     ];
   }
   function buildSampleMonsters() {
@@ -1421,13 +1446,14 @@ function buildDefaultState() {
   }
   function buildUnit(entry, side, slotIndex) {
     const rank = String(entry.rank || 'E').toUpperCase();
-    const stats = normaliseStats(entry.stats);
     const row = normRow(entry.row) || inferRow(entry.position, entry.job);
     const meta = parseMonsterMeta(entry);
     const isMonster = side === 'enemies';
     const monsterProfile = isMonster ? monsterProfileForEntry(entry) : null;
+    // 몬스터: 개별 스탯 없음, HP/ATK만 프로필 테이블에서 가져옴
+    const stats = isMonster ? { str:0, con:0, int:0, agi:0, sense:0 } : normaliseStats(entry.stats);
     const baseHp = Number(isMonster ? monsterProfile.hp : (entry.hp || (100 + stats.con * 10 + stats.str * 3)));
-    const defaultMp = isMonster ? monsterProfile.mp : (100 + stats.int * 10);
+    const defaultMp = isMonster ? monsterProfile.mp : (100 + stats.int * 10 + stats.sense * 3);
     const defaultSp = isMonster ? monsterProfile.sp : (100 + stats.agi * 10 + stats.sense * 3);
     const allSkillMap = getAllSkillMap();
     const hasMagicSkill = Array.isArray(entry.skills) && entry.skills.some(id => {
@@ -1456,15 +1482,16 @@ function buildDefaultState() {
       hp: Number(entry.currentHp != null ? entry.currentHp : baseHp), maxHp: baseHp,
       mp: Number(entry.currentMp != null ? entry.currentMp : baseMp), maxMp: baseMp,
       sp: Number(entry.currentSp != null ? entry.currentSp : baseSp), maxSp: baseSp,
-      atk: Number(isMonster ? (entry.atk != null ? entry.atk : monsterProfile.damage) : (entry.atk != null ? entry.atk : Math.round(defaultAtkByRank(rank) + stats.str * 0.2 + stats.agi * 0.2 + stats.int * 0.3))),
-      pdef: Number(entry.pdef != null ? entry.pdef : Math.floor(stats.con * 0.4)),
-      mdef: Number(entry.mdef != null ? entry.mdef : Math.floor((stats.int + stats.sense) * 0.25)),
+      // 몬스터: ATK = 프로필 damage, pdef/mdef = 0 (개별 스탯 없음)
+      atk: Number(isMonster ? monsterProfile.damage : (entry.atk != null ? entry.atk : Math.round(defaultAtkByRank(rank) + stats.str * 0.2 + stats.agi * 0.2 + stats.int * 0.3))),
+      pdef: Number(isMonster ? 0 : (entry.pdef != null ? entry.pdef : Math.floor(stats.con * 0.4))),
+      mdef: Number(isMonster ? 0 : (entry.mdef != null ? entry.mdef : Math.floor((stats.int + stats.sense) * 0.25))),
       damageType: entry.damageType || inferDamageType(entry.position, entry.job),
       attackStat: entry.attackStat || inferAttackStat(entry.position, entry.job),
       skills: Array.isArray(entry.skills) ? entry.skills.slice() : [],
       ai: entry.ai || null,
       buffs: Array.isArray(entry.buffs) ? deepClone(entry.buffs) : [],
-      statuses: Object.assign({ stun:0, bind:0, sleep:0, poison:0, bleed:0, burn:0, curse:0, poisonPower:0, bleedPower:0, burnPower:0 }, deepClone(entry.statuses || {})),
+      statuses: Object.assign({ stun:0, bind:0, sleep:0, poison:0, bleed:0, burn:0, curse:0, poisonStacks:0, poisonPower:0, bleedPower:0, burnStacks:0, burnPower:0, stunResistTimer:0, sleepResistTimer:0, bleedHealReduction:0 }, deepClone(entry.statuses || {})),
       cooldowns: {},
       lastAction:'',
       dead:false,
@@ -3645,6 +3672,12 @@ function getBuffedStat(unit, statKey) {
     });
     return value;
   }
+  const CURSE_PERCENT_BY_RANK = { E:0.10, D:0.12, C:0.15, B:0.20, A:0.25, S:0.30 };
+  function getCursePenalty(unit) {
+    if (Number(unit.statuses.curse || 0) <= 0) return 0;
+    const rank = normalizeRank(unit.rank);
+    return CURSE_PERCENT_BY_RANK[rank] || 0.10;
+  }
   function getIncomingDamageMul(unit) {
     let mul = (unit.buffs || []).reduce((acc, buff) => acc * Number(buff.damageTakenMul || 1), 1);
     if (unit && unit.damageTakenMods) {
@@ -3654,11 +3687,18 @@ function getBuffedStat(unit, statKey) {
       const sideUnits = unit.side === 'party' ? model.state.runtime.party : model.state.runtime.enemies;
       if (getAlive(sideUnits).length === 1) mul *= Number(unit.aloneDamageTaken || 1);
     }
+    // Curse: rank-based incoming damage increase
+    const cursePct = getCursePenalty(unit);
+    if (cursePct > 0) mul *= (1 + cursePct);
+    // Burn: +10% incoming damage (does not stack)
+    if (Number(unit.statuses.burn || 0) > 0) mul *= 1.10;
     return mul;
   }
   function getOutgoingMul(unit, target, skill) {
     let mul = 1;
-    if (Number(unit.statuses.curse || 0) > 0) mul *= 0.85;
+    // Curse: rank-based attack decrease
+    const cursePct = getCursePenalty(unit);
+    if (cursePct > 0) mul *= (1 - cursePct);
     if (unit.species === 'beast' && target && Number(target.statuses.bleed || 0) > 0) mul *= Number(unit.bonusVsBleeding || 1.2);
     return mul;
   }
@@ -3694,22 +3734,52 @@ function getBuffedStat(unit, statKey) {
     return cost;
   }
   function critChance(unit) {
-    return clamp(0.25 * (getBuffedStat(unit, 'agi') + getBuffedStat(unit, 'sense')), 3, 35) / 100;
+    let bonus = 0;
+    (unit.buffs || []).forEach(b => { if (b.critChanceBonus) bonus += Number(b.critChanceBonus); });
+    let sense = getBuffedStat(unit, 'sense');
+    // Bind: 속박된헌터 감각 -50%
+    if (!unit.isMonster && Number(unit.statuses.bind || 0) > 0) sense = Math.floor(sense * 0.5);
+    return clamp(0.25 * (getBuffedStat(unit, 'agi') + sense) + bonus, 3, 35) / 100;
+  }
+  const EVASION_BY_RANK = { E:0.03, D:0.05, C:0.07, B:0.10, A:0.12, S:0.15 };
+  function getBaseEvasion(unit) {
+    const rank = normalizeRank(unit.rank);
+    return EVASION_BY_RANK[rank] || 0.03;
   }
   function hitChance(attacker, target, skill) {
-    const attackerSense = getBuffedStat(attacker, 'sense') - (Number(attacker.statuses.bind || 0) > 0 ? 4 : 0);
-    const attackerAgi = getBuffedStat(attacker, 'agi') - (Number(attacker.statuses.bind || 0) > 0 ? 4 : 0);
-    const targetSense = getBuffedStat(target, 'sense') - (Number(target.statuses.bind || 0) > 0 ? 2 : 0);
-    const targetAgi = getBuffedStat(target, 'agi') - (Number(target.statuses.bind || 0) > 0 ? 2 : 0);
-    const senseDiff = attackerSense - targetSense;
-    const agiDiff = attackerAgi - targetAgi;
-    let base = 0.84 + (senseDiff * 0.008) + (agiDiff * 0.004);
-    if (skill && skill.category === 'aoeAttack') base -= 0.05;
-    if (skill && skill.category === 'aoeCC') base -= 0.08;
-    return clamp(base, 0.55, 0.98);
+    let accuracy;
+    if (attacker.isMonster) {
+      // 몬스터 기본명중률 100%
+      accuracy = 1.0;
+      // 속박된 몬스터: 명중률 -50%
+      if (Number(attacker.statuses.bind || 0) > 0) accuracy *= 0.5;
+    } else {
+      // 헌터 명중률 = 70 + 감각 * 0.5
+      let sense = getBuffedStat(attacker, 'sense');
+      // 속박된 헌터: 감각 -50%, 명중률 -50%
+      if (Number(attacker.statuses.bind || 0) > 0) sense = Math.floor(sense * 0.5);
+      accuracy = (70 + sense * 0.5) / 100;
+      if (Number(attacker.statuses.bind || 0) > 0) accuracy *= 0.5;
+    }
+    // 대상 회피율 계산 (등급별)
+    let evasion = 0;
+    if (!target.isMonster) {
+      evasion = getBaseEvasion(target);
+      // 공격자 등급 > 대상 등급 → 대상 회피율 0%
+      if (rankIndex(attacker.rank) > rankIndex(target.rank)) {
+        evasion = 0;
+      }
+      // 몬스터가 공격자일시 동급헌터의 회피율을 50%만 적용
+      if (attacker.isMonster) {
+        evasion *= 0.5;
+      }
+    }
+    // 최종 적중률 = 명중률 - 대상 회피율, 100% 이상 → 무조건 적중
+    return accuracy - evasion;
   }
   function performHit(attacker, target, skill) {
-    const hit = Math.random() <= hitChance(attacker, target, skill);
+    const hitRate = hitChance(attacker, target, skill);
+    const hit = hitRate >= 1.0 || Math.random() <= hitRate;
     const crit = hit && Math.random() <= critChance(attacker);
     return { hit, crit };
   }
@@ -3739,7 +3809,9 @@ function getBuffedStat(unit, statKey) {
     const mainStat = getStatPower(caster, skill);
     const ss = (2 * mainStat) + (3 * Number(caster.atk || 0));
     const coef = Number(skill && skill.coef != null ? skill.coef : 1.0);
-    const curseMul = Number(caster.statuses.curse || 0) > 0 ? 0.85 : 1;
+    // Curse reduces outgoing heal by rank-based %
+    const cursePct = getCursePenalty(caster);
+    const curseMul = cursePct > 0 ? (1 - cursePct) : 1;
     return Math.max(1, Math.round(ss * coef * curseMul));
   }
   function getAlive(units) { return units.filter(u => !u.dead && u.hp > 0); }
@@ -3817,8 +3889,13 @@ function getBuffedStat(unit, statKey) {
     if (target.hp <= 0) target.dead = true;
   }
   function applyHeal(target, heal) {
+    // Bleed reduces healing received by 50%
+    let effectiveHeal = heal;
+    if (Number(target.statuses.bleedHealReduction || 0) > 0) {
+      effectiveHeal = Math.max(1, Math.round(heal * 0.5));
+    }
     const before = target.hp;
-    target.hp = Math.min(target.maxHp, target.hp + heal);
+    target.hp = Math.min(target.maxHp, target.hp + effectiveHeal);
     return target.hp - before;
   }
   function applyBuff(targets, skill, sourceUnit) {
@@ -3848,14 +3925,50 @@ function getBuffedStat(unit, statKey) {
     if (!skill.cc) return;
     targets.forEach(target => {
       if (target.dead) return;
-      if (skill.cc.type === 'stun') {
-        target.statuses.stun = Math.max(Number(target.statuses.stun || 0), Number(skill.cc.turns || 1));
+      const type = normStatus(skill.cc.type);
+      if (!type) return;
+      if (unitHasImmunity(target, type)) {
+        addRoundHighlight(summary, `${target.name}은(는) ${type} 면역`);
+        pushBattleLog(runtime, `${target.name}은(는) ${type} 면역`);
+        return;
+      }
+      if (type === 'stun') {
+        // Stun resistance: immune for 5 turns after being stunned
+        if (Number(target.statuses.stunResistTimer || 0) > 0) {
+          addRoundHighlight(summary, `${target.name} 기절 저항 (면역 상태)`);
+          pushBattleLog(runtime, `${target.name} 기절 저항 활성 중`);
+          return;
+        }
+        let turns = Number(skill.cc.turns || 1);
+        const kind = String(target.kind || '').toLowerCase();
+        if (kind === 'boss') turns = Math.min(turns, 1);
+        else if (kind === 'elite') turns = Math.min(turns, 2);
+        target.statuses.stun = Math.max(Number(target.statuses.stun || 0), turns);
+        target.statuses.stunResistTimer = 5; // 5-turn immunity after stun
         addRoundHighlight(summary, `${sourceName}의 ${skill.name} → ${target.name} 기절`);
         pushBattleLog(runtime, `${sourceName} 사용: ${skill.name} → ${target.name} 기절`);
+      } else if (type === 'sleep') {
+        // Sleep resistance: immune for 5 turns after being slept
+        if (Number(target.statuses.sleepResistTimer || 0) > 0) {
+          addRoundHighlight(summary, `${target.name} 수면 저항 (면역 상태)`);
+          pushBattleLog(runtime, `${target.name} 수면 저항 활성 중`);
+          return;
+        }
+        let turns = Number(skill.cc.turns || 2);
+        const kind = String(target.kind || '').toLowerCase();
+        if (kind === 'boss' || kind === 'elite') turns = Math.min(turns, 2);
+        target.statuses.sleep = Math.max(Number(target.statuses.sleep || 0), turns);
+        target.statuses.sleepResistTimer = 5; // 5-turn immunity after sleep
+        addRoundHighlight(summary, `${sourceName}의 ${skill.name} → ${target.name} 수면`);
+        pushBattleLog(runtime, `${sourceName} 사용: ${skill.name} → ${target.name} 수면`);
+      } else {
+        target.statuses[type] = Math.max(Number(target.statuses[type] || 0), Number(skill.cc.turns || 1));
+        addRoundHighlight(summary, `${sourceName}의 ${skill.name} → ${target.name} ${type}`);
+        pushBattleLog(runtime, `${sourceName} 사용: ${skill.name} → ${target.name} ${type}`);
       }
     });
   }
-  function applyStatus(target, skill, summary, sourceName, forcedStatus, runtime) {
+  function applyStatus(target, skill, summary, sourceName, forcedStatus, runtime, sourceUnit) {
     const srcStatus = forcedStatus ? { type: forcedStatus } : (skill && skill.status);
     if (!srcStatus || !srcStatus.type || target.dead) return false;
     const type = normStatus(srcStatus.type);
@@ -3869,22 +3982,69 @@ function getBuffedStat(unit, statKey) {
     const chance = srcStatus.chance == null ? profile.chance : Number(srcStatus.chance);
     if (Math.random() > chance) return false;
     const turns = Number(srcStatus.turns || profile.turns);
-    const power = Number(srcStatus.power || profile.power || 0);
-    if (['stun','bind','sleep','curse'].includes(type)) {
-      target.statuses[type] = Math.max(Number(target.statuses[type] || 0), turns);
-      addRoundHighlight(summary, `${sourceName}의 ${skill?.name || '공격'} → ${target.name} ${type}`);
-      pushBattleLog(runtime, `${sourceName} 사용: ${skill?.name || '공격'} → ${target.name} ${type}`);
-      return true;
-    }
-    if (type === 'poison') {
-      target.statuses.poison = Math.max(Number(target.statuses.poison || 0), turns);
-      target.statuses.poisonPower = Math.max(Number(target.statuses.poisonPower || 0), power || 0.04);
+
+    if (type === 'stun') {
+      if (Number(target.statuses.stunResistTimer || 0) > 0) return false;
+      let t = turns;
+      const kind = String(target.kind || '').toLowerCase();
+      if (kind === 'boss') t = Math.min(t, 1);
+      else if (kind === 'elite') t = Math.min(t, 2);
+      target.statuses.stun = Math.max(Number(target.statuses.stun || 0), t);
+      target.statuses.stunResistTimer = 5;
+    } else if (type === 'sleep') {
+      if (Number(target.statuses.sleepResistTimer || 0) > 0) return false;
+      let t = turns;
+      const kind = String(target.kind || '').toLowerCase();
+      if (kind === 'boss' || kind === 'elite') t = Math.min(t, 2);
+      target.statuses.sleep = Math.max(Number(target.statuses.sleep || 0), t);
+      target.statuses.sleepResistTimer = 5;
+    } else if (type === 'bind') {
+      target.statuses.bind = Math.max(Number(target.statuses.bind || 0), turns);
+    } else if (type === 'curse') {
+      target.statuses.curse = Math.max(Number(target.statuses.curse || 0), turns);
+    } else if (type === 'poison') {
+      // Stack-based: max 3 stacks, 3 turns
+      const curStacks = Number(target.statuses.poisonStacks || 0);
+      if (curStacks < 3) {
+        target.statuses.poisonStacks = curStacks + 1;
+      }
+      target.statuses.poison = 3; // always reset to 3 turns
+      // Calculate poison power per stack from source
+      if (sourceUnit) {
+        if (sourceUnit.isMonster) {
+          // Monster poison: monsterDamage * 40%
+          target.statuses.poisonPower = Number(sourceUnit.monsterBaseDamage || 0) * 0.4;
+        } else {
+          // Hunter poison: (2*MainStat + 3*ATK) * skillCoef * 0.2
+          const mainStat = getStatPower(sourceUnit, skill);
+          const coef = Number(skill && skill.coef != null ? skill.coef : 1.0);
+          target.statuses.poisonPower = (2 * mainStat + 3 * Number(sourceUnit.atk || 0)) * coef * 0.2;
+        }
+      }
     } else if (type === 'bleed') {
-      target.statuses.bleed = Math.max(Number(target.statuses.bleed || 0), turns);
-      target.statuses.bleedPower = Math.max(Number(target.statuses.bleedPower || 0), power || 0.05);
+      // Bleed: 30% of triggering damage as extra, 3-turn healing -50%
+      target.statuses.bleed = Math.max(Number(target.statuses.bleed || 0), 3);
+      target.statuses.bleedHealReduction = 3; // 3 turns of 50% healing reduction
+      // bleedPower is set by the caller based on damage dealt
     } else if (type === 'burn') {
-      target.statuses.burn = Math.max(Number(target.statuses.burn || 0), turns);
-      target.statuses.burnPower = Math.max(Number(target.statuses.burnPower || 0), power || 0.03);
+      // Stack-based: max 5 stacks, 5 turns
+      const curStacks = Number(target.statuses.burnStacks || 0);
+      if (curStacks < 5) {
+        target.statuses.burnStacks = curStacks + 1;
+      }
+      target.statuses.burn = 5; // always reset to 5 turns
+      // Calculate burn power per stack from source
+      if (sourceUnit) {
+        if (sourceUnit.isMonster) {
+          // Monster burn: monsterDamage * 20%
+          target.statuses.burnPower = Number(sourceUnit.monsterBaseDamage || 0) * 0.2;
+        } else {
+          // Hunter burn: (2*MainStat + 3*ATK) * skillCoef * 0.12
+          const mainStat = getStatPower(sourceUnit, skill);
+          const coef = Number(skill && skill.coef != null ? skill.coef : 1.0);
+          target.statuses.burnPower = (2 * mainStat + 3 * Number(sourceUnit.atk || 0)) * coef * 0.12;
+        }
+      }
     }
     addRoundHighlight(summary, `${sourceName}의 ${skill?.name || '공격'} → ${target.name} ${type}`);
     pushBattleLog(runtime, `${sourceName} 사용: ${skill?.name || '공격'} → ${target.name} ${type}`);
@@ -3990,7 +4150,11 @@ function getBuffedStat(unit, statKey) {
       const hpBefore = Number(target.hp || 0);
       applyDamage(target, dmg);
       if (Number(target.statuses.sleep || 0) > 0) target.statuses.sleep = 0;
-      if (actor.onHitStatus) applyStatus(target, { name:'기본 공격', status:{ type:actor.onHitStatus, chance:actor.onHitChance, turns:actor.onHitTurns } }, summary, actor.name, null, runtime);
+      if (actor.onHitStatus) applyStatus(target, { name:'기본 공격', status:{ type:actor.onHitStatus, chance:actor.onHitChance, turns:actor.onHitTurns } }, summary, actor.name, null, runtime, actor);
+      // 출혈: 해당 라운드가 끝난뒤 출혈을 일으킨 피해의 30% 추가피해
+      if (Number(target.statuses.bleed || 0) > 0) {
+        target.statuses.bleedPower = Math.round(dmg * 0.3);
+      }
       actor.lastAction = `기본 공격 → ${target.name} ${dmg}`;
       if (actor.side === 'party') summary.partyDamage += dmg; else summary.enemyDamage += dmg;
       if (target.dead) {
@@ -4056,7 +4220,7 @@ function getBuffedStat(unit, statKey) {
           const hpBefore = Number(target.hp || 0);
           applyDamage(target, dmg);
           if (Number(target.statuses.sleep || 0) > 0) target.statuses.sleep = 0;
-          if (actor.onHitStatus) applyStatus(target, { name:skill.name, status:{ type:actor.onHitStatus, chance:actor.onHitChance, turns:actor.onHitTurns } }, summary, actor.name, null, runtime);
+          if (actor.onHitStatus) applyStatus(target, { name:skill.name, status:{ type:actor.onHitStatus, chance:actor.onHitChance, turns:actor.onHitTurns } }, summary, actor.name, null, runtime, actor);
           if (actor.side === 'party') summary.partyDamage += dmg; else summary.enemyDamage += dmg;
           if (target.dead) {
             if (actor.side === 'party') { summary.partyKills += 1; recordKillExp(runtime, target); } else summary.enemyKills += 1;
@@ -4090,8 +4254,12 @@ function getBuffedStat(unit, statKey) {
       applyDamage(target, dmg);
       if (Number(target.statuses.sleep || 0) > 0) target.statuses.sleep = 0;
       if (skill.cc) ccTargets.push(target);
-      applyStatus(target, skill, summary, actor.name, null, runtime);
-      if (actor.onHitStatus) applyStatus(target, { name:skill.name, status:{ type:actor.onHitStatus, chance:actor.onHitChance, turns:actor.onHitTurns } }, summary, actor.name, null, runtime);
+      applyStatus(target, skill, summary, actor.name, null, runtime, actor);
+      if (actor.onHitStatus) applyStatus(target, { name:skill.name, status:{ type:actor.onHitStatus, chance:actor.onHitChance, turns:actor.onHitTurns } }, summary, actor.name, null, runtime, actor);
+      // 출혈: 해당 라운드가 끝난뒤 출혈을 일으킨 피해의 30% 추가피해
+      if (Number(target.statuses.bleed || 0) > 0) {
+        target.statuses.bleedPower = Math.round(dmg * 0.3);
+      }
       if (target.dead) { killedNames.push(target.name); if (actor.side === 'party') recordKillExp(runtime, target); }
       if (hit.crit) addRoundHighlight(summary, `${actor.name} 치명타`);
       pushDamageEventLog(runtime, actor, target, skill.name, dmg, hit.crit, target.dead);
@@ -4123,23 +4291,36 @@ function getBuffedStat(unit, statKey) {
       });
       removeExpiredBuffEffects(unit, expired);
 
+      // 독: 방어무시 절대데미지, 스택당 poisonPower 피해
       if (Number(unit.statuses.poison || 0) > 0) {
-        const dmg = Math.max(1, Math.round(unit.maxHp * Number(unit.statuses.poisonPower || 0.04)));
-        applyDamage(unit, dmg);
-        addRoundHighlight(summary, `${unit.name} 독 피해 ${dmg}`);
-        pushBattleLog(runtime, `${unit.name} 독 피해 ${dmg}`);
+        const stacks = Math.min(3, Number(unit.statuses.poisonStacks || 1));
+        const perStack = Math.max(1, Math.round(Number(unit.statuses.poisonPower || 0)));
+        const dmg = perStack * stacks;
+        if (dmg > 0) {
+          applyDamage(unit, dmg);
+          addRoundHighlight(summary, `${unit.name} 독 피해 ${dmg} (${stacks}중첩)`);
+          pushBattleLog(runtime, `${unit.name} 독 피해 ${dmg} (${stacks}중첩)`);
+        }
       }
+      // 출혈: 출혈을 일으킨 피해의 30% 추가피해 (bleedPower에 저장됨)
       if (!unit.dead && Number(unit.statuses.bleed || 0) > 0) {
-        const dmg = Math.max(1, Math.round(unit.maxHp * Number(unit.statuses.bleedPower || 0.05)));
-        applyDamage(unit, dmg);
-        addRoundHighlight(summary, `${unit.name} 출혈 피해 ${dmg}`);
-        pushBattleLog(runtime, `${unit.name} 출혈 피해 ${dmg}`);
+        const dmg = Math.max(1, Math.round(Number(unit.statuses.bleedPower || 0)));
+        if (dmg > 0) {
+          applyDamage(unit, dmg);
+          addRoundHighlight(summary, `${unit.name} 출혈 피해 ${dmg}`);
+          pushBattleLog(runtime, `${unit.name} 출혈 피해 ${dmg}`);
+        }
       }
+      // 화상: 방어무시 절대데미지, 스택당 burnPower 피해
       if (!unit.dead && Number(unit.statuses.burn || 0) > 0) {
-        const dmg = Math.max(1, Math.round(unit.maxHp * Number(unit.statuses.burnPower || 0.03)));
-        applyDamage(unit, dmg);
-        addRoundHighlight(summary, `${unit.name} 화상 피해 ${dmg}`);
-        pushBattleLog(runtime, `${unit.name} 화상 피해 ${dmg}`);
+        const stacks = Math.min(5, Number(unit.statuses.burnStacks || 1));
+        const perStack = Math.max(1, Math.round(Number(unit.statuses.burnPower || 0)));
+        const dmg = perStack * stacks;
+        if (dmg > 0) {
+          applyDamage(unit, dmg);
+          addRoundHighlight(summary, `${unit.name} 화상 피해 ${dmg} (${stacks}중첩)`);
+          pushBattleLog(runtime, `${unit.name} 화상 피해 ${dmg} (${stacks}중첩)`);
+        }
       }
       if (!unit.dead && Number(unit.regenPct || 0) > 0) {
         const blocked = (unit.regenBlockedBy || []).some(key => Number(unit.statuses[key] || 0) > 0);
@@ -4150,9 +4331,24 @@ function getBuffedStat(unit, statKey) {
         }
       }
 
+      // 상태이상 턴 감소
       ['stun','bind','sleep','poison','bleed','burn','curse'].forEach(key => {
         unit.statuses[key] = Math.max(0, Number(unit.statuses[key] || 0) - 1);
       });
+      // 독/화상: 턴이 0이 되면 스택 초기화
+      if (Number(unit.statuses.poison || 0) <= 0) unit.statuses.poisonStacks = 0;
+      if (Number(unit.statuses.burn || 0) <= 0) unit.statuses.burnStacks = 0;
+      // 출혈 치유량 감소 타이머
+      if (Number(unit.statuses.bleedHealReduction || 0) > 0) {
+        unit.statuses.bleedHealReduction = Math.max(0, unit.statuses.bleedHealReduction - 1);
+      }
+      // 기절/수면 저항 타이머 감소
+      if (Number(unit.statuses.stunResistTimer || 0) > 0) {
+        unit.statuses.stunResistTimer = Math.max(0, unit.statuses.stunResistTimer - 1);
+      }
+      if (Number(unit.statuses.sleepResistTimer || 0) > 0) {
+        unit.statuses.sleepResistTimer = Math.max(0, unit.statuses.sleepResistTimer - 1);
+      }
       Object.keys(unit.cooldowns || {}).forEach(key => {
         unit.cooldowns[key] = Math.max(0, Number(unit.cooldowns[key] || 0) - 1);
       });
@@ -4240,6 +4436,10 @@ function getBuffedStat(unit, statKey) {
       if (checkBattleEnd(runtime)) break;
       if (Number(actor.statuses.stun || 0) > 0) {
         addRoundHighlight(summary, `${actor.name} 기절로 행동 불가`);
+        continue;
+      }
+      if (Number(actor.statuses.sleep || 0) > 0) {
+        addRoundHighlight(summary, `${actor.name} 수면으로 행동 불가`);
         continue;
       }
       const action = actor.side === 'party' ? resolvePartyAction(runtime, actor, allies, foes) : chooseEnemyAction(actor, allies, foes, false);
@@ -6739,7 +6939,7 @@ function renderCommandPanel(runtime) {
     ensureSelections();
     const item = deepClone(getCharById(model.state.selected.characters) || {
       id:'', name:'', job:'', position:'', row:'mid', rank:'E',
-      stats:{ str:5, con:5, int:5, agi:5, sense:5 }, hp:165, mp:150, sp:165, atk:9, pdef:3, mdef:3,
+      stats:{ str:5, con:5, int:5, agi:5, sense:5 }, hp:165, mp:165, sp:165, atk:9, pdef:3, mdef:3,
       damageType:'physical', attackStat:'str', skills:[], note:'',
       level:1, exp:0, totalExp:0
     });
