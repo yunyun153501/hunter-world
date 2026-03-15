@@ -40,14 +40,14 @@ const GATE_RANK_WEIGHTS = {
   large:[['C',30],['B',32],['A',24],['S',14]]
 };
 const GATE_SPECIES_COMPAT = {
-  undead:['ghost','elemental'],
-  ghost:['undead','elemental'],
+  undead:['ghost','elemental','demon'],
+  ghost:['undead','elemental','demon','celestial'],
   beast:['elemental','plant'],
   plant:['slime','elemental','beast'],
   slime:['plant','elemental'],
-  construct:['elemental'],
-  elemental:['construct','beast','plant','slime','ghost'],
-  demon:['undead','ghost'],
+  construct:['elemental','frost'],
+  elemental:['construct','beast','plant','slime','ghost','undead','demon','frost','celestial'],
+  demon:['undead','ghost','elemental'],
   frost:['elemental','construct'],
   celestial:['elemental','ghost']
 };
@@ -73,6 +73,7 @@ const GATE_COMBO_PLACES = {
   'elemental+slime':['범람하는 수로','청람의 습지','미끌거리는 균열','출렁이는 핵실'],
   'demon+undead':['타락한 묘역','지옥의 안치소','불타는 골목','암흑 납골당'],
   'demon+ghost':['사악한 장막','불타는 영안실','저주의 회랑','암흑 빈터'],
+  'demon+elemental':['불타는 핵심부','마염의 균열','타락한 심장부','화염 파편역'],
   'elemental+frost':['서리 균열','냉기 핵심부','동결된 파편역','빙하 심장부'],
   'construct+frost':['얼어붙은 격납고','냉기 송전실','동결 기계묘지','서리 철탑군'],
   'celestial+elemental':['빛나는 균열','성광 핵심부','신성한 파편역','축복의 심장부'],
@@ -6688,8 +6689,13 @@ function renderGoldTransferPanel() {
   const allPersonas = model.db.personas || [];
   const fmtG = n => n >= 1e8 ? `${(n/1e8).toFixed(2)}억원` : n >= 10000 ? `${Math.round(n/10000)}만원` : `${n.toLocaleString('en-US')}원`;
 
-  const charRows = [...allChars.map(c => ({ ...c, _type:'char' })), ...allPersonas.map(p => ({ ...p, _type:'persona' }))].map(m => {
-    const g = Number((m.inventory && m.inventory.gold) || 0);
+  // 파티에 편성된 캐릭터만 표시
+  const partySlotIds = ((model.db.battleSetup || {}).partySlots || []).filter(Boolean);
+  const allUnits = [...allChars.map(c => ({ ...c, _type:'char' })), ...allPersonas.map(p => ({ ...p, _type:'persona' }))];
+  const partyMembers = partySlotIds.map(id => allUnits.find(u => u.id === id)).filter(Boolean);
+
+  const charRows = partyMembers.map(m => {
+    const g = Number((m.inventory && m.inventory.gold) || m.gold || 0);
     return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(148,163,184,0.08);">
       <span style="flex:1;font-size:12px;"><strong>${escapeHtml(m.name||m.id)}</strong> <span class="gb-badge">${m._type === 'char' ? '캐릭터' : '페르소나'}</span> ${fmtG(g)}</span>
       <input type="number" min="1" placeholder="금액" style="width:90px;" class="gb-input" id="gb-gold-xfer-amt-${escapeHtml(m.id)}" value="">
@@ -6700,8 +6706,8 @@ function renderGoldTransferPanel() {
 
   return `<div class="gb-panel">
     <div class="gb-section-title">💸 골드 이동</div>
-    <div class="gb-sub" style="margin-bottom:6px;">공용 인벤 ↔ 캐릭터/페르소나 사이에 골드를 이동한다. <strong>공용: ${fmtG(sharedGold)}</strong></div>
-    ${charRows || '<div class="gb-sub">캐릭터/페르소나 없음.</div>'}
+    <div class="gb-sub" style="margin-bottom:6px;">공용 인벤 ↔ 파티원 사이에 골드를 이동한다. <strong>공용: ${fmtG(sharedGold)}</strong></div>
+    ${charRows || '<div class="gb-sub">파티에 편성된 캐릭터가 없습니다. 파티 탭에서 먼저 편성하세요.</div>'}
   </div>`;
 }
 
@@ -6930,10 +6936,56 @@ function renderPartyView() {
       <div class="gb-sub" style="margin-top:4px;font-size:11px;">⚔️ ${eqSummary}</div>
       <div class="gb-sub" style="margin-top:4px;">스킬: ${(u.skills || []).map(s => {
         const sk = getAllSkillMap()[s];
-        return sk ? sk.name : s;
+        if (!sk) return escapeHtml(s);
+        const costStr = sk.costs ? [sk.costs.mp ? `MP:${sk.costs.mp}` : '', sk.costs.sp ? `SP:${sk.costs.sp}` : ''].filter(Boolean).join('/') : '';
+        const coefStr = sk.coef ? `계수:${sk.coef}` : '';
+        const catLabel = { singleAttack:'단일공격', aoeAttack:'광역공격', singleCC:'단일CC', aoeCC:'광역CC', buff:'버프', singleHeal:'힐', aoeHeal:'광역힐', passive:'패시브', utility:'유틸' }[sk.category] || sk.category;
+        const tooltip = [catLabel, coefStr, costStr, sk.desc || ''].filter(Boolean).join(' | ');
+        return `<span class="gb-skill-tag" title="${escapeHtml(tooltip)}" style="cursor:help;border-bottom:1px dashed rgba(148,163,184,0.4);">${escapeHtml(sk.name)}</span>`;
       }).join(', ') || '없음'}</div>
+      <div class="gb-btn-row" style="margin-top:6px;">
+        <button class="gb-btn tiny" data-party-inv="${escapeHtml(u.id)}">🎒 인벤토리</button>
+      </div>
     </div>`;
   }).join('');
+
+  // 파티 인벤토리 관리 (선택된 파티원)
+  const partyInvTarget = model.state.partyInvTarget || '';
+  const partyInvUnit = partyInvTarget ? allUnits.find(u => u.id === partyInvTarget) : null;
+  const partyInvSection = partyInvUnit ? (() => {
+    const type = allChars.find(c => c.id === partyInvUnit.id) ? 'character' : 'persona';
+    return `<div class="gb-panel" style="margin-top:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="gb-section-title">🎒 ${escapeHtml(partyInvUnit.name)} 인벤토리 관리</div>
+        <button class="gb-btn tiny" data-party-inv-close>✕ 닫기</button>
+      </div>
+      ${renderPersonalInventoryHtml(type, partyInvUnit.id)}
+    </div>`;
+  })() : '';
+
+  // 파티 골드 이동 패널 (파티원만 표시)
+  const partyGoldSection = (() => {
+    const inv = getInventory();
+    const sharedGold = Number(inv.gold || 0);
+    const fmtGG = n => n >= 1e8 ? `${(n/1e8).toFixed(2)}억원` : n >= 10000 ? `${Math.round(n/10000)}만원` : `${n.toLocaleString('en-US')}원`;
+    const partyMembers = partySlots.filter(s => s.unit).map(s => s.unit);
+    if (!partyMembers.length) return '';
+    const rows = partyMembers.map(m => {
+      const type = allChars.find(c => c.id === m.id) ? 'char' : 'persona';
+      const g = Number((m.inventory && m.inventory.gold) || m.gold || 0);
+      return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(148,163,184,0.08);">
+        <span style="flex:1;font-size:12px;"><strong>${escapeHtml(m.name||m.id)}</strong> ${fmtGG(g)}</span>
+        <input type="number" min="1" placeholder="금액" style="width:90px;" class="gb-input" id="gb-gold-xfer-amt-${escapeHtml(m.id)}" value="">
+        <button class="gb-btn tiny" data-gold-to-shared="${escapeHtml(m.id)}" data-gold-xfer-type="${type}">→공용</button>
+        <button class="gb-btn tiny" data-gold-from-shared="${escapeHtml(m.id)}" data-gold-xfer-type="${type}">공용→</button>
+      </div>`;
+    }).join('');
+    return `<div class="gb-panel" style="margin-top:12px;">
+      <div class="gb-section-title">💸 파티 골드 이동</div>
+      <div class="gb-sub" style="margin-bottom:6px;">파티원 ↔ 공용인벤 골드 이동. <strong>공용: ${fmtGG(sharedGold)}</strong></div>
+      ${rows}
+    </div>`;
+  })();
 
   return `
     <div class="gb-panel">
@@ -6941,6 +6993,8 @@ function renderPartyView() {
       <div class="gb-sub" style="margin-bottom:8px;">DB에 등록된 캐릭터/페르소나를 파티 슬롯에 배치하고, 레벨업으로 얻은 스탯포인트를 배분하세요.</div>
     </div>
     <div class="gb-grid two">${partyCards}</div>
+    ${partyInvSection}
+    ${partyGoldSection}
     <div class="gb-panel" style="margin-top:12px;">
       <div class="gb-btn-row">
         <button class="gb-btn primary" id="gb-party-save-all">파티 편성 저장</button>
@@ -7005,7 +7059,20 @@ function renderCharacterView() {
     const skillMap = getAllSkillMap();
     const skillList = (u.skills || []).map(sId => {
       const sk = skillMap[sId];
-      return sk ? `<div class="gb-sub" style="padding:2px 0;">• <strong>${escapeHtml(sk.name)}</strong> <span class="gb-badge">${escapeHtml(sk.category)}</span> ${sk.desc ? '— ' + escapeHtml(sk.desc) : ''}</div>` : `<div class="gb-sub">• ${escapeHtml(sId)}</div>`;
+      if (!sk) return `<div class="gb-sub" style="padding:2px 0;">• ${escapeHtml(sId)}</div>`;
+      const costStr = sk.costs ? [sk.costs.mp ? `MP:${sk.costs.mp}` : '', sk.costs.sp ? `SP:${sk.costs.sp}` : ''].filter(Boolean).join(' / ') : '비용 없음';
+      const coefStr = sk.coef != null ? `계수: ${sk.coef}` : '';
+      const catLabel = { singleAttack:'단일공격', aoeAttack:'광역공격', singleCC:'단일CC', aoeCC:'광역CC', buff:'버프', singleHeal:'힐', aoeHeal:'광역힐', passive:'패시브', utility:'유틸' }[sk.category] || sk.category;
+      const elemStr = sk.element && sk.element !== 'none' ? `속성:${sk.element}` : '';
+      const dmgTypeStr = sk.damageType ? `타입:${sk.damageType}` : '';
+      const statTypeStr = (sk.statTypes||[]).length ? `스탯:${sk.statTypes.join('/')}` : '';
+      const durationStr = sk.duration ? `${sk.duration}턴` : '';
+      const ccStr = sk.cc ? `CC:${sk.cc.type}(${sk.cc.turns}턴)` : '';
+      const buffStr = sk.buff && sk.buff.stats ? `버프:${Object.entries(sk.buff.stats).map(([k,v])=>`${k}+${v}`).join(',')}` : '';
+      const passiveStr = sk.passiveBonuses ? `패시브:${Object.entries(sk.passiveBonuses).map(([k,v])=>`${k}+${v}`).join(',')}` : '';
+      const byRankStr = sk.byRank ? '(등급별 성장)' : '';
+      const details = [catLabel, coefStr, costStr, dmgTypeStr, elemStr, statTypeStr, durationStr, ccStr, buffStr, passiveStr, byRankStr].filter(Boolean).join(' | ');
+      return `<div class="gb-sub" style="padding:2px 0;cursor:help;" title="${escapeHtml(details)}">• <strong>${escapeHtml(sk.name)}</strong> <span class="gb-badge">${escapeHtml(catLabel)}</span> ${coefStr ? `<span class="gb-badge">${coefStr}</span>` : ''} ${costStr ? `<span class="gb-sub" style="font-size:10px;">[${escapeHtml(costStr)}]</span>` : ''} ${sk.desc ? '— ' + escapeHtml(sk.desc) : ''}</div>`;
     }).join('') || '<div class="gb-sub">스킬 없음</div>';
 
     detailHtml = `
@@ -9507,6 +9574,14 @@ async function saveMaterialTraitFromForm() {
       unit.sp += lvBonus;
       await saveDb(); renderApp();
       toast(`${unit.name}: ${statKey} +1 (잔여 ${unit.freeStatPoints}포인트)`);
+    });
+    on('[data-party-inv]', 'click', async (ev) => {
+      model.state.partyInvTarget = ev.currentTarget.getAttribute('data-party-inv') || '';
+      await saveState(); renderApp();
+    });
+    on('[data-party-inv-close]', 'click', async () => {
+      model.state.partyInvTarget = '';
+      await saveState(); renderApp();
     });
     // ── 캐릭터 뷰 핸들러 ──────────────────────────────────────────────────────
     on('[data-charview-tab]', 'click', async (ev) => {
