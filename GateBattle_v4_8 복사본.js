@@ -1679,6 +1679,7 @@ function applyExpToCharacter(charEntry, expGained) {
   if (!charEntry.level || charEntry.level < 1) charEntry.level = 1;
   if (charEntry.exp == null) charEntry.exp = 0;
   if (charEntry.totalExp == null) charEntry.totalExp = 0;
+  if (charEntry.freeStatPoints == null) charEntry.freeStatPoints = 0;
   charEntry.exp = Number(charEntry.exp) + expGained;
   charEntry.totalExp = Number(charEntry.totalExp) + expGained;
   const oldLevel = charEntry.level;
@@ -1688,7 +1689,12 @@ function applyExpToCharacter(charEntry, expGained) {
     if (charEntry.exp < needed) break;
     charEntry.exp -= needed;
     charEntry.level += 1;
-    messages.push(`${charEntry.name} Lv${charEntry.level - 1} → Lv${charEntry.level} (레벨업!)`);
+    charEntry.freeStatPoints = (charEntry.freeStatPoints || 0) + 2;
+    // 레벨업 보상: HP+2, MP+2, SP+2
+    charEntry.hp = (Number(charEntry.hp) || 0) + 2;
+    charEntry.mp = (Number(charEntry.mp) || 0) + 2;
+    charEntry.sp = (Number(charEntry.sp) || 0) + 2;
+    messages.push(`${charEntry.name} Lv${charEntry.level - 1} → Lv${charEntry.level} (레벨업! 스탯포인트 +2)`);
   }
   if (charEntry.level >= EXP_MAX_LEVEL) { charEntry.exp = 0; }
   return { levelsGained: charEntry.level - oldLevel, newLevel: charEntry.level, oldLevel, messages };
@@ -1731,7 +1737,7 @@ function getAvailableSpeciesFromDb() {
     if (sp) set.add(sp);
   });
   const arr = Array.from(set);
-  return arr.length ? arr : ['undead','ghost','beast','plant','slime','construct','elemental'];
+  return arr.length ? arr : ['undead','ghost','beast','plant','slime','construct','elemental','demon','frost','celestial'];
 }
 function pickGateSpeciesPair() {
   const available = getAvailableSpeciesFromDb();
@@ -4723,16 +4729,24 @@ function renderHub() {
         <div class="gb-card-title">🗡️ 전투</div>
         <div class="gb-sub">파티/적 편성, 전열/중열/후열, 수동 행동 선택.</div>
       </button>
+      <button class="gb-card-nav" data-go="party">
+        <div class="gb-card-title">👥 파티</div>
+        <div class="gb-sub">파티 편성, 스탯포인트 배분, 전투 출격 관리.</div>
+      </button>
+      <button class="gb-card-nav" data-go="character">
+        <div class="gb-card-title">🧑 캐릭터</div>
+        <div class="gb-sub">페르소나 관리, 장비, 스킬, 레벨 확인.</div>
+      </button>
+    </div>
+    <div class="gb-grid four">
       <button class="gb-card-nav" data-go="inventory">
-        <div class="gb-card-title">🎒 인벤토리</div>
+        <div class="gb-card-title">🎒 공용인벤</div>
         <div class="gb-sub">페르소나 공용 인벤, 가방, 무게, 돈 편집.</div>
       </button>
       <button class="gb-card-nav" data-go="db">
         <div class="gb-card-title">🗂️ DB</div>
         <div class="gb-sub">캐릭터, 페르소나, 스킬, 몬스터를 직접 입력/수정.</div>
       </button>
-    </div>
-    <div class="gb-grid four">
       <button class="gb-card-nav" data-go="association">
         <div class="gb-card-title">🏛️ 협회</div>
         <div class="gb-sub">게이트 신청·정산, 경매장, 브리핑룸. 정산은 이곳에서.</div>
@@ -4741,6 +4755,8 @@ function renderHub() {
         <div class="gb-card-title">🛒 상점</div>
         <div class="gb-sub">편의점, 백화점, 헌터거리 (수리점·대장간·물약·소모품·재료).</div>
       </button>
+    </div>
+    <div class="gb-grid four">
       <button class="gb-card-nav" data-go="home">
         <div class="gb-card-title">🏠 집</div>
         <div class="gb-sub">구매 또는 임대 가능한 주거 매물 목록. 계약금·월세 정보 포함.</div>
@@ -4755,7 +4771,7 @@ function renderHub() {
     ${currentInfo}
     <div class="gb-panel">
       <div class="gb-section-title">v2.2 범위</div>
-      <div class="gb-sub">허브 / 협회(정산·경매) / 상점 / 주거 / 길드 / 공용 인벤토리 / 가방·무게 / 게이트 자동 생성 / 방 단위 진행 / 광맥 채굴.</div>
+      <div class="gb-sub">허브 / 게이트 / 전투 / 파티 / 캐릭터 / 공용인벤 / DB / 협회(정산·경매) / 상점 / 주거 / 길드 / 가방·무게 / 게이트 자동 생성 / 방 단위 진행 / 광맥 채굴.</div>
       <div class="gb-rule">광역CC = 단일CC의 1/2 계수 + 자원 소모 2배</div>
     </div>
   `;
@@ -6825,6 +6841,202 @@ function renderInventoryView() {
   `;
 }
 
+// ── 파티 관리 뷰 ─────────────────────────────────────────────────────────────
+function renderPartyView() {
+  const setup = model.db.battleSetup || { partySlots:[], enemySlots:[] };
+  const allChars = (model.db.characters || []);
+  const allPersonas = (model.db.personas || []);
+  const allUnits = allChars.concat(allPersonas);
+
+  // 현재 파티에 들어있는 캐릭터
+  const partySlots = [];
+  for (let i = 0; i < MAX_PARTY; i++) {
+    const slotId = (setup.partySlots || [])[i] || '';
+    const unit = allUnits.find(u => u.id === slotId);
+    partySlots.push({ index: i, id: slotId, unit });
+  }
+
+  // 파티 멤버 카드 렌더
+  const partyCards = partySlots.map((slot, i) => {
+    if (!slot.unit) {
+      return `<div class="gb-panel" style="min-height:120px;display:flex;align-items:center;justify-content:center;opacity:0.5;">
+        <div>
+          <div class="gb-sub">슬롯 ${i + 1} (비어있음)</div>
+          <select class="gb-input" id="gb-party-assign-${i}" style="margin-top:6px;">
+            <option value="">— 캐릭터 선택 —</option>
+            ${allUnits.map(u => `<option value="${escapeHtml(u.id)}">${escapeHtml(u.name)} [${escapeHtml(u.job || '직업없음')}] Lv${Number(u.level || 1)}</option>`).join('')}
+          </select>
+          <button class="gb-btn tiny" data-party-assign="${i}" style="margin-top:4px;">배치</button>
+        </div>
+      </div>`;
+    }
+    const u = slot.unit;
+    const stats = u.stats || { str:0, con:0, int:0, agi:0, sense:0 };
+    const freePoints = Number(u.freeStatPoints || 0);
+    const lv = Number(u.level || 1);
+    const curExp = Number(u.exp || 0);
+    const needed = expNeededForLevel(lv);
+    const expPct = Math.min(100, Math.round((curExp / needed) * 100));
+
+    const statNames = { str:'근력', con:'체력', int:'지능', agi:'민첩', sense:'감각' };
+    const statRows = Object.entries(statNames).map(([key, label]) => {
+      const val = Number(stats[key] || 0);
+      return `<div style="display:flex;align-items:center;gap:6px;padding:2px 0;">
+        <span style="width:40px;font-size:12px;">${label}</span>
+        <span style="width:30px;text-align:right;font-weight:600;">${val}</span>
+        ${freePoints > 0 ? `<button class="gb-btn tiny" data-party-statup="${escapeHtml(u.id)}:${key}" style="padding:1px 6px;font-size:11px;">+1</button>` : ''}
+      </div>`;
+    }).join('');
+
+    return `<div class="gb-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <strong>${escapeHtml(u.name)}</strong> <span class="gb-badge">${escapeHtml(u.rank || 'E')}</span>
+          <div class="gb-sub">${escapeHtml(u.job || '직업없음')} / ${escapeHtml(rowLabel(u.row))} / Lv${lv}</div>
+        </div>
+        <button class="gb-btn tiny danger" data-party-remove="${i}">제외</button>
+      </div>
+      <div style="margin:6px 0;">
+        <div class="gb-sub">EXP: ${curExp}/${needed} (${expPct}%)</div>
+        <div style="background:rgba(100,100,100,0.3);height:6px;border-radius:3px;margin-top:3px;">
+          <div style="width:${expPct}%;height:100%;background:#3b82f6;border-radius:3px;"></div>
+        </div>
+      </div>
+      <div class="gb-sub" style="margin:4px 0;">HP:${Number(u.hp||0)} MP:${Number(u.mp||0)} SP:${Number(u.sp||0)} ATK:${Number(u.atk||0)}</div>
+      ${freePoints > 0 ? `<div style="color:#34d399;font-weight:600;font-size:13px;margin:4px 0;">🌟 배분 가능 스탯포인트: ${freePoints}</div>` : ''}
+      <div style="margin-top:4px;">${statRows}</div>
+      <div class="gb-sub" style="margin-top:4px;">스킬: ${(u.skills || []).map(s => {
+        const sk = getAllSkillMap()[s];
+        return sk ? sk.name : s;
+      }).join(', ') || '없음'}</div>
+    </div>`;
+  }).join('');
+
+  return `
+    <div class="gb-panel">
+      <div class="gb-section-title">👥 파티 관리</div>
+      <div class="gb-sub" style="margin-bottom:8px;">DB에 등록된 캐릭터/페르소나를 파티 슬롯에 배치하고, 레벨업으로 얻은 스탯포인트를 배분하세요.</div>
+    </div>
+    <div class="gb-grid two">${partyCards}</div>
+    <div class="gb-panel" style="margin-top:12px;">
+      <div class="gb-btn-row">
+        <button class="gb-btn primary" id="gb-party-save-all">파티 편성 저장</button>
+        <button class="gb-btn" data-go="battle">전투 화면으로</button>
+      </div>
+    </div>
+  `;
+}
+
+// ── 캐릭터 관리 뷰 (페르소나 중심) ──────────────────────────────────────────
+function renderCharacterView() {
+  const charTab = model.state.charViewTab || 'personas';
+  const allPersonas = model.db.personas || [];
+  const allChars = model.db.characters || [];
+  const items = charTab === 'characters' ? allChars : allPersonas;
+  const selectedId = model.state.charViewSelected || '';
+  const selected = items.find(c => c.id === selectedId) || null;
+
+  const listHtml = items.length === 0
+    ? '<div class="gb-sub">등록된 항목이 없습니다. DB에서 추가해주세요.</div>'
+    : items.map(c => {
+        const isActive = c.id === selectedId;
+        const lv = Number(c.level || 1);
+        const freeP = Number(c.freeStatPoints || 0);
+        return `<button class="gb-list-item ${isActive ? 'is-active' : ''}" data-charview-select="${escapeHtml(c.id)}">
+          ${escapeHtml(c.name)} <span class="gb-sub">[${escapeHtml(c.job || '?')}] Lv${lv}</span>
+          ${freeP > 0 ? ` <span style="color:#34d399;">🌟${freeP}</span>` : ''}
+        </button>`;
+      }).join('');
+
+  let detailHtml = '<div class="gb-sub">좌측에서 캐릭터를 선택하세요.</div>';
+  if (selected) {
+    const u = selected;
+    const stats = u.stats || { str:0, con:0, int:0, agi:0, sense:0 };
+    const freePoints = Number(u.freeStatPoints || 0);
+    const lv = Number(u.level || 1);
+    const curExp = Number(u.exp || 0);
+    const needed = expNeededForLevel(lv);
+    const expPct = Math.min(100, Math.round((curExp / needed) * 100));
+
+    const statNames = { str:'근력(STR)', con:'체력(CON)', int:'지능(INT)', agi:'민첩(AGI)', sense:'감각(SENSE)' };
+    const statEffects = {
+      str: '물리공격력 +0.2, HP +3',
+      con: 'HP +10',
+      agi: '물리공격력 +0.2, SP +10',
+      int: '마법공격력 +0.3, MP +10',
+      sense: 'SP +3, MP +3'
+    };
+    const statRows = Object.entries(statNames).map(([key, label]) => {
+      const val = Number(stats[key] || 0);
+      return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(148,163,184,0.1);">
+        <span style="width:100px;font-size:13px;font-weight:600;">${label}</span>
+        <span style="width:35px;text-align:right;font-size:15px;font-weight:700;">${val}</span>
+        <span class="gb-sub" style="flex:1;font-size:11px;">(${statEffects[key]})</span>
+        ${freePoints > 0 ? `<button class="gb-btn tiny" data-charview-statup="${escapeHtml(u.id)}:${key}" style="padding:2px 8px;">+1</button>` : ''}
+      </div>`;
+    }).join('');
+
+    const skillMap = getAllSkillMap();
+    const skillList = (u.skills || []).map(sId => {
+      const sk = skillMap[sId];
+      return sk ? `<div class="gb-sub" style="padding:2px 0;">• <strong>${escapeHtml(sk.name)}</strong> <span class="gb-badge">${escapeHtml(sk.category)}</span> ${sk.desc ? '— ' + escapeHtml(sk.desc) : ''}</div>` : `<div class="gb-sub">• ${escapeHtml(sId)}</div>`;
+    }).join('') || '<div class="gb-sub">스킬 없음</div>';
+
+    detailHtml = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div>
+          <div style="font-size:18px;font-weight:700;">${escapeHtml(u.name)}</div>
+          <div class="gb-sub">${escapeHtml(u.job || '직업없음')} / ${escapeHtml(u.rank || 'E')}등급 / ${escapeHtml(rowLabel(u.row))} / Lv${lv}</div>
+        </div>
+        <span class="gb-badge" style="font-size:14px;">${escapeHtml(u.rank || 'E')}</span>
+      </div>
+      <div style="margin:8px 0;">
+        <div class="gb-sub">EXP: ${curExp} / ${needed} (${expPct}%)</div>
+        <div style="background:rgba(100,100,100,0.3);height:8px;border-radius:4px;margin-top:4px;">
+          <div style="width:${expPct}%;height:100%;background:#3b82f6;border-radius:4px;transition:width 0.3s;"></div>
+        </div>
+      </div>
+      <div class="gb-grid two" style="margin:8px 0;">
+        <div class="gb-sub">❤️ HP: <strong>${Number(u.hp||0)}</strong></div>
+        <div class="gb-sub">💧 MP: <strong>${Number(u.mp||0)}</strong></div>
+        <div class="gb-sub">⚡ SP: <strong>${Number(u.sp||0)}</strong></div>
+        <div class="gb-sub">⚔️ ATK: <strong>${Number(u.atk||0)}</strong></div>
+        <div class="gb-sub">🛡️ P.DEF: <strong>${Number(u.pdef||0)}</strong></div>
+        <div class="gb-sub">🔮 M.DEF: <strong>${Number(u.mdef||0)}</strong></div>
+      </div>
+      ${freePoints > 0 ? `<div style="color:#34d399;font-weight:700;font-size:14px;margin:8px 0;padding:6px;background:rgba(52,211,153,0.1);border-radius:6px;">🌟 배분 가능 스탯포인트: ${freePoints}</div>` : ''}
+      <div style="margin:8px 0;">
+        <div class="gb-section-title" style="font-size:13px;">스탯</div>
+        ${statRows}
+      </div>
+      <div style="margin:8px 0;">
+        <div class="gb-section-title" style="font-size:13px;">스킬</div>
+        ${skillList}
+      </div>
+      ${u.note ? `<div class="gb-sub" style="margin-top:8px;">📝 ${escapeHtml(u.note)}</div>` : ''}
+      ${u.id ? renderEquippedStatSection(u, charTab === 'characters' ? 'character' : 'persona') : ''}
+    `;
+  }
+
+  return `
+    <div class="gb-btn-row" style="margin-bottom:8px;">
+      <button class="gb-btn ${charTab==='personas'?'primary':''}" data-charview-tab="personas">페르소나</button>
+      <button class="gb-btn ${charTab==='characters'?'primary':''}" data-charview-tab="characters">캐릭터</button>
+    </div>
+    <div class="gb-grid db">
+      <div class="gb-panel">
+        <div class="gb-section-title">${charTab === 'characters' ? '캐릭터' : '페르소나'} 목록</div>
+        ${listHtml}
+      </div>
+      <div class="gb-panel">
+        <div class="gb-section-title">상세 정보</div>
+        ${detailHtml}
+      </div>
+    </div>
+    ${selected && selected.id ? renderPersonalInventoryHtml(charTab === 'characters' ? 'character' : 'persona', selected.id) : ''}
+  `;
+}
+
 function renderBattleSetup() {
   const setup = model.db.battleSetup || { partySlots:[], enemySlots:[] };
   const currentGate = gateStateSafe().current;
@@ -7605,6 +7817,8 @@ function renderApp() {
   if      (view === 'hub')         body = renderHub();
   else if (view === 'gate')        body = renderGateView();
   else if (view === 'battle')      body = renderBattleRuntime();
+  else if (view === 'party')       body = renderPartyView();
+  else if (view === 'character')   body = renderCharacterView();
   else if (view === 'inventory')   body = renderInventoryView();
   else if (view === 'association') body = renderAssociationView();
   else if (view === 'shop')        body = renderShopView();
@@ -7616,13 +7830,14 @@ function renderApp() {
       <div class="gb-header">
         <div>
           <div class="gb-title">⚔️ Gate Battle Prototype v2.2</div>
-          <div class="gb-sub">허브 · 협회 · 상점 · 집 · 길드 · 게이트 · 전투 · 인벤토리 · DB</div>
+          <div class="gb-sub">허브 · 게이트 · 전투 · 파티 · 캐릭터 · 공용인벤 · DB</div>
         </div>
         <div style="display:flex; gap:8px; align-items:flex-start; flex-wrap:wrap;">
           <button class="gb-btn ${view==='hub'?'primary':''}" data-go="hub">허브</button>
           <button class="gb-btn ${view==='gate'?'primary':''}" data-go="gate">게이트</button>
           <button class="gb-btn ${view==='battle'?'primary':''}" data-go="battle">전투</button>
-          <button class="gb-btn ${view==='inventory'?'primary':''}" data-go="inventory">인벤</button>
+          <button class="gb-btn ${view==='party'?'primary':''}" data-go="party">파티</button>
+          <button class="gb-btn ${view==='character'?'primary':''}" data-go="character">캐릭터</button>
           <button class="gb-btn ${view==='db'?'primary':''}" data-go="db">DB</button>
           <button class="gb-btn" id="gb-close-ui">닫기</button>
         </div>
@@ -9219,6 +9434,83 @@ async function saveMaterialTraitFromForm() {
       model.state.dbTab = ev.currentTarget.getAttribute('data-dbtab');
       await saveState();
       renderApp();
+    });
+    // ── 파티 뷰 핸들러 ────────────────────────────────────────────────────────
+    on('[data-party-assign]', 'click', async (ev) => {
+      const idx = parseInt(ev.currentTarget.getAttribute('data-party-assign'), 10);
+      const sel = document.getElementById(`gb-party-assign-${idx}`);
+      if (!sel || !sel.value) { toast('캐릭터를 선택하세요.', true); return; }
+      if (!model.db.battleSetup) model.db.battleSetup = { partySlots:[], enemySlots:[] };
+      if (!model.db.battleSetup.partySlots) model.db.battleSetup.partySlots = [];
+      model.db.battleSetup.partySlots[idx] = sel.value;
+      await saveDb(); renderApp();
+    });
+    on('[data-party-remove]', 'click', async (ev) => {
+      const idx = parseInt(ev.currentTarget.getAttribute('data-party-remove'), 10);
+      if (!model.db.battleSetup || !model.db.battleSetup.partySlots) return;
+      model.db.battleSetup.partySlots[idx] = '';
+      await saveDb(); renderApp();
+    });
+    on('#gb-party-save-all', 'click', async () => {
+      await saveDb();
+      toast('파티 편성 저장 완료');
+    });
+    on('[data-party-statup]', 'click', async (ev) => {
+      const [charId, statKey] = (ev.currentTarget.getAttribute('data-party-statup') || '').split(':');
+      if (!charId || !statKey) return;
+      const allUnits = (model.db.characters || []).concat(model.db.personas || []);
+      const unit = allUnits.find(u => u.id === charId);
+      if (!unit) { toast('캐릭터를 찾을 수 없습니다.', true); return; }
+      if (!unit.freeStatPoints || unit.freeStatPoints <= 0) { toast('배분 가능한 스탯포인트가 없습니다.', true); return; }
+      if (!unit.stats) unit.stats = { str:0, con:0, int:0, agi:0, sense:0 };
+      unit.stats[statKey] = (unit.stats[statKey] || 0) + 1;
+      unit.freeStatPoints -= 1;
+      // 스탯 효과 자동 반영
+      const s = unit.stats;
+      unit.hp = 100 + s.con * 10 + s.str * 3;
+      unit.mp = 100 + s.int * 10 + (s.sense || 0) * 3;
+      unit.sp = 100 + s.agi * 10 + (s.sense || 0) * 3;
+      unit.atk = Math.round((Number(unit.weaponAtk) || 0) + s.str * 0.2 + s.agi * 0.2 + s.int * 0.3);
+      // 레벨업 보너스 HP/MP/SP (+2 per level)
+      const lvBonus = Math.max(0, (Number(unit.level) || 1) - 1) * 2;
+      unit.hp += lvBonus;
+      unit.mp += lvBonus;
+      unit.sp += lvBonus;
+      await saveDb(); renderApp();
+      toast(`${unit.name}: ${statKey} +1 (잔여 ${unit.freeStatPoints}포인트)`);
+    });
+    // ── 캐릭터 뷰 핸들러 ──────────────────────────────────────────────────────
+    on('[data-charview-tab]', 'click', async (ev) => {
+      model.state.charViewTab = ev.currentTarget.getAttribute('data-charview-tab');
+      model.state.charViewSelected = '';
+      await saveState(); renderApp();
+    });
+    on('[data-charview-select]', 'click', async (ev) => {
+      model.state.charViewSelected = ev.currentTarget.getAttribute('data-charview-select');
+      await saveState(); renderApp();
+    });
+    on('[data-charview-statup]', 'click', async (ev) => {
+      const [charId, statKey] = (ev.currentTarget.getAttribute('data-charview-statup') || '').split(':');
+      if (!charId || !statKey) return;
+      const allUnits = (model.db.characters || []).concat(model.db.personas || []);
+      const unit = allUnits.find(u => u.id === charId);
+      if (!unit) { toast('캐릭터를 찾을 수 없습니다.', true); return; }
+      if (!unit.freeStatPoints || unit.freeStatPoints <= 0) { toast('배분 가능한 스탯포인트가 없습니다.', true); return; }
+      if (!unit.stats) unit.stats = { str:0, con:0, int:0, agi:0, sense:0 };
+      unit.stats[statKey] = (unit.stats[statKey] || 0) + 1;
+      unit.freeStatPoints -= 1;
+      // 스탯 효과 자동 반영
+      const s = unit.stats;
+      unit.hp = 100 + s.con * 10 + s.str * 3;
+      unit.mp = 100 + s.int * 10 + (s.sense || 0) * 3;
+      unit.sp = 100 + s.agi * 10 + (s.sense || 0) * 3;
+      unit.atk = Math.round((Number(unit.weaponAtk) || 0) + s.str * 0.2 + s.agi * 0.2 + s.int * 0.3);
+      const lvBonus = Math.max(0, (Number(unit.level) || 1) - 1) * 2;
+      unit.hp += lvBonus;
+      unit.mp += lvBonus;
+      unit.sp += lvBonus;
+      await saveDb(); renderApp();
+      toast(`${unit.name}: ${statKey} +1 (잔여 ${unit.freeStatPoints}포인트)`);
     });
     on('[data-select-type]', 'click', async (ev) => {
       const type = ev.currentTarget.getAttribute('data-select-type');
