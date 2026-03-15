@@ -6863,10 +6863,32 @@ function renderPartyView() {
   const allPersonas = (model.db.personas || []);
   const allUnits = allChars.concat(allPersonas);
 
-  // 현재 파티에 들어있는 캐릭터
-  const partySlots = [];
+  // 허브 팀 연동 — 팀이 결성되어 있으면 팀원만 파티에 표시
+  const team = Array.isArray(model.db.team) ? model.db.team : [];
+  const teamCharIds = team.map(m => m.charId).filter(id => id && id !== '__shared__');
+
+  // 팀이 없으면 빈 화면
+  if (teamCharIds.length === 0) {
+    return `
+      <div class="gb-panel">
+        <div class="gb-section-title">👥 파티 관리</div>
+        <div class="gb-sub" style="margin:16px 0;">팀이 결성되지 않았습니다. 허브 → 팀 패널에서 먼저 팀을 구성하세요.</div>
+        <div class="gb-btn-row"><button class="gb-btn" data-go="hub">허브로 이동</button></div>
+      </div>
+    `;
+  }
+
+  // 팀원을 파티 슬롯에 자동 연동 (battleSetup.partySlots를 팀원 기반으로 갱신)
+  if (!model.db.battleSetup) model.db.battleSetup = { partySlots:[], enemySlots:[] };
+  if (!model.db.battleSetup.partySlots) model.db.battleSetup.partySlots = [];
   for (let i = 0; i < MAX_PARTY; i++) {
-    const slotId = (setup.partySlots || [])[i] || '';
+    model.db.battleSetup.partySlots[i] = teamCharIds[i] || '';
+  }
+
+  // 현재 파티에 들어있는 캐릭터 (팀 기반)
+  const partySlots = [];
+  for (let i = 0; i < teamCharIds.length && i < MAX_PARTY; i++) {
+    const slotId = teamCharIds[i];
     const unit = allUnits.find(u => u.id === slotId);
     partySlots.push({ index: i, id: slotId, unit });
   }
@@ -6875,14 +6897,7 @@ function renderPartyView() {
   const partyCards = partySlots.map((slot, i) => {
     if (!slot.unit) {
       return `<div class="gb-panel" style="min-height:120px;display:flex;align-items:center;justify-content:center;opacity:0.5;">
-        <div>
-          <div class="gb-sub">슬롯 ${i + 1} (비어있음)</div>
-          <select class="gb-input" id="gb-party-assign-${i}" style="margin-top:6px;">
-            <option value="">— 캐릭터 선택 —</option>
-            ${allUnits.map(u => `<option value="${escapeHtml(u.id)}">${escapeHtml(u.name)} [${escapeHtml(u.job || '직업없음')}] Lv${Number(u.level || 1)}</option>`).join('')}
-          </select>
-          <button class="gb-btn tiny" data-party-assign="${i}" style="margin-top:4px;">배치</button>
-        </div>
+        <div class="gb-sub">슬롯 ${i + 1} — 팀원 (DB에 미등록: ${escapeHtml(slot.id)})</div>
       </div>`;
     }
     const u = slot.unit;
@@ -6921,7 +6936,6 @@ function renderPartyView() {
           <strong>${escapeHtml(u.name)}</strong> <span class="gb-badge">${escapeHtml(u.rank || 'E')}</span>
           <div class="gb-sub">${escapeHtml(u.job || '직업없음')} / ${escapeHtml(rowLabel(u.row))} / Lv${lv}</div>
         </div>
-        <button class="gb-btn tiny danger" data-party-remove="${i}">제외</button>
       </div>
       <div style="margin:6px 0;">
         <div class="gb-sub">EXP: ${curExp}/${needed} (${expPct}%)</div>
@@ -6991,14 +7005,15 @@ function renderPartyView() {
   return `
     <div class="gb-panel">
       <div class="gb-section-title">👥 파티 관리</div>
-      <div class="gb-sub" style="margin-bottom:8px;">DB에 등록된 캐릭터/페르소나를 파티 슬롯에 배치하고, 레벨업으로 얻은 스탯포인트를 배분하세요.</div>
+      <div class="gb-sub" style="margin-bottom:8px;">허브에서 편성한 팀원이 파티로 자동 연동됩니다. 스탯포인트 배분, 인벤토리 관리, 골드 이동이 가능합니다.</div>
     </div>
     <div class="gb-grid two">${partyCards}</div>
     ${partyInvSection}
     ${partyGoldSection}
     <div class="gb-panel" style="margin-top:12px;">
       <div class="gb-btn-row">
-        <button class="gb-btn primary" id="gb-party-save-all">파티 편성 저장</button>
+        <button class="gb-btn primary" id="gb-party-save-all">파티 저장</button>
+        <button class="gb-btn" data-go="hub">허브 (팀 편성)</button>
         <button class="gb-btn" data-go="battle">전투 화면으로</button>
       </div>
     </div>
@@ -7605,7 +7620,48 @@ function renderCommandPanel(runtime) {
       id:'', name:'', grade:'E', category:'singleAttack', target:'singleEnemy', coef:1.0, mp:0, sp:0,
       damageType:'physical', element:'none', statTypes:'str', duration:0, ccType:'', ccTurns:1, buffStat:'', buffValue:0, statusType:'', statusTurns:2, desc:''
     });
-    const builtins = Object.values(BUILTIN_SKILLS).map(sk => `<div class="gb-skill-row"><div><strong>${escapeHtml(sk.name)}</strong> <span class="gb-badge">${escapeHtml(sk.id)}</span> <span class="gb-badge">${escapeHtml(sk.category)}</span></div><div class="gb-skill-desc">${escapeHtml(sk.desc || '')}</div></div>`).join('');
+    const catLabels = { singleAttack:'단일공격', aoeAttack:'광역공격', singleCC:'단일CC', aoeCC:'광역CC', singleHeal:'힐', aoeHeal:'광역힐', buff:'버프', passive:'패시브', utility:'유틸' };
+    const builtins = Object.values(BUILTIN_SKILLS).map(sk => {
+      const cat = catLabels[sk.category] || sk.category;
+      const grade = sk.grade || '?';
+      const rarity = sk.rarity ? ` <span class="gb-badge" style="background:#a855f7;color:#fff;">${escapeHtml(sk.rarity)}</span>` : '';
+      // 비용
+      const costs = sk.costs || {};
+      const costParts = [];
+      if (costs.mp) costParts.push('MP:' + costs.mp);
+      if (costs.sp) costParts.push('SP:' + costs.sp);
+      const costStr = costParts.length ? costParts.join(' / ') : '';
+      // 계수
+      const coefStr = sk.coef != null ? '계수:' + sk.coef : (sk.baseSingleCoef != null ? '기본계수:' + sk.baseSingleCoef + ' (광역CC→½)' : '');
+      // 성장형 byRank
+      const byRankStr = sk.byRank ? Object.entries(sk.byRank).map(([g, v]) => {
+        const parts = [];
+        if (v.coef != null) parts.push('계수:' + v.coef);
+        if (v.costs) { if (v.costs.mp) parts.push('MP:' + v.costs.mp); if (v.costs.sp) parts.push('SP:' + v.costs.sp); }
+        if (v.buff && v.buff.stats) parts.push('버프:' + Object.entries(v.buff.stats).map(([s,n])=>s.toUpperCase()+'+'+n).join(','));
+        if (v.passiveBonuses) parts.push('패시브:' + Object.entries(v.passiveBonuses).map(([s,n])=>s.toUpperCase()+'+'+n).join(','));
+        return parts.length ? g + '(' + parts.join(', ') + ')' : '';
+      }).filter(Boolean).join(' | ') : '';
+      // 기타 정보
+      const extras = [];
+      if (sk.damageType) extras.push(sk.damageType === 'physical' ? '물리' : '마법');
+      if (sk.element && sk.element !== 'none') extras.push('속성:' + sk.element);
+      if (sk.cc) extras.push('CC:' + sk.cc.type + ' ' + sk.cc.turns + '턴');
+      if (sk.buff && sk.buff.stats) extras.push('버프:' + Object.entries(sk.buff.stats).map(([s,n])=>s.toUpperCase()+'+'+n).join(','));
+      if (sk.buff && sk.buff.threatBonus) extras.push('위협+' + sk.buff.threatBonus);
+      if (sk.duration) extras.push(sk.duration + '턴');
+      if (sk.resourceRestore) extras.push('회복:' + Object.entries(sk.resourceRestore).map(([k,v])=>k.toUpperCase()+'+'+v).join(','));
+      if (sk.passiveBonuses) extras.push('패시브:' + Object.entries(sk.passiveBonuses).map(([s,n])=>s.toUpperCase()+'+'+n).join(','));
+      if (sk.statTypes) extras.push('스탯:' + (Array.isArray(sk.statTypes) ? sk.statTypes : [sk.statTypes]).join('/'));
+      const extraStr = extras.join(' · ');
+      return `<div class="gb-skill-row" style="padding:6px 0;border-bottom:1px solid rgba(148,163,184,0.1);">
+        <div><strong>${escapeHtml(sk.name)}</strong> <span class="gb-badge">${escapeHtml(grade)}</span>${rarity} <span class="gb-badge">${escapeHtml(cat)}</span> <span class="gb-badge">${escapeHtml(sk.id)}</span></div>
+        <div style="font-size:12px;margin-top:2px;">${coefStr ? `<span style="color:#3b82f6;font-weight:600;">${escapeHtml(coefStr)}</span>` : ''}${costStr ? ` <span style="color:#f59e0b;">[${escapeHtml(costStr)}]</span>` : ''}</div>
+        ${byRankStr ? `<div class="gb-sub" style="font-size:11px;margin-top:2px;">📈 성장: ${escapeHtml(byRankStr)}</div>` : ''}
+        ${extraStr ? `<div class="gb-sub" style="font-size:11px;margin-top:1px;">${escapeHtml(extraStr)}</div>` : ''}
+        <div class="gb-skill-desc" style="margin-top:2px;">${escapeHtml(sk.desc || '')}</div>
+      </div>`;
+    }).join('');
     const list = (model.db.customSkills || []).map(c => `<button class="gb-list-item ${c.id===model.state.selected.skills?'is-active':''}" data-select-type="skills" data-id="${escapeHtml(c.id)}">${escapeHtml(c.name)} <span class="gb-sub">[${escapeHtml(c.id)}]</span></button>`).join('');
     return `
       <div class="gb-panel">

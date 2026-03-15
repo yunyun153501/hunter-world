@@ -1,0 +1,385 @@
+{
+  "_meta": {
+    "description": "접두사+접미사 조합으로 스킬을 대량 생성하는 템플릿. prefix(접두사)와 suffix(접미사)를 조합해 스킬을 자동으로 만들 수 있다.",
+    "usage": "1) prefixes에서 접두사 선택 → 이름앞부분 + 속성/피해타입/스탯 결정. 2) suffixes에서 접미사 선택 → 카테고리/계수/비용/대상 결정. 3) 등급(grade)은 별도 지정. 조합: prefix.name + suffix.name = 스킬 이름.",
+    "example": "접두사 '화염' + 접미사 '일격' = '화염 일격' (fire속성, singleAttack, 물리, E급 계수1.5, MP20/SP20)",
+    "gradeScaling": {
+      "note": "등급별 계수/비용 스케일. suffix의 base 값에 이 배율을 곱한다.",
+      "E": { "coefMul": 1.0, "costMul": 1.0 },
+      "D": { "coefMul": 1.6, "costMul": 1.17 },
+      "C": { "coefMul": 2.4, "costMul": 1.33 },
+      "B": { "coefMul": 4.0, "costMul": 1.67 },
+      "A": { "coefMul": 6.4, "costMul": 2.17 },
+      "S": { "coefMul": 9.6, "costMul": 2.67 }
+    }
+  },
+  "prefixes": [
+    {
+      "id": "fire",
+      "name": "화염",
+      "element": "fire",
+      "damageType": "magic",
+      "statTypes": ["int"],
+      "desc": "불꽃 속성"
+    },
+    {
+      "id": "ice",
+      "name": "냉기",
+      "element": "ice",
+      "damageType": "magic",
+      "statTypes": ["int"],
+      "desc": "얼음 속성"
+    },
+    {
+      "id": "electric",
+      "name": "번개",
+      "element": "electric",
+      "damageType": "magic",
+      "statTypes": ["int", "sense"],
+      "desc": "전기 속성"
+    },
+    {
+      "id": "dark",
+      "name": "암흑",
+      "element": "dark",
+      "damageType": "magic",
+      "statTypes": ["int"],
+      "desc": "어둠 속성"
+    },
+    {
+      "id": "light",
+      "name": "성광",
+      "element": "light",
+      "damageType": "magic",
+      "statTypes": ["int", "sense"],
+      "desc": "빛 속성"
+    },
+    {
+      "id": "wind",
+      "name": "질풍",
+      "element": "wind",
+      "damageType": "physical",
+      "statTypes": ["agi"],
+      "desc": "바람 속성"
+    },
+    {
+      "id": "earth",
+      "name": "대지",
+      "element": "earth",
+      "damageType": "physical",
+      "statTypes": ["con"],
+      "desc": "땅 속성"
+    },
+    {
+      "id": "water",
+      "name": "수류",
+      "element": "water",
+      "damageType": "magic",
+      "statTypes": ["int"],
+      "desc": "물 속성"
+    },
+    {
+      "id": "force",
+      "name": "강타",
+      "element": "none",
+      "damageType": "physical",
+      "statTypes": ["str"],
+      "desc": "무속성 물리"
+    },
+    {
+      "id": "swift",
+      "name": "쾌속",
+      "element": "none",
+      "damageType": "physical",
+      "statTypes": ["agi"],
+      "desc": "무속성 민첩 물리"
+    },
+    {
+      "id": "mind",
+      "name": "정신",
+      "element": "none",
+      "damageType": "magic",
+      "statTypes": ["int", "sense"],
+      "desc": "무속성 마법"
+    },
+    {
+      "id": "iron",
+      "name": "철벽",
+      "element": "none",
+      "damageType": "physical",
+      "statTypes": ["con"],
+      "desc": "무속성 방어형"
+    },
+    {
+      "id": "shadow",
+      "name": "그림자",
+      "element": "dark",
+      "damageType": "physical",
+      "statTypes": ["agi", "sense"],
+      "desc": "어둠 속성 물리"
+    },
+    {
+      "id": "holy",
+      "name": "신성한",
+      "element": "light",
+      "damageType": "magic",
+      "statTypes": ["int"],
+      "desc": "빛 속성 회복/버프"
+    },
+    {
+      "id": "poison",
+      "name": "독",
+      "element": "none",
+      "damageType": "magic",
+      "statTypes": ["int"],
+      "statusType": "poison",
+      "desc": "독 속성"
+    },
+    {
+      "id": "blood",
+      "name": "피",
+      "element": "none",
+      "damageType": "physical",
+      "statTypes": ["str", "con"],
+      "statusType": "bleed",
+      "desc": "출혈 속성"
+    }
+  ],
+  "suffixes": [
+    {
+      "id": "strike",
+      "name": "일격",
+      "category": "singleAttack",
+      "target": "singleEnemy",
+      "baseCoef": 1.5,
+      "baseCosts": { "mp": 20, "sp": 20 },
+      "desc": "단일 대상 공격"
+    },
+    {
+      "id": "blast",
+      "name": "폭발",
+      "category": "aoeAttack",
+      "target": "allEnemies",
+      "baseCoef": 0.875,
+      "baseCosts": { "mp": 40, "sp": 0 },
+      "desc": "광역 공격"
+    },
+    {
+      "id": "stun",
+      "name": "충격",
+      "category": "singleCC",
+      "target": "singleEnemy",
+      "baseCoef": 0.875,
+      "baseCosts": { "mp": 20, "sp": 20 },
+      "cc": { "type": "stun", "turns": 1 },
+      "desc": "단일 CC (1턴 기절)"
+    },
+    {
+      "id": "bind",
+      "name": "속박",
+      "category": "singleCC",
+      "target": "singleEnemy",
+      "baseCoef": 0.875,
+      "baseCosts": { "mp": 25, "sp": 15 },
+      "cc": { "type": "bind", "turns": 2 },
+      "desc": "단일 CC (2턴 속박)"
+    },
+    {
+      "id": "wave",
+      "name": "파동",
+      "category": "aoeCC",
+      "target": "allEnemies",
+      "baseCoef": 0.875,
+      "baseCosts": { "mp": 20, "sp": 20 },
+      "cc": { "type": "stun", "turns": 1 },
+      "desc": "광역 CC (자동 보정: 계수½, 비용2배)"
+    },
+    {
+      "id": "heal",
+      "name": "치유",
+      "category": "singleHeal",
+      "target": "singleAlly",
+      "baseCoef": 2.0,
+      "baseCosts": { "mp": 40, "sp": 0 },
+      "desc": "단일 회복"
+    },
+    {
+      "id": "rain",
+      "name": "비",
+      "category": "aoeHeal",
+      "target": "allAllies",
+      "baseCoef": 0.875,
+      "baseCosts": { "mp": 35, "sp": 0 },
+      "desc": "광역 회복"
+    },
+    {
+      "id": "aura",
+      "name": "오라",
+      "category": "buff",
+      "target": "allAllies",
+      "baseCoef": 0,
+      "baseCosts": { "mp": 25, "sp": 0 },
+      "duration": 3,
+      "buff": { "stats": { "int": 4 } },
+      "desc": "광역 버프 (3턴)"
+    },
+    {
+      "id": "wall",
+      "name": "장벽",
+      "category": "buff",
+      "target": "allAllies",
+      "baseCoef": 0,
+      "baseCosts": { "mp": 30, "sp": 0 },
+      "duration": 3,
+      "buff": { "stats": { "con": 4 } },
+      "desc": "광역 방어 버프 (3턴)"
+    },
+    {
+      "id": "rush",
+      "name": "돌진",
+      "category": "singleAttack",
+      "target": "singleEnemy",
+      "baseCoef": 1.2,
+      "baseCosts": { "mp": 0, "sp": 25 },
+      "desc": "저마나 SP 단일 공격"
+    },
+    {
+      "id": "barrage",
+      "name": "연타",
+      "category": "singleAttack",
+      "target": "singleEnemy",
+      "baseCoef": 1.8,
+      "baseCosts": { "mp": 15, "sp": 25 },
+      "desc": "고계수 단일 연타 공격"
+    },
+    {
+      "id": "storm",
+      "name": "폭풍",
+      "category": "aoeAttack",
+      "target": "allEnemies",
+      "baseCoef": 1.0,
+      "baseCosts": { "mp": 45, "sp": 10 },
+      "desc": "강화 광역 공격"
+    },
+    {
+      "id": "sleep",
+      "name": "자장가",
+      "category": "singleCC",
+      "target": "singleEnemy",
+      "baseCoef": 0.5,
+      "baseCosts": { "mp": 30, "sp": 0 },
+      "cc": { "type": "sleep", "turns": 2 },
+      "desc": "단일 CC (2턴 수면)"
+    },
+    {
+      "id": "curse",
+      "name": "저주",
+      "category": "singleAttack",
+      "target": "singleEnemy",
+      "baseCoef": 1.0,
+      "baseCosts": { "mp": 30, "sp": 0 },
+      "statusType": "curse",
+      "statusTurns": 3,
+      "desc": "단일 공격 + 저주 3턴"
+    },
+    {
+      "id": "shield",
+      "name": "방패",
+      "category": "buff",
+      "target": "self",
+      "baseCoef": 0,
+      "baseCosts": { "mp": 20, "sp": 10 },
+      "duration": 3,
+      "buff": { "stats": { "con": 6 } },
+      "desc": "자기 방어 버프 (3턴)"
+    }
+  ],
+  "sampleGeneratedSkills": [
+    {
+      "_note": "접두사 '화염' + 접미사 '일격' = E급 화염 일격",
+      "id": "fire_strike_E",
+      "name": "화염 일격",
+      "grade": "E",
+      "category": "singleAttack",
+      "target": "singleEnemy",
+      "coef": 1.5,
+      "costs": { "mp": 20, "sp": 20 },
+      "damageType": "magic",
+      "element": "fire",
+      "statTypes": ["int"],
+      "desc": "불꽃 속성 단일 대상 공격"
+    },
+    {
+      "_note": "접두사 '화염' + 접미사 '일격' = C급 (계수×2.4, 비용×1.33)",
+      "id": "fire_strike_C",
+      "name": "화염 일격",
+      "grade": "C",
+      "category": "singleAttack",
+      "target": "singleEnemy",
+      "coef": 3.6,
+      "costs": { "mp": 27, "sp": 27 },
+      "damageType": "magic",
+      "element": "fire",
+      "statTypes": ["int"],
+      "desc": "불꽃 속성 단일 대상 공격"
+    },
+    {
+      "_note": "접두사 '번개' + 접미사 '폭발' = D급",
+      "id": "electric_blast_D",
+      "name": "번개 폭발",
+      "grade": "D",
+      "category": "aoeAttack",
+      "target": "allEnemies",
+      "coef": 1.4,
+      "costs": { "mp": 47, "sp": 0 },
+      "damageType": "magic",
+      "element": "electric",
+      "statTypes": ["int", "sense"],
+      "desc": "전기 속성 광역 공격"
+    },
+    {
+      "_note": "접두사 '성광' + 접미사 '치유' = D급",
+      "id": "holy_heal_D",
+      "name": "신성한 치유",
+      "grade": "D",
+      "category": "singleHeal",
+      "target": "singleAlly",
+      "coef": 3.2,
+      "costs": { "mp": 47, "sp": 0 },
+      "damageType": "magic",
+      "element": "light",
+      "statTypes": ["int"],
+      "desc": "빛 속성 회복/버프 단일 회복"
+    },
+    {
+      "_note": "접두사 '그림자' + 접미사 '연타' = B급",
+      "id": "shadow_barrage_B",
+      "name": "그림자 연타",
+      "grade": "B",
+      "category": "singleAttack",
+      "target": "singleEnemy",
+      "coef": 7.2,
+      "costs": { "mp": 25, "sp": 42 },
+      "damageType": "physical",
+      "element": "dark",
+      "statTypes": ["agi", "sense"],
+      "desc": "어둠 속성 물리 고계수 단일 연타 공격"
+    },
+    {
+      "_note": "접두사 '독' + 접미사 '저주' = C급, 독+저주",
+      "id": "poison_curse_C",
+      "name": "독 저주",
+      "grade": "C",
+      "category": "singleAttack",
+      "target": "singleEnemy",
+      "coef": 2.4,
+      "costs": { "mp": 40, "sp": 0 },
+      "damageType": "magic",
+      "element": "none",
+      "statTypes": ["int"],
+      "statusType": "poison",
+      "statusTurns": 3,
+      "desc": "독 속성 단일 공격 + 저주 3턴"
+    }
+  ]
+}
