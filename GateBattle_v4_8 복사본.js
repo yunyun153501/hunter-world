@@ -1106,25 +1106,25 @@ const RARE_FAMILY_PRESETS = {
     energyShower: { id:'energyShower', name:'에너지샤워', grade:'E', category:'aoeAttack', target:'allEnemies', costs:{ mp:40, sp:0 }, coef:0.875, statTypes:['int'], damageType:'magic', element:'none', desc:'기본 광역 마법 공격.' },
     shieldBash: { id:'shieldBash', name:'실드강타', grade:'E', category:'singleCC', target:'singleEnemy', costs:{ mp:20, sp:20 }, coef:0.875, statTypes:['con'], damageType:'physical', element:'none', cc:{ type:'stun', turns:1 }, desc:'단일 CC. 1턴 기절.' },
     shockwave: { id:'shockwave', name:'충격파', grade:'E', category:'aoeCC', target:'allEnemies', baseSingleCoef:0.875, costs:{ mp:20, sp:20 }, statTypes:['con'], damageType:'physical', element:'none', cc:{ type:'stun', turns:1 }, desc:'광역 CC. 단일 CC 대비 계수 1/2, 비용 2배.' },
-    haste: { id:'haste', name:'헤이스트', grade:'D', category:'buff', target:'singleAlly', costs:{ mp:25, sp:0 }, duration:3, statTypes:['int','sense'], buff:{ stats:{ agi:4 } }, desc:'3턴 동안 AGI +4.' },
+    haste: { id:'haste', name:'헤이스트', grade:'D', category:'buff', target:'allAllies', costs:{ mp:25, sp:0 }, duration:3, statTypes:['int','sense'], buff:{ stats:{ agi:4 } }, desc:'3턴 동안 파티원 AGI +4.' },
     heal: { id:'heal', name:'힐', grade:'D', category:'singleHeal', target:'singleAlly', costs:{ mp:40, sp:0 }, coef:2.0, statTypes:['int'], desc:'기본 단일 회복.' },
     pray: { id:'pray', name:'기도', grade:'D', category:'singleHeal', target:'singleAlly', costs:{ mp:45, sp:0 }, coef:2.2, statTypes:['int'], desc:'힐보다 조금 강한 단일 회복.' },
-    blessingOfLight: { id:'blessingOfLight', name:'빛의 축복', grade:'D', category:'buff', target:'allAllies', costs:{ mp:35, sp:0 }, duration:3, statTypes:['int','sense'], buff:{ stats:{ int:4 } }, desc:'3턴 동안 전 아군 INT +4.' },
-    powerShot: { id:'powerShot', name:'Power Shot', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:10, sp:20 }, coef:1.5, statTypes:['agi'], damageType:'physical', element:'none', desc:'집중 화살. 단일 고계수.' },
-    quickShot: { id:'quickShot', name:'Quick Shot', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:0, sp:15 }, coef:1.2, statTypes:['agi'], damageType:'physical', element:'none', desc:'저비용 단일 공격.' },
+    blessingOfLight: { id:'blessingOfLight', name:'빛의 축복', grade:'D', category:'buff', target:'allAllies', costs:{ mp:25, sp:0 }, duration:3, statTypes:['int','sense'], buff:{ stats:{ int:4 } }, desc:'3턴 동안 전 아군 INT +4.' },
+    powerShot: { id:'powerShot', name:'파워샷', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:20, sp:20 }, coef:1.5, statTypes:['agi'], damageType:'physical', element:'none', desc:'집중 화살. 단일 고계수.' },
+    quickShot: { id:'quickShot', name:'퀵샷', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:0, sp:15 }, coef:1.2, statTypes:['agi'], damageType:'physical', element:'none', desc:'저비용 단일 공격.' },
     fullArrowRecovery: { id:'fullArrowRecovery', name:'Full Arrow Recovery', grade:'E', rarity:'rare', category:'utility', target:'self', costs:{ mp:30, sp:0 }, statTypes:['agi'], resourceRestore:{ sp:25 }, desc:'SP 25 회복.' },
     tripleShot: {
-      id:'tripleShot', name:'Triple Shot', grade:'E', rarity:'rare', category:'singleAttack', target:'singleEnemy',
+      id:'tripleShot', name:'트리플샷', grade:'E', rarity:'rare', category:'singleAttack', target:'singleEnemy',
       statTypes:['agi'], damageType:'physical', element:'none',
       byRank:{ E:{ coef:1.5, costs:{ mp:15, sp:15 } }, D:{ coef:2.0, costs:{ mp:20, sp:20 } }, C:{ coef:2.8, costs:{ mp:20, sp:20 } }, B:{ coef:4.6, costs:{ mp:25, sp:25 } }, A:{ coef:7.0, costs:{ mp:35, sp:35 } }, S:{ coef:10.5, costs:{ mp:45, sp:45 } } },
       desc:'성장형 3연타. 총계수만 적용.'
     },
-    quickThrow: { id:'quickThrow', name:'Quick Throw', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:0, sp:25 }, coef:1.5, statTypes:['agi','sense'], damageType:'physical', element:'none', desc:'투척 단일 공격.' },
-    knifeRecall: { id:'knifeRecall', name:'Basic Knife Recall', grade:'E', category:'utility', target:'singleEnemy', costs:{ mp:20, sp:0 }, coef:1.5, statTypes:['agi','sense'], damageType:'physical', element:'none', resourceRestore:{ sp:10 }, desc:'공격 후 SP 10 회복.' },
+    quickThrow: { id:'quickThrow', name:'퀵스로', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:0, sp:40 }, coef:1.5, statTypes:['agi','sense'], damageType:'physical', element:'none', desc:'투척 단일 공격.' },
+    knifeRecall: { id:'knifeRecall', name:'무기회수', grade:'E', category:'utility', target:'singleEnemy', costs:{ mp:20, sp:0 }, coef:1.5, procChance:0.3, statTypes:['agi','sense'], damageType:'physical', element:'none', resourceRestore:{ sp:10 }, desc:'무기회수 + 30% 확률로 x1.5 계수 공격.' },
     preciseAim: {
-      id:'preciseAim', name:'Precise Aim', grade:'E', rarity:'rare', category:'buff', target:'self', duration:3, statTypes:['agi','sense'],
-      byRank:{ E:{ costs:{ mp:25, sp:0 }, buff:{ stats:{ agi:2 } } }, D:{ costs:{ mp:30, sp:0 }, buff:{ stats:{ agi:4 } } }, C:{ costs:{ mp:40, sp:0 }, buff:{ stats:{ agi:6 } } }, B:{ costs:{ mp:50, sp:0 }, buff:{ stats:{ agi:8 } } }, A:{ costs:{ mp:65, sp:0 }, buff:{ stats:{ agi:10 } } }, S:{ costs:{ mp:85, sp:0 }, buff:{ stats:{ agi:12 } } } },
-      desc:'성장형 버프. 3턴 AGI 증가.'
+      id:'preciseAim', name:'민첩한 조준', grade:'E', rarity:'rare', category:'buff', target:'allAllies', duration:3, statTypes:['agi','sense'],
+      byRank:{ E:{ costs:{ mp:25, sp:0 }, buff:{ stats:{ agi:2, sense:2 } } }, D:{ costs:{ mp:30, sp:0 }, buff:{ stats:{ agi:4, sense:4 } } }, C:{ costs:{ mp:40, sp:0 }, buff:{ stats:{ agi:6, sense:6 } } }, B:{ costs:{ mp:50, sp:0 }, buff:{ stats:{ agi:8, sense:8 } } }, A:{ costs:{ mp:65, sp:0 }, buff:{ stats:{ agi:10, sense:10 } } }, S:{ costs:{ mp:85, sp:0 }, buff:{ stats:{ agi:12, sense:12 } } } },
+      desc:'성장형 광역버프. 3턴 파티원 AGI·SENSE 증가.'
     },
     smallGarden: {
       id:'smallGarden', name:'작은 정원', grade:'E', rarity:'rare', category:'aoeHeal', target:'allAllies', statTypes:['int'],
@@ -1141,12 +1141,12 @@ const RARE_FAMILY_PRESETS = {
 
   function buildSampleCharacters() {
     return [
-      { id:'char_bran', name:'브란', job:'크루세이더', position:'탱커', row:'front', rank:'D', stats:{ str:13, con:15, int:4, agi:7, sense:8 }, hp:300, mp:55, sp:120, atk:16, pdef:18, mdef:10, damageType:'physical', attackStat:'con', skills:['shieldBash','steelAnvil','shieldProficiency','shockwave','taunt'], note:'전열 탱커' },
-      { id:'char_doyun', name:'도윤', job:'무투가', position:'근거리물리', row:'front', rank:'E', stats:{ str:14, con:12, int:3, agi:11, sense:9 }, hp:230, mp:40, sp:110, atk:6, pdef:8, mdef:3, skills:['fistStrike','hiddenMight'], note:'전열 근딜' },
-      { id:'char_lin', name:'린', job:'궁수', position:'원거리물리', row:'mid', rank:'E', stats:{ str:7, con:9, int:4, agi:15, sense:13 }, hp:180, mp:55, sp:100, atk:6, pdef:4, mdef:2, skills:['quickShot','powerShot','preciseAim','tripleShot'] },
-      { id:'char_kain', name:'카인', job:'투척가', position:'원거리물리', row:'mid', rank:'E', stats:{ str:8, con:9, int:4, agi:14, sense:14 }, hp:175, mp:60, sp:110, atk:6, pdef:4, mdef:3, skills:['quickThrow','knifeRecall','daggerHandling'] },
-      { id:'char_ibel', name:'이벨', job:'마법사', position:'원거리마법', row:'back', rank:'E', stats:{ str:4, con:7, int:16, agi:9, sense:10 }, hp:155, mp:170, sp:55, atk:5, pdef:3, mdef:7, damageType:'magic', attackStat:'int', skills:['energyBolt','energyShower','haste'] },
-      { id:'char_sera', name:'세라', job:'클레릭', position:'힐러', row:'back', rank:'D', stats:{ str:5, con:9, int:16, agi:8, sense:11 }, hp:210, mp:160, sp:70, atk:5, pdef:5, mdef:8, damageType:'magic', attackStat:'int', skills:['heal','pray','blessingOfLight','smallGarden'] }
+      { id:'char_bran', name:'브란', job:'크루세이더', position:'탱커', row:'front', rank:'D', stats:{ str:13, con:15, int:4, agi:7, sense:8 }, hp:289, mp:140, sp:170, atk:20, pdef:18, mdef:10, damageType:'physical', attackStat:'con', skills:['shieldBash','steelAnvil','shieldProficiency','shockwave','taunt'], note:'전열 탱커' },
+      { id:'char_doyun', name:'도윤', job:'무투가', position:'근거리물리', row:'front', rank:'E', stats:{ str:14, con:12, int:3, agi:11, sense:9 }, hp:262, mp:130, sp:210, atk:11, pdef:8, mdef:3, skills:['fistStrike','hiddenMight'], note:'전열 근딜' },
+      { id:'char_lin', name:'린', job:'궁수', position:'원거리물리', row:'mid', rank:'E', stats:{ str:7, con:9, int:4, agi:15, sense:13 }, hp:211, mp:140, sp:250, atk:11, pdef:4, mdef:2, skills:['quickShot','powerShot','preciseAim','tripleShot'] },
+      { id:'char_kain', name:'카인', job:'투척가', position:'원거리물리', row:'mid', rank:'E', stats:{ str:8, con:9, int:4, agi:14, sense:14 }, hp:214, mp:140, sp:240, atk:11, pdef:4, mdef:3, skills:['quickThrow','knifeRecall','daggerHandling'] },
+      { id:'char_ibel', name:'이벨', job:'마법사', position:'원거리마법', row:'back', rank:'E', stats:{ str:4, con:7, int:16, agi:9, sense:10 }, hp:182, mp:260, sp:190, atk:12, pdef:3, mdef:7, damageType:'magic', attackStat:'int', skills:['energyBolt','energyShower','haste'] },
+      { id:'char_sera', name:'세라', job:'클레릭', position:'힐러', row:'back', rank:'D', stats:{ str:5, con:9, int:16, agi:8, sense:11 }, hp:205, mp:260, sp:180, atk:22, pdef:5, mdef:8, damageType:'magic', attackStat:'int', skills:['heal','pray','blessingOfLight','smallGarden'] }
     ];
   }
   function buildSampleMonsters() {
@@ -1426,9 +1426,9 @@ function buildDefaultState() {
     const meta = parseMonsterMeta(entry);
     const isMonster = side === 'enemies';
     const monsterProfile = isMonster ? monsterProfileForEntry(entry) : null;
-    const baseHp = Number(isMonster ? monsterProfile.hp : (entry.hp || (120 + stats.con * 10 + rankBonus(rank))));
-    const defaultMp = isMonster ? monsterProfile.mp : (30 + stats.int * 8 + Math.floor(rankBonus(rank) * 0.3));
-    const defaultSp = isMonster ? monsterProfile.sp : (35 + (stats.str + stats.agi + stats.con) * 2 + Math.floor(rankBonus(rank) * 0.2));
+    const baseHp = Number(isMonster ? monsterProfile.hp : (entry.hp || (100 + stats.con * 10 + stats.str * 3)));
+    const defaultMp = isMonster ? monsterProfile.mp : (100 + stats.int * 10);
+    const defaultSp = isMonster ? monsterProfile.sp : (100 + stats.agi * 10);
     const allSkillMap = getAllSkillMap();
     const hasMagicSkill = Array.isArray(entry.skills) && entry.skills.some(id => {
       const sk = allSkillMap[String(id || '').trim()];
@@ -1456,7 +1456,7 @@ function buildDefaultState() {
       hp: Number(entry.currentHp != null ? entry.currentHp : baseHp), maxHp: baseHp,
       mp: Number(entry.currentMp != null ? entry.currentMp : baseMp), maxMp: baseMp,
       sp: Number(entry.currentSp != null ? entry.currentSp : baseSp), maxSp: baseSp,
-      atk: Number(isMonster ? (entry.atk != null ? entry.atk : monsterProfile.damage) : (entry.atk != null ? entry.atk : defaultAtkByRank(rank))),
+      atk: Number(isMonster ? (entry.atk != null ? entry.atk : monsterProfile.damage) : (entry.atk != null ? entry.atk : Math.round(defaultAtkByRank(rank) + stats.str * 0.2 + stats.agi * 0.2 + stats.int * 0.3))),
       pdef: Number(entry.pdef != null ? entry.pdef : Math.floor(stats.con * 0.4)),
       mdef: Number(entry.mdef != null ? entry.mdef : Math.floor((stats.int + stats.sense) * 0.25)),
       damageType: entry.damageType || inferDamageType(entry.position, entry.job),
@@ -4047,7 +4047,8 @@ function getBuffedStat(unit, statKey) {
 
     if (skill.category === 'utility') {
       const targets = getTargetListForAction(runtime, actor, action, skill);
-      if (skill.coef && targets[0] && skill.target !== 'self') {
+      const procOk = skill.procChance == null || Math.random() < skill.procChance;
+      if (procOk && skill.coef && targets[0] && skill.target !== 'self') {
         const target = targets[0];
         const hit = performHit(actor, target, skill);
         if (hit.hit) {
@@ -6738,7 +6739,7 @@ function renderCommandPanel(runtime) {
     ensureSelections();
     const item = deepClone(getCharById(model.state.selected.characters) || {
       id:'', name:'', job:'', position:'', row:'mid', rank:'E',
-      stats:{ str:5, con:5, int:5, agi:5, sense:5 }, hp:180, mp:60, sp:80, atk:5, pdef:3, mdef:3,
+      stats:{ str:5, con:5, int:5, agi:5, sense:5 }, hp:165, mp:150, sp:150, atk:9, pdef:3, mdef:3,
       damageType:'physical', attackStat:'str', skills:[], note:'',
       level:1, exp:0, totalExp:0
     });
