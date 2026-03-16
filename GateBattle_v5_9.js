@@ -1140,289 +1140,7 @@ const RARE_FAMILY_PRESETS = {
     return 1;
   }
 
-  const BUILTIN_SKILLS = {
-    energyBolt: { id:'energyBolt', name:'에너지볼트', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:30, sp:0 }, coef:1.5, statTypes:['int'], damageType:'magic', element:'none', desc:'기본 단일 마법 공격.' },
-    energyShower: { id:'energyShower', name:'에너지샤워', grade:'E', category:'aoeAttack', target:'allEnemies', costs:{ mp:40, sp:0 }, coef:0.875, statTypes:['int'], damageType:'magic', element:'none', desc:'기본 광역 마법 공격.' },
-    shieldBash: { id:'shieldBash', name:'실드강타', grade:'E', category:'singleCC', target:'singleEnemy', costs:{ mp:20, sp:20 }, coef:0.875, statTypes:['con'], damageType:'physical', element:'none', cc:{ type:'stun', turns:1 }, desc:'단일 CC. 1턴 기절.' },
-    shockwave: { id:'shockwave', name:'충격파', grade:'E', category:'aoeCC', target:'allEnemies', coef:0.4375, costs:{ mp:40, sp:40 }, statTypes:['con'], damageType:'physical', element:'none', cc:{ type:'stun', turns:1 }, desc:'광역 CC. 계수 0.4375, MP 40 / SP 40. 1턴 기절.' },
-    haste: { id:'haste', name:'헤이스트', grade:'D', category:'buff', target:'allAllies', costs:{ mp:25, sp:0 }, duration:3, statTypes:['int','sense'], buff:{ stats:{ agi:4 } }, desc:'3턴 동안 파티원 AGI +4.' },
-    heal: { id:'heal', name:'힐', grade:'D', category:'singleHeal', target:'singleAlly', costs:{ mp:40, sp:0 }, coef:2.0, statTypes:['int'], desc:'기본 단일 회복.' },
-    pray: { id:'pray', name:'기도', grade:'D', category:'singleHeal', target:'singleAlly', costs:{ mp:45, sp:0 }, coef:2.2, statTypes:['int'], desc:'힐보다 조금 강한 단일 회복.' },
-    blessingOfLight: { id:'blessingOfLight', name:'빛의 축복', grade:'D', category:'buff', target:'allAllies', costs:{ mp:25, sp:0 }, duration:3, statTypes:['int','sense'], buff:{ stats:{ int:4 } }, desc:'3턴 동안 전 아군 INT +4.' },
-    powerShot: { id:'powerShot', name:'파워샷', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:20, sp:20 }, coef:1.5, statTypes:['agi'], damageType:'physical', element:'none', desc:'집중 화살. 단일 고계수.' },
-    quickShot: { id:'quickShot', name:'퀵샷', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:0, sp:15 }, coef:1.2, statTypes:['agi'], damageType:'physical', element:'none', desc:'저비용 단일 공격.' },
-    fullArrowRecovery: {
-      id:'fullArrowRecovery', name:'전탄회수', grade:'E', rarity:'rare', category:'aoeAttack', target:'allEnemies',
-      statTypes:['agi'], damageType:'physical', element:'none', resourceRestore:{ sp:25 },
-      byRank:{ E:{ coef:0.875, costs:{ mp:40, sp:0 } }, D:{ coef:1.4, costs:{ mp:50, sp:0 } }, C:{ coef:2.1, costs:{ mp:60, sp:0 } }, B:{ coef:3.5, costs:{ mp:70, sp:0 } }, A:{ coef:5.6, costs:{ mp:80, sp:0 } }, S:{ coef:8.4, costs:{ mp:100, sp:0 } } },
-      desc:'성장형 전탄회수. 화살 회수 + 전체 적 광역 피해. SP 25 회복.'
-    },
-    tripleShot: {
-      id:'tripleShot', name:'트리플샷', grade:'E', rarity:'rare', category:'singleAttack', target:'singleEnemy',
-      statTypes:['agi'], damageType:'physical', element:'none',
-      byRank:{ E:{ coef:1.5, costs:{ mp:15, sp:15 } }, D:{ coef:2.4, costs:{ mp:15, sp:15 } }, C:{ coef:3.6, costs:{ mp:18, sp:18 } }, B:{ coef:6.0, costs:{ mp:25, sp:25 } }, A:{ coef:9.6, costs:{ mp:30, sp:30 } }, S:{ coef:14.4, costs:{ mp:40, sp:40 } } },
-      desc:'성장형 3연타. 총계수만 적용.'
-    },
-    quickThrow: { id:'quickThrow', name:'퀵스로', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:0, sp:40 }, coef:1.5, statTypes:['agi','sense'], damageType:'physical', element:'none', desc:'투척 단일 공격.' },
-    knifeRecall: { id:'knifeRecall', name:'무기회수', grade:'E', category:'utility', target:'singleEnemy', costs:{ mp:20, sp:0 }, coef:1.5, procChance:0.3, statTypes:['agi','sense'], damageType:'physical', element:'none', resourceRestore:{ sp:10 }, desc:'무기회수 + 30% 확률로 x1.5 계수 공격.' },
-    preciseAim: {
-      id:'preciseAim', name:'민첩한 조준', grade:'E', rarity:'rare', category:'buff', target:'allAllies', duration:3, statTypes:['agi','sense'],
-      byRank:{ E:{ costs:{ mp:25, sp:0 }, buff:{ stats:{ agi:2, sense:2 } } }, D:{ costs:{ mp:30, sp:0 }, buff:{ stats:{ agi:4, sense:4 } } }, C:{ costs:{ mp:40, sp:0 }, buff:{ stats:{ agi:6, sense:6 } } }, B:{ costs:{ mp:50, sp:0 }, buff:{ stats:{ agi:8, sense:8 } } }, A:{ costs:{ mp:65, sp:0 }, buff:{ stats:{ agi:10, sense:10 } } }, S:{ costs:{ mp:85, sp:0 }, buff:{ stats:{ agi:12, sense:12 } } } },
-      desc:'성장형 광역버프. 3턴 파티원 AGI·SENSE 증가.'
-    },
-    smallGarden: {
-      id:'smallGarden', name:'작은 정원', grade:'E', rarity:'rare', category:'aoeHeal', target:'allAllies', statTypes:['int'],
-      byRank:{ E:{ coef:0.875, costs:{ mp:30, sp:0 } }, D:{ coef:1.4, costs:{ mp:35, sp:0 } }, C:{ coef:2.1, costs:{ mp:40, sp:0 } }, B:{ coef:3.5, costs:{ mp:50, sp:0 } }, A:{ coef:5.6, costs:{ mp:65, sp:0 } }, S:{ coef:8.4, costs:{ mp:90, sp:0 } } },
-      desc:'성장형 광역 회복. 각 대상에게 계수 기반 회복.'
-    },
-    steelAnvil: { id:'steelAnvil', name:'강철 모루', grade:'E', rarity:'rare', category:'passive', statTypes:['con'], byRank:{ E:{ passiveBonuses:{ pdef:1, mdef:1 } }, D:{ passiveBonuses:{ pdef:3, mdef:3 } }, C:{ passiveBonuses:{ pdef:5, mdef:5 } }, B:{ passiveBonuses:{ pdef:7, mdef:7 } }, A:{ passiveBonuses:{ pdef:9, mdef:9 } }, S:{ passiveBonuses:{ pdef:11, mdef:11 } } }, desc:'물리방어/마법방어 증가.' },
-    shieldProficiency: { id:'shieldProficiency', name:'방패숙련', grade:'E', category:'passive', statTypes:['con'], passiveMods:{ shieldSpMul:0.9 }, desc:'방패 계열 SP 10% 감소.' },
-    daggerHandling: { id:'daggerHandling', name:'단검숙련', grade:'E', category:'passive', statTypes:['agi','sense'], passiveMods:{ daggerSpMul:0.9 }, desc:'단검/투척 계열 SP 10% 감소.' },
-    fistStrike: { id:'fistStrike', name:'정권', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:20, sp:20 }, coef:1.5, statTypes:['str','con'], damageType:'physical', element:'none', desc:'근접 단일 공격.' },
-    hiddenMight: { id:'hiddenMight', name:'이면의 완력', grade:'E', rarity:'rare', category:'passive', statTypes:['str'], byRank:{ E:{ passiveBonuses:{ str:1 } }, D:{ passiveBonuses:{ str:2 } }, C:{ passiveBonuses:{ str:3 } }, B:{ passiveBonuses:{ str:4 } }, A:{ passiveBonuses:{ str:5 } }, S:{ passiveBonuses:{ str:6 } } }, desc:'STR 증가.' },
-    taunt: { id:'taunt', name:'도발', grade:'E', category:'buff', target:'self', costs:{ mp:0, sp:20 }, duration:3, statTypes:['con'], buff:{ threatBonus:5 }, desc:'3턴 동안 위협 수치 크게 증가.' },
-
-    // ─── §6 김민수 ───
-    spotlight: {
-      id:'spotlight', name:'이목집중', grade:'E', rarity:'rare', category:'buff', target:'self', duration:3, statTypes:['con'],
-      byRank:{ E:{ costs:{ mp:30, sp:0 }, buff:{ threatBonus:10 } }, D:{ costs:{ mp:35, sp:0 }, buff:{ threatBonus:20 } }, C:{ costs:{ mp:45, sp:0 }, buff:{ threatBonus:30 } }, B:{ costs:{ mp:55, sp:0 }, buff:{ threatBonus:40 } }, A:{ costs:{ mp:70, sp:0 }, buff:{ threatBonus:50 } }, S:{ costs:{ mp:90, sp:0 }, buff:{ threatBonus:60 } } },
-      desc:'성장형 광역도발. 위협 수치 대폭 증가.'
-    },
-
-    // ─── §8 이사벨 헤이즈 ───
-    holdTheLine: { id:'holdTheLine', name:'방어선 유지', grade:'D', category:'buff', target:'self', costs:{ mp:0, sp:40 }, duration:3, statTypes:['con'], buff:{ ccImmunity:true }, desc:'3턴 CC 완전 면역.' },
-    holyProvocation: { id:'holyProvocation', name:'신성한 도발', grade:'D', category:'buff', target:'singleEnemy', costs:{ mp:15, sp:15 }, duration:2, statTypes:['con'], buff:{ forcedTaunt:true }, cooldown:3, desc:'대상 1체를 2턴 강제 도발. 해제 후 3턴 면역.' },
-    divineProtection: { id:'divineProtection', name:'신의 보호', grade:'D', category:'singleHeal', target:'singleAlly', costs:{ mp:30, sp:0 }, coef:2.0, statTypes:['int'], desc:'치유 + 만HP 시 보호막 전환 (최대 HP 20%).' },
-    holyLight: { id:'holyLight', name:'성스러운 빛', grade:'D', category:'singleAttack', target:'singleEnemy', costs:{ mp:30, sp:0 }, coef:1.92, statTypes:['int'], damageType:'magic', element:'light', desc:'빛 속성 단일 공격. 언데드/암흑 ×1.3.' },
-    fragmentOfAthena: { id:'fragmentOfAthena', name:'아테나의 파편', grade:'D', rarity:'unique', category:'passive', statTypes:['con'], desc:'잠재/미발현. 진화 경로: Fragment → Successor → Avatar of Athena.' },
-
-    // ─── §9 최민준 ───
-    fightingSpiritBoost: {
-      id:'fightingSpiritBoost', name:'투심 향상', grade:'C', rarity:'rare', category:'buff', target:'allAllies', duration:3, statTypes:['con'],
-      byRank:{ C:{ costs:{ mp:30, sp:0 }, buff:{ stats:{ str:3, agi:3 } } }, B:{ costs:{ mp:40, sp:0 }, buff:{ stats:{ str:4, agi:4 } } }, A:{ costs:{ mp:55, sp:0 }, buff:{ stats:{ str:5, agi:5 } } }, S:{ costs:{ mp:70, sp:0 }, buff:{ stats:{ str:8, agi:7 } } } },
-      desc:'성장형 광역버프. 3턴 파티원 STR·AGI 증가.'
-    },
-    formationCommand: { id:'formationCommand', name:'진형 지휘', grade:'C', category:'passive', statTypes:['con'], passiveMods:{ formationDmgReduce:0.08 }, desc:'전투 시작 2턴 전 아군 피해감소 +8%. 전열 위치 시.' },
-    moraleManagement: { id:'moraleManagement', name:'사기관리', grade:'C', category:'passive', statTypes:['con'], passiveMods:{ moraleCostReduce:0.12 }, desc:'전투 시작 2턴 전 아군 SP/MP 소모 -12%.' },
-    shieldSmash: { id:'shieldSmash', name:'방패강타', grade:'C', category:'singleCC', target:'singleEnemy', costs:{ mp:25, sp:25 }, coef:2.88, statTypes:['con','str'], damageType:'physical', element:'none', cc:{ type:'stun', turns:1, chance:0.20 }, desc:'C급 단일 CC. 20% 기절 1턴.' },
-    battleCry: { id:'battleCry', name:'도발함성', grade:'C', category:'buff', target:'self', costs:{ mp:0, sp:30 }, duration:3, statTypes:['con'], buff:{ threatBonus:8 }, desc:'광역 도발. 위협 +8, 3턴.' },
-    charge: { id:'charge', name:'돌진', grade:'C', category:'singleAttack', target:'singleEnemy', costs:{ mp:20, sp:30 }, coef:3.2, statTypes:['str'], damageType:'physical', element:'none', desc:'단일 공격. 후열 적 ×1.2.' },
-
-    // ─── §10 서지한 ───
-    vampiricInstinct: { id:'vampiricInstinct', name:'흡혈 본능', grade:'C', rarity:'curse', category:'passive', statTypes:['int'], passiveMods:{ vampiricDrain:0.05 }, desc:'MP 10% 이하 시 다음 공격이 대상 HP 5% 흡수. 발동 후 INT -3 3턴.' },
-    bloodSense: { id:'bloodSense', name:'피의 감각', grade:'C', rarity:'curse', category:'passive', statTypes:['sense'], passiveMods:{ ambushEvasion:0.15 }, desc:'출혈 대상 감지 + 기습 회피 +15%.' },
-
-    // ─── §11 박소원 ───
-    potionCraft: {
-      id:'potionCraft', name:'포션제조', grade:'E', rarity:'rare', category:'utility', target:'self', statTypes:['int','sense'],
-      byRank:{ E:{ costs:{ mp:0, sp:0 } }, D:{ costs:{ mp:0, sp:0 } }, C:{ costs:{ mp:0, sp:0 } }, B:{ costs:{ mp:0, sp:0 } }, A:{ costs:{ mp:0, sp:0 } }, S:{ costs:{ mp:0, sp:0 } } },
-      desc:'성장형 포션제조. 자신 등급 이하 포션 제조 가능. 전투 외 전용.'
-    },
-    potionToss: { id:'potionToss', name:'포션던지기', grade:'C', category:'utility', target:'singleAlly', costs:{ mp:0, sp:0 }, statTypes:['agi'], desc:'아군 1체에 포션 투척. 자가 제조 포션은 부작용 면제.' },
-    materialAnalysis: { id:'materialAnalysis', name:'재료분석', grade:'C', category:'passive', statTypes:['sense'], desc:'게이트 내 채집물/드랍 재료 등급·속성·용도 자동 감별.' },
-
-    // ─── §12 강유라 ───
-    bodyReinforce: {
-      id:'bodyReinforce', name:'신체강화', grade:'C', rarity:'rare', category:'buff', target:'self', duration:3, statTypes:['str','agi'],
-      byRank:{ C:{ costs:{ mp:25, sp:0 }, buff:{ stats:{ str:3, agi:3 } } }, B:{ costs:{ mp:35, sp:0 }, buff:{ stats:{ str:4, agi:4 } } }, A:{ costs:{ mp:50, sp:0 }, buff:{ stats:{ str:5, agi:5 } } }, S:{ costs:{ mp:65, sp:0 }, buff:{ stats:{ str:7, agi:7 } } } },
-      desc:'성장형 자가버프. 3턴 STR·AGI 증가.'
-    },
-    crushingKick: { id:'crushingKick', name:'파쇄격', grade:'C', category:'singleAttack', target:'singleEnemy', costs:{ mp:20, sp:30 }, coef:3.4, statTypes:['str','agi'], damageType:'physical', element:'none', desc:'근접 고계수 단일 공격.' },
-    spinSweep: { id:'spinSweep', name:'회전축격', grade:'C', category:'aoeAttack', target:'allEnemies', costs:{ mp:30, sp:35 }, coef:2.0, statTypes:['str','agi'], damageType:'physical', element:'none', desc:'전열 적 전체 광역 공격.' },
-    vitalStrike: { id:'vitalStrike', name:'급소가격', grade:'C', category:'singleCC', target:'singleEnemy', costs:{ mp:20, sp:25 }, coef:2.0, statTypes:['agi','sense'], damageType:'physical', element:'none', cc:{ type:'bind', turns:2, chance:0.22 }, desc:'단일 CC. 22% 속박 2턴.' },
-
-    // ─── §13 한서연 ───
-    flameLance: { id:'flameLance', name:'화염창', grade:'B', category:'singleAttack', target:'singleEnemy', costs:{ mp:50, sp:0 }, coef:5.6, statTypes:['int'], damageType:'magic', element:'fire', desc:'단일 고계수 화염. 빙결 대상 ×1.3.' },
-    meteorBarrage: { id:'meteorBarrage', name:'유성포격', grade:'B', category:'aoeAttack', target:'allEnemies', costs:{ mp:55, sp:0 }, coef:3.2, statTypes:['int'], damageType:'magic', element:'fire', desc:'광역 화염 공격.' },
-    flameWall: { id:'flameWall', name:'화염벽', grade:'B', category:'aoeCC', target:'allEnemies', costs:{ mp:45, sp:45 }, coef:1.6, statTypes:['int'], damageType:'magic', element:'fire', cc:{ type:'burn', turns:5, chance:0.32 }, desc:'광역 CC. 32% 화상 5턴(최대 5중첩).' },
-    manaFocus: { id:'manaFocus', name:'마나집중', grade:'B', category:'buff', target:'self', costs:{ mp:40, sp:0 }, duration:3, statTypes:['int'], buff:{ stats:{ int:8 } }, desc:'자가 INT +8, 3턴.' },
-
-    // ─── §14 하루 이토 ───
-    summonZephyr: { id:'summonZephyr', name:'정령소환: 제피르', grade:'B', category:'buff', target:'allAllies', costs:{ mp:45, sp:0 }, duration:5, statTypes:['int','agi'], buff:{ stats:{ agi:6 }, summon:'zephyr' }, desc:'바람 정령 소환 5턴. 전 아군 AGI +6. 질풍격 ×1.2.' },
-    summonBark: { id:'summonBark', name:'정령소환: 바크', grade:'B', category:'buff', target:'allAllies', costs:{ mp:45, sp:0 }, duration:5, statTypes:['int','con'], buff:{ stats:{ con:4 }, summon:'bark' }, desc:'나무 정령 소환 5턴. 전 아군 CON +4. 뿌리속박 CC +10%.' },
-    galeStrike: { id:'galeStrike', name:'질풍격', grade:'B', category:'singleAttack', target:'singleEnemy', costs:{ mp:40, sp:20 }, coef:5.2, statTypes:['int','agi'], damageType:'magic', element:'wind', desc:'바람 속성 단일 공격. 제피르 시 ×1.2 (6.24).' },
-    rootBind: { id:'rootBind', name:'뿌리속박', grade:'B', category:'aoeCC', target:'allEnemies', costs:{ mp:50, sp:40 }, coef:1.5, statTypes:['int'], damageType:'magic', element:'earth', cc:{ type:'bind', turns:2, chance:0.22 }, desc:'광역 CC. 22% 속박 2턴. 바크 시 32%.' },
-    earthHeal: { id:'earthHeal', name:'대지의 치유', grade:'B', category:'aoeHeal', target:'allAllies', costs:{ mp:50, sp:0 }, coef:3.8, statTypes:['int'], desc:'정령 소환 시 사용 가능. 광역 회복.' },
-    terrainShift: { id:'terrainShift', name:'지형 전환', grade:'B', category:'utility', target:'self', costs:{ mp:55, sp:0 }, statTypes:['int'], cooldown:99, desc:'전장 숲/초원 변경 3턴. 식물 +15%, 화염 -10%. 1전투 1회.' },
-
-    // ─── §4 안도현 ───
-    exceptionalDexterity: {
-      id:'exceptionalDexterity', name:'탁월한 손재주', grade:'E', rarity:'rare', category:'passive', statTypes:['sense'],
-      byRank:{ E:{ passiveBonuses:{ sense:1 } }, D:{ passiveBonuses:{ sense:2 } }, C:{ passiveBonuses:{ sense:3 } }, B:{ passiveBonuses:{ sense:4 } }, A:{ passiveBonuses:{ sense:5 } }, S:{ passiveBonuses:{ sense:6 } } },
-      desc:'성장형 SEN 증가 + 상위 등급 장비 수리 지원 범위 확대.'
-    },
-    fieldMaintenance: { id:'fieldMaintenance', name:'현장정비', grade:'E', category:'passive', statTypes:['sense'], passiveMods:{ durabilityReduce:0.50 }, desc:'파티원 장비 내구도 소모 50% 감소. 안도현 파티 편성 시.' },
-    quickRepair: { id:'quickRepair', name:'빠른수리', grade:'E', category:'utility', target:'singleAlly', costs:{ mp:0, sp:0 }, statTypes:['sense'], desc:'장비 1개 내구도 +10. 게이트 내 장비당 1회.' },
-    fieldAidSupport: { id:'fieldAidSupport', name:'응급처치지원', grade:'E', category:'passive', statTypes:['sense'], passiveMods:{ campHealBonus:0.10 }, desc:'야영 시 HP/MP/SP 회복 +10%.' },
-
-    // ─── §15 유진성 ───
-    equipmentCraft: {
-      id:'equipmentCraft', name:'장비제작', grade:'D', rarity:'rare', category:'utility', target:'self', statTypes:['str','sense'],
-      byRank:{ D:{ passiveBonuses:{ str:1 } }, C:{ passiveBonuses:{ str:2 } }, B:{ passiveBonuses:{ str:3 } }, A:{ passiveBonuses:{ str:4 } }, S:{ passiveBonuses:{ str:5 } } },
-      desc:'성장형 장비 제조. 등급별 제작 가능 범위 확대. 전투 외 전용.'
-    },
-    appraisal: {
-      id:'appraisal', name:'감정', grade:'D', rarity:'rare', category:'passive', statTypes:['sense'],
-      byRank:{ D:{ passiveBonuses:{ sense:1 } }, C:{ passiveBonuses:{ sense:2 } }, B:{ passiveBonuses:{ sense:3 } }, A:{ passiveBonuses:{ sense:4 } }, S:{ passiveBonuses:{ sense:5 } } },
-      desc:'성장형 장비/재료 감정. 등급별 상세도 증가.'
-    },
-    battlefieldRepair: { id:'battlefieldRepair', name:'전장 응급수선', grade:'D', category:'utility', target:'singleAlly', costs:{ mp:0, sp:30 }, statTypes:['str','sense'], desc:'전투 중 장비 내구도 +15. 대상당 1회.' },
-    firepowerTuning: { id:'firepowerTuning', name:'화력 최적화', grade:'D', category:'buff', target:'singleAlly', costs:{ mp:20, sp:20 }, duration:3, statTypes:['str','sense'], buff:{ stats:{ atk:5 } }, desc:'대상 무기 ATK +5, 3턴.' },
-
-    // ─── §16 한아람 ───
-    cargoSupport: { id:'cargoSupport', name:'하역지원', grade:'E', category:'passive', statTypes:['str','con'], passiveMods:{ cargoCapacity:0.20 }, desc:'파티 아이템 운반량 +20%. 채굴 속도 +10%.' },
-    emergencyDodge: { id:'emergencyDodge', name:'긴급회피', grade:'E', category:'utility', target:'self', costs:{ mp:0, sp:25 }, statTypes:['agi'], cooldown:5, buff:{ evasionNext:1.0 }, desc:'다음 1회 공격 100% 회피. 쿨 5턴.' },
-
-    // ═══════════════════════════════════════════════════════════
-    //  부록 A: 고랭크 NPC 스킬
-    // ═══════════════════════════════════════════════════════════
-
-    // ─── 강민혁 (A랭크 · 검사 · 흑사) ───
-    auraMastery: { id:'auraMastery', name:'오라 마스터리', grade:'A', rarity:'unique', category:'passive', statTypes:['str','agi'], desc:'오라 제어 정밀도 극대화 — 안정적 중거리 투사.' },
-    shadowDraw: { id:'shadowDraw', name:'그림자 발도', grade:'A', rarity:'rare', category:'singleAttack', target:'singleEnemy', costs:{ mp:40, sp:40 }, coef:8.5, statTypes:['agi','str'], damageType:'physical', element:'none', desc:'선제 발도 — 우선 행동.' },
-    auraSlash: { id:'auraSlash', name:'오라 참격', grade:'A', category:'singleAttack', target:'singleEnemy', costs:{ mp:35, sp:25 }, coef:7.8, statTypes:['str'], damageType:'physical', element:'none', desc:'중거리 검기 투사.' },
-    auraArc: { id:'auraArc', name:'오라 호', grade:'A', category:'aoeAttack', target:'allEnemies', costs:{ mp:45, sp:0 }, coef:4.5, statTypes:['str'], damageType:'physical', element:'none', desc:'중거리 반원 검기.' },
-
-    // ─── 강우석 (A랭크 · 탱커 · 백련) ───
-    impactReduction: { id:'impactReduction', name:'충격 감소', grade:'A', rarity:'rare', category:'passive', statTypes:['con'], passiveMods:{ physicalDmgReduce:0.15 }, desc:'받는 물리 피해 -15% 상시.' },
-    defensiveStance: { id:'defensiveStance', name:'방어 태세', grade:'A', category:'buff', target:'self', costs:{ mp:30, sp:30 }, duration:3, statTypes:['con'], buff:{ stats:{ con:8 }, immobile:true }, desc:'CON +8, 3턴. 이동불가.' },
-    tauntA: { id:'tauntA', name:'도발', grade:'A', category:'buff', target:'self', costs:{ mp:0, sp:30 }, duration:3, statTypes:['con'], buff:{ threatBonus:10 }, desc:'3턴 위협 +10.' },
-    chargeA: { id:'chargeA', name:'돌진', grade:'A', category:'singleAttack', target:'singleEnemy', costs:{ mp:30, sp:40 }, coef:7.2, statTypes:['con'], damageType:'physical', element:'none', desc:'단일 공격. 후열 적 ×1.2.' },
-    shieldMastery: { id:'shieldMastery', name:'방패숙련', grade:'A', category:'passive', statTypes:['con'], passiveMods:{ shieldSpMul:0.85 }, desc:'방패 SP -15%.' },
-    conBoost: { id:'conBoost', name:'체력증강', grade:'A', category:'passive', statTypes:['con'], passiveBonuses:{ con:6 }, desc:'CON +6 상시.' },
-    staminaRecovery: { id:'staminaRecovery', name:'스태미나 회복', grade:'A', category:'passive', statTypes:['con'], passiveMods:{ spRegenPct:0.05 }, desc:'턴 시작 SP +5% 자연 회복.' },
-    senBoost: { id:'senBoost', name:'감각증강', grade:'A', category:'passive', statTypes:['sense'], passiveBonuses:{ sense:4 }, desc:'SEN +4 상시.' },
-
-    // ─── 사사키 유아 (A랭크 · 딜러/탱커 · 저승무사) ───
-    spiritArmor: { id:'spiritArmor', name:'혼령 갑주', grade:'A', category:'buff', target:'self', costs:{ mp:50, sp:0 }, duration:5, statTypes:['int','con'], buff:{ stats:{ pdef:12, mdef:8 } }, desc:'P.DEF +12, M.DEF +8, 5턴.' },
-    weaponManifestation: { id:'weaponManifestation', name:'무장 구현', grade:'A', category:'buff', target:'self', costs:{ mp:45, sp:0 }, duration:5, statTypes:['int','str'], buff:{ stats:{ atk:15 } }, desc:'ATK +15, 물리/영적 듀얼 속성, 5턴.' },
-    crescentSlash: { id:'crescentSlash', name:'삼일월', grade:'A', category:'singleAttack', target:'singleEnemy', costs:{ mp:30, sp:35 }, coef:8.2, statTypes:['str','agi'], damageType:'physical', element:'none', desc:'고계수 단일 참격.' },
-    spiritSever: { id:'spiritSever', name:'귀혼참', grade:'A', rarity:'rare', category:'singleCC', target:'singleEnemy', costs:{ mp:40, sp:40 }, coef:5.0, statTypes:['int','str'], damageType:'magic', element:'none', cc:{ type:'sleep', turns:2, chance:0.18 }, desc:'수면 18% 2턴.' },
-
-    // ─── 임설희 (A랭크 · 딜러 · 백련) ───
-    iceMaker: { id:'iceMaker', name:'아이스 메이커', grade:'A', rarity:'unique', category:'utility', target:'self', costs:{ mp:40, sp:0 }, statTypes:['int'], desc:'자유 형태 빙결 조형 — 무기/방벽/지형 생성.' },
-    icicleLance: { id:'icicleLance', name:'얼음창 투사', grade:'A', category:'singleAttack', target:'singleEnemy', costs:{ mp:45, sp:0 }, coef:8.8, statTypes:['int'], damageType:'magic', element:'ice', desc:'빙결 속성 단일 고계수.' },
-    frostFlower: { id:'frostFlower', name:'서리꽃', grade:'A', category:'aoeCC', target:'allEnemies', costs:{ mp:55, sp:30 }, coef:2.5, statTypes:['int'], damageType:'magic', element:'ice', cc:{ type:'bind', turns:2, chance:0.20 }, desc:'광역 CC. 속박 20% 2턴.' },
-    stairAndSlide: { id:'stairAndSlide', name:'계단&미끄럼틀', grade:'A', category:'utility', target:'self', costs:{ mp:35, sp:0 }, duration:3, statTypes:['int'], desc:'전술 이동로 생성, 3턴 유지.' },
-
-    // ─── 백휘성 (S랭크 · 딜러 · 협회) ───
-    auraOfJudge: { id:'auraOfJudge', name:'심판자의 기운', grade:'S', rarity:'rare', category:'passive', statTypes:['int'], passiveMods:{ enemySkillCostMul:1.10 }, desc:'적 스킬 비용 +10%.' },
-    heliosNova: { id:'heliosNova', name:'헬리오스 노바', grade:'S', category:'aoeAttack', target:'allEnemies', costs:{ mp:90, sp:50 }, coef:12.0, statTypes:['int'], damageType:'magic', element:'light', desc:'빛/열 광역 섬멸.' },
-    shacklesOfRadiance: { id:'shacklesOfRadiance', name:'빛의 속박', grade:'S', rarity:'rare', category:'singleCC', target:'singleEnemy', costs:{ mp:70, sp:0 }, coef:8.0, statTypes:['int'], damageType:'magic', element:'light', cc:{ type:'silence', turns:3 }, desc:'마법 완전 봉인 3턴.' },
-
-    // ─── 한지원 (S랭크 · 서포터 · 적호) ───
-    trueGaze: { id:'trueGaze', name:'진실의 시선', grade:'S', rarity:'unique', category:'passive', statTypes:['sense'], desc:'연속 시각 집중으로 대상 스탯/약점 해석.' },
-    barrierManipulation: { id:'barrierManipulation', name:'결계 조작', grade:'S', rarity:'rare', category:'buff', target:'allAllies', costs:{ mp:80, sp:0 }, duration:3, statTypes:['int','sense'], buff:{ stats:{ pdef:10, mdef:10 } }, desc:'다층 방벽 생성. 전 아군 P.DEF/M.DEF +10, 3턴.' },
-    healingMagic: { id:'healingMagic', name:'치유 마법', grade:'S', category:'singleHeal', target:'singleAlly', costs:{ mp:45, sp:0 }, coef:2.4, statTypes:['int'], desc:'경상 즉시 회복.' },
-
-    // ─── 박준호 (S랭크 · 탱커 · 적호) ───
-    byeokryeokjang: { id:'byeokryeokjang', name:'벽력장', grade:'S', category:'buff', target:'self', costs:{ mp:80, sp:60 }, duration:5, statTypes:['con','str'], buff:{ stats:{ pdef:20, mdef:15 }, onContactStun:{ chance:0.25, turns:1 } }, desc:'번개 갑주. P.DEF +20, M.DEF +15, 접촉 stun 25% 1턴, 5턴.' },
-    uraegyeok: { id:'uraegyeok', name:'우레격', grade:'S', category:'aoeCC', target:'allEnemies', costs:{ mp:100, sp:80 }, coef:9.0, statTypes:['con','str'], damageType:'physical', element:'electric', cc:{ type:'stun', turns:1, chance:0.20 }, cooldown:8, desc:'광역 stun 20% 1턴. 쿨 8턴.' },
-
-    // ─── 하월영 (S랭크 · 탱커(?) · 무소속) ───
-    shunpo: { id:'shunpo', name:'순보', grade:'S', rarity:'rare', category:'utility', target:'self', costs:{ mp:0, sp:40 }, statTypes:['agi'], desc:'초고속 이동.' },
-    wolseomTriple: { id:'wolseomTriple', name:'월섬 "삼월"', grade:'S', rarity:'rare', category:'singleAttack', target:'singleEnemy', costs:{ mp:50, sp:60 }, coef:13.5, statTypes:['agi','str'], damageType:'physical', element:'none', desc:'3연참 고계수.' },
-    parry: { id:'parry', name:'받아치기', grade:'S', category:'utility', target:'self', costs:{ mp:0, sp:25 }, statTypes:['agi','sense'], buff:{ parryStance:true, parryCoef:4.0 }, desc:'피격 직전 반격 자세 — 회피 성공 시 반격 계수 4.0.' },
-    insight: { id:'insight', name:'통찰', grade:'S', category:'passive', statTypes:['sense'], passiveMods:{ evasionBonus:0.10 }, desc:'적 의도/궤적 선읽기 — 회피율 +10% 상시.' },
-
-    // ─── 앨리스 크로프트 (A랭크 · 서포터 · 크로노스의 후계자) ───
-    slowTime: { id:'slowTime', name:'시간 감속', grade:'A', category:'aoeCC', target:'allEnemies', costs:{ mp:65, sp:0 }, duration:3, statTypes:['int'], damageType:'magic', element:'none', cc:{ type:'slow', turns:3 }, buff:{ stats:{ agi:-8 } }, desc:'적 전체 둔화 3턴 (명중률 -30%, 회피율 -50%) + AGI -8 디버프.' },
-    hasteTime: { id:'hasteTime', name:'시간 가속', grade:'A', category:'buff', target:'allAllies', costs:{ mp:55, sp:0 }, duration:2, statTypes:['int'], buff:{ stats:{ agi:8 } }, desc:'전 아군 AGI +8, 2턴.' },
-    temporalSense: { id:'temporalSense', name:'시간 감지', grade:'A', category:'passive', statTypes:['sense','int'], desc:'유사 시간 능력 탐지 및 분석적 교란.' },
-    itemExtension: { id:'itemExtension', name:'소모품 연장', grade:'A', rarity:'unique', category:'passive', statTypes:['int'], passiveMods:{ itemDurationMul:1.20 }, desc:'소모품 효과 지속시간 +20%.' },
-
-    // ─── 이지혜 (A랭크 · 딜러/소환사 · Nyx) ───
-    reverseSummon: { id:'reverseSummon', name:'반전 소환', grade:'A', category:'utility', target:'self', costs:{ mp:30, sp:0 }, statTypes:['int'], desc:'야간/그림자 근처 포탈 개방 — 존재가 올지는 랜덤, 장기 지속.' },
-    nightsVeil: { id:'nightsVeil', name:'밤의 장막', grade:'A', category:'passive', statTypes:['int','sense'], desc:'비전투 시 은폐 + 어그로 감소.' },
-    sharedLethargy: { id:'sharedLethargy', name:'공유된 나른함', grade:'A', category:'passive', statTypes:['int'], desc:'어둡거나 조용한 환경에서 적 경계심 감소.' },
-
-    // ─── 임진태 (S랭크 · 딜러 · 은랑) ───
-    partialTransform: { id:'partialTransform', name:'늑대 변신 (부분)', grade:'S', category:'buff', target:'self', costs:{ mp:60, sp:0 }, duration:5, statTypes:['str','agi','con'], buff:{ stats:{ str:12, agi:10, con:8 } }, desc:'부분 변신. STR +12, AGI +10, CON +8, 5턴.' },
-    fullTransform: { id:'fullTransform', name:'늑대 변신 (완전)', grade:'S', category:'buff', target:'self', costs:{ mp:100, sp:80 }, duration:3, statTypes:['str','agi','con'], buff:{ stats:{ str:20, agi:18, con:15, int:5, sense:10 } }, desc:'완전 변신. 전 스탯 대폭 증가, 3턴.' },
-    gluttonousInstinct: { id:'gluttonousInstinct', name:'탐식 본능', grade:'S', rarity:'unique', category:'passive', statTypes:['str','con'], desc:'적 출혈/사망 시 전 스탯 비례 증가 — 과부하 시 폭주 위험.' },
-
-    // ─── 제이크 밀러 (S랭크 · 딜러 · 무투가 · 무소속) ───
-    devastatingBlow: { id:'devastatingBlow', name:'분쇄격', grade:'S', category:'singleAttack', target:'singleEnemy', costs:{ mp:0, sp:80 }, coef:13.0, statTypes:['str'], damageType:'physical', element:'none', desc:'순수 주먹. 고계수 단일 물리.' },
-    quakeStrike: { id:'quakeStrike', name:'지진타', grade:'S', category:'aoeAttack', target:'allEnemies', costs:{ mp:30, sp:70 }, coef:7.5, statTypes:['str','con'], damageType:'physical', element:'none', desc:'지면 충격파 광역.' },
-    martialAwakening: { id:'martialAwakening', name:'무투가의 각성', grade:'S', category:'buff', target:'self', costs:{ mp:50, sp:50 }, duration:3, statTypes:['str','agi'], buff:{ stats:{ str:15, agi:10 } }, desc:'STR +15, AGI +10, 3턴.' },
-    instinctRead: { id:'instinctRead', name:'본능 읽기', grade:'S', category:'passive', statTypes:['sense','agi'], passiveMods:{ evasionBonus:0.12 }, desc:'적 미세 움직임 선읽기 — 회피율 +12%.' },
-
-    // ═══════════════════════════════════════════════════════════
-    //  부록 B: 적대 NPC 스킬
-    // ═══════════════════════════════════════════════════════════
-
-    // ─── 강태식 (C랭크 · 딜러/암살자) ───
-    stealth: { id:'stealth', name:'은밀', grade:'C', category:'passive', statTypes:['agi','sense'], desc:'전투 외 존재감 억제 — 감지 난이도 상승.' },
-    ambush: { id:'ambush', name:'기습', grade:'C', category:'singleAttack', target:'singleEnemy', costs:{ mp:0, sp:35 }, coef:3.6, statTypes:['agi'], damageType:'physical', element:'none', desc:'은신 상태 시 자동 치명타.' },
-    poisonBlade: { id:'poisonBlade', name:'독도포', grade:'C', category:'singleCC', target:'singleEnemy', costs:{ mp:15, sp:25 }, coef:2.5, statTypes:['agi'], damageType:'physical', element:'none', cc:{ type:'poison', turns:3, chance:0.35 }, desc:'독 35% 3턴.' },
-    escape: { id:'escape', name:'도주', grade:'C', category:'utility', target:'self', costs:{ mp:0, sp:40 }, statTypes:['agi'], desc:'전투 이탈 — 다음 턴 전투장 벗어남.' },
-
-    // ─── 권도윤 (B랭크 · 블랙마켓) ───
-    suggestion: { id:'suggestion', name:'암시', grade:'B', rarity:'rare', category:'singleCC', target:'singleEnemy', costs:{ mp:45, sp:0 }, statTypes:['int'], damageType:'magic', element:'none', cc:{ type:'confuse', turns:1 }, desc:'대상 판단력 교란 — 1턴 혼란 (non-boss).' },
-    phantomStep: { id:'phantomStep', name:'환영보', grade:'B', rarity:'rare', category:'utility', target:'self', costs:{ mp:0, sp:35 }, statTypes:['agi'], desc:'단거리 무음 이동 — 은신+회피.' },
-    knifeStrike: { id:'knifeStrike', name:'단검 일격', grade:'B', category:'singleAttack', target:'singleEnemy', costs:{ mp:0, sp:40 }, coef:5.0, statTypes:['agi'], damageType:'physical', element:'none', desc:'단검 단일 물리 공격.' },
-
-    // ─── 유진혁 (A~S급 · 에레보스의 피조물) ───
-    darknessManipulation: { id:'darknessManipulation', name:'어둠 조작', grade:'A', category:'utility', target:'self', costs:{ mp:60, sp:0 }, statTypes:['int','str'], desc:'암흑 형태 자유 생성 (무기/장벽/올가미).' },
-    shadowMeld: { id:'shadowMeld', name:'그림자 융합', grade:'A', category:'utility', target:'self', costs:{ mp:0, sp:40 }, statTypes:['agi','int'], desc:'그림자 속 잠복 → 기습 + 회피.' },
-    abyssalBlade: { id:'abyssalBlade', name:'심연검', grade:'A', rarity:'rare', category:'singleAttack', target:'singleEnemy', costs:{ mp:45, sp:45 }, coef:9.0, statTypes:['str','int'], damageType:'magic', element:'dark', desc:'암흑 속성. 빛 속성 ×0.7.' },
-    erebosCloak: { id:'erebosCloak', name:'에레보스의 외투', grade:'A', category:'passive', statTypes:['int','con'], passiveMods:{ darkEnvStatBonus:5, darkEnvDmgReduce:0.10 }, desc:'어둠 환경 시 전 스탯 +5, 피해 감소 +10%.' },
-
-    // ─── 장은서 (추정 A급+ · 상태창 불신론자 리더) ───
-    curseImmunity: { id:'curseImmunity', name:'저주 면역', grade:'A', rarity:'unique', category:'passive', statTypes:['con','sense'], desc:'저주형 아이템 페널티 무시 또는 대폭 감소.' },
-    bloodletterDagger: { id:'bloodletterDagger', name:'피식자의 단검', grade:'A', category:'singleAttack', target:'singleEnemy', costs:{ mp:0, sp:45 }, coef:8.5, statTypes:['agi'], damageType:'physical', element:'none', passiveMods:{ lifesteal:0.05 }, desc:'적중 시 HP 흡수 5%.' },
-    shroudOfNonexistence: { id:'shroudOfNonexistence', name:'비존재의 장막', grade:'A', category:'passive', statTypes:['sense'], desc:'마나 신호 은폐 — 감지 극히 어려움. 패널티: 주변 불운 유발.' },
-
-    // ─── 신우현 (비각성 · 이계 숭배단) ───
-    corruptedResonance: { id:'corruptedResonance', name:'오염된 공명', grade:'A', rarity:'curse', category:'singleAttack', target:'singleEnemy', costs:{ mp:40, sp:0 }, coef:7.5, statTypes:['int'], damageType:'magic', element:'dark', desc:'오염 마정석 소모. 폭발/촉수/저주 효과. 출력 = 석 품질 비례.' },
-    monsterKinship: { id:'monsterKinship', name:'몬스터 친화', grade:'E', rarity:'curse', category:'passive', statTypes:['sense'], desc:'몬스터 비공격 · 기본 의사소통.' },
-    corruptSpread: { id:'corruptSpread', name:'오염 확산', grade:'A', rarity:'curse', category:'aoeCC', target:'allEnemies', costs:{ mp:50, sp:0 }, coef:2.0, statTypes:['int'], damageType:'magic', element:'dark', cc:{ type:'curse', turns:3, chance:0.28 }, desc:'범위 내 저주 28% 3턴 + 독 28% 3턴.' },
-
-    // ─── 나선영 (추정 A급+ · 이계 숭배단) ───
-    whisperOfFear: { id:'whisperOfFear', name:'공포의 속삭임', grade:'A', rarity:'rare', category:'singleCC', target:'singleEnemy', costs:{ mp:50, sp:0 }, statTypes:['int'], damageType:'magic', element:'none', cc:{ type:'sleep', turns:2, chance:0.20 }, desc:'수면 20% 2턴 or 속박 25% 2턴.' },
-    corrosiveMist: { id:'corrosiveMist', name:'부식의 안개', grade:'A', category:'aoeCC', target:'allEnemies', costs:{ mp:55, sp:35 }, coef:2.0, statTypes:['int'], damageType:'magic', element:'none', cc:{ type:'poison', turns:3, chance:0.30 }, desc:'독 30% 3턴 + 저주 26% 3턴.' },
-    manaSight: { id:'manaSight', name:'마나 시야', grade:'A', rarity:'curse', category:'passive', statTypes:['sense','int'], desc:'시각 대신 마나/감정 패턴 감지 — 은폐 무력화.' },
-    fearInfusion: { id:'fearInfusion', name:'공포 주입', grade:'A', rarity:'rare', category:'singleCC', target:'singleEnemy', costs:{ mp:60, sp:0 }, statTypes:['int'], damageType:'magic', element:'none', cc:{ type:'fear', turns:2 }, desc:'대상 공포 상태 2턴 (행동 30% 확률 실패).' },
-
-    // ─── 채하윤 (前 E랭크 · 상태창 불신론자 부사령관) ───
-    manaBullet: { id:'manaBullet', name:'마나 탄환', grade:'C', rarity:'rare', category:'singleAttack', target:'singleEnemy', costs:{ mp:20, sp:0 }, coef:3.0, statTypes:['int','agi'], damageType:'magic', element:'none', desc:'탄환 형태 변형 가능 (폭발/관통/추적).' },
-    piercingRound: { id:'piercingRound', name:'관통탄', grade:'C', rarity:'rare', category:'singleAttack', target:'singleEnemy', costs:{ mp:25, sp:0 }, coef:3.2, statTypes:['agi'], damageType:'physical', element:'none', passiveMods:{ bonusDamage:0.30 }, desc:'관통 효과로 최종 피해 +30%.' },
-    explosiveRound: { id:'explosiveRound', name:'폭발탄', grade:'C', rarity:'rare', category:'aoeAttack', target:'allEnemies', costs:{ mp:30, sp:0 }, coef:1.8, statTypes:['int'], damageType:'magic', element:'none', desc:'소범위 폭발.' },
-    homingRound: { id:'homingRound', name:'추적탄', grade:'C', rarity:'rare', category:'singleAttack', target:'singleEnemy', costs:{ mp:35, sp:0 }, coef:2.5, statTypes:['sense'], damageType:'magic', element:'none', desc:'회피 불가 (은신 대상 추적).' },
-
-    // ─── 리베아 (D랭크 · 잊혀진 신격) ───
-    manaDrain: { id:'manaDrain', name:'마나 드레인', grade:'D', category:'singleAttack', target:'singleEnemy', costs:{ mp:25, sp:0 }, coef:2.0, statTypes:['int'], damageType:'magic', element:'none', desc:'접촉 시 대상 마나 흡수. 과사용 시 자해 위험.' },
-    lordOfAdversity: { id:'lordOfAdversity', name:'역경의 군주', grade:'D', rarity:'unique', category:'singleCC', target:'singleEnemy', costs:{ mp:40, sp:0 }, coef:1.2, statTypes:['int'], damageType:'magic', element:'none', cc:{ type:'silence', turns:2 }, desc:'대상 스킬 일시 봉인(침묵). 강한 사용 시 반동.' },
-
-    // ─── 민채린 (B랭크 · 딜러/암살자 · Shadow Hunter) ───
-    shadowCloak: { id:'shadowCloak', name:'그림자 은폐', grade:'B', category:'buff', target:'self', costs:{ mp:30, sp:20 }, duration:3, statTypes:['agi'], buff:{ stats:{ agi:8 } }, desc:'어둠 속 존재감 제거. AGI +8, 3턴.' },
-    shadowStrike: { id:'shadowStrike', name:'그림자 기습', grade:'B', category:'singleAttack', target:'singleEnemy', costs:{ mp:25, sp:35 }, coef:5.5, statTypes:['agi'], damageType:'physical', element:'dark', desc:'그림자를 통한 순간 기습. 후열 공격 가능.' },
-    twinDaggerSlash: { id:'twinDaggerSlash', name:'쌍검 난무', grade:'B', category:'singleAttack', target:'singleEnemy', costs:{ mp:0, sp:45 }, coef:5.0, statTypes:['agi','sense'], damageType:'physical', element:'none', desc:'쌍 단검 연속 공격.' },
-
-    // ─── 유선화 (A랭크 · 회피형 격투가) ───
-    quickStep: { id:'quickStep', name:'퀵 스텝', grade:'A', rarity:'rare', category:'buff', target:'self', costs:{ mp:20, sp:35 }, duration:2, statTypes:['agi'], buff:{ stats:{ agi:10 } }, desc:'고속 이동. AGI +10, 2턴.' },
-    counterStance: { id:'counterStance', name:'카운터', grade:'A', rarity:'rare', category:'utility', target:'self', costs:{ mp:0, sp:30 }, statTypes:['agi','sense'], buff:{ parryStance:true, parryCoef:3.5 }, desc:'회피/패리 성공 후 반격. 계수 3.5.' },
-    risingSpirit: { id:'risingSpirit', name:'투지 상승', grade:'A', rarity:'rare', category:'buff', target:'self', costs:{ mp:40, sp:30 }, duration:3, statTypes:['str','agi'], buff:{ stats:{ str:10, agi:8 } }, desc:'전투 의지 고양. STR +10, AGI +8, 3턴.' },
-
-    // ─── 주아람 (B랭크 · 전략가) ───
-    redThread: { id:'redThread', name:'홍선', grade:'B', rarity:'unique', category:'buff', target:'allAllies', costs:{ mp:50, sp:0 }, duration:5, statTypes:['sense'], buff:{ stats:{ sense:4 } }, desc:'최대 5명에 투명한 실 연결. 위치·상태 감지. SENSE +4, 5턴.' },
-    tacticalCommand: { id:'tacticalCommand', name:'전술 지시', grade:'B', category:'buff', target:'allAllies', costs:{ mp:35, sp:0 }, duration:2, statTypes:['int','sense'], buff:{ stats:{ agi:4, sense:4 } }, desc:'전술 지시. 전 아군 AGI +4, SENSE +4, 2턴.' },
-
-    // ─── 진소희 (A랭크 · 딜러/서포터 · 퇴마사) ───
-    exorcismExplosion: { id:'exorcismExplosion', name:'폭파부', grade:'A', rarity:'unique', category:'singleAttack', target:'singleEnemy', costs:{ mp:55, sp:0 }, coef:8.0, statTypes:['int'], damageType:'magic', element:'light', desc:'퇴마부: 폭파부. 집중 마법 폭발.' },
-    exorcismLightning: { id:'exorcismLightning', name:'전격부', grade:'A', rarity:'unique', category:'singleAttack', target:'singleEnemy', costs:{ mp:45, sp:0 }, coef:7.68, statTypes:['int'], damageType:'magic', element:'electric', desc:'퇴마부: 전격부. 신속 전격.' },
-    exorcismBinding: { id:'exorcismBinding', name:'속박부', grade:'A', rarity:'unique', category:'singleCC', target:'singleEnemy', costs:{ mp:50, sp:0 }, coef:4.0, statTypes:['int'], damageType:'magic', element:'none', cc:{ type:'bind', turns:2 }, desc:'퇴마부: 속박부. 단기 속박 사슬.' },
-    exorcismBarrier: { id:'exorcismBarrier', name:'결계부', grade:'A', rarity:'unique', category:'buff', target:'singleAlly', costs:{ mp:45, sp:0 }, duration:2, statTypes:['int'], buff:{ stats:{ con:8 } }, desc:'퇴마부: 결계부. 단기 방어 결계. CON +8, 2턴.' },
-
-    // ─── 최태준 (A랭크 · 커맨더) ───
-    commandOrder: { id:'commandOrder', name:'전술 명령', grade:'A', category:'buff', target:'allAllies', costs:{ mp:50, sp:0 }, duration:2, statTypes:['int','sense'], buff:{ stats:{ str:6, agi:6, con:4 } }, desc:'전술 명령. 전 아군 STR +6, AGI +6, CON +4, 2턴.' },
-    infoLink: { id:'infoLink', name:'정보 공유', grade:'A', rarity:'unique', category:'buff', target:'allAllies', costs:{ mp:40, sp:0 }, duration:3, statTypes:['int','sense'], buff:{ stats:{ sense:8 } }, desc:'정보 흐름 공유. 전 아군 SENSE +8, 3턴.' },
-    repositioning: { id:'repositioning', name:'재배치', grade:'A', category:'utility', target:'singleAlly', costs:{ mp:30, sp:0 }, statTypes:['sense'], desc:'포지셔닝 컨트롤. 대상 아군 전열 변경.' },
-
-    // ─── 최태현 (B랭크 · 근접 딜러) ───
-    soulHold: { id:'soulHold', name:'소울 홀드', grade:'B', rarity:'unique', category:'singleAttack', target:'singleEnemy', costs:{ mp:30, sp:30 }, coef:5.0, statTypes:['str','agi'], damageType:'physical', element:'none', desc:'첫 타격 시 대상 스탯 10~20% 탈취, 숨 참는 동안 지속.' },
-    blackThornSlash: { id:'blackThornSlash', name:'검은 가시 참격', grade:'B', category:'singleAttack', target:'singleEnemy', costs:{ mp:0, sp:40 }, coef:5.5, statTypes:['str','agi'], damageType:'physical', element:'none', desc:'검은 가시 롱소드의 긴 리치 활용 참격.' }
-  };
+  const BUILTIN_SKILLS = {};
 
   function buildSampleCharacters() {
     return [
@@ -4810,6 +4528,13 @@ function getBuffedStat(unit, statKey) {
     if (skill.target === 'self') return [actor];
     if (skill.target === 'singleAlly') return [findUnitByUid(runtime, action.target) || chooseHealTarget(allies) || actor].filter(Boolean);
     if (skill.target === 'singleEnemy') return [chooseWeightedTarget(actor, foes, skill, action.target)].filter(Boolean);
+    // 열 기반 반광역 타겟 (row-based semi-AoE)
+    if (skill.target === 'rowFront') { const t = getAlive(foes).filter(u => u.row === 'front'); return t.length ? t : getAlive(foes); }
+    if (skill.target === 'rowMid') { const t = getAlive(foes).filter(u => u.row === 'mid'); return t.length ? t : getAlive(foes); }
+    if (skill.target === 'rowBack') { const t = getAlive(foes).filter(u => u.row === 'back'); return t.length ? t : getAlive(foes); }
+    // 2열 공격 타겟 (dual-row)
+    if (skill.target === 'rowFrontMid') { const t = getAlive(foes).filter(u => u.row === 'front' || u.row === 'mid'); return t.length ? t : getAlive(foes); }
+    if (skill.target === 'rowMidBack') { const t = getAlive(foes).filter(u => u.row === 'mid' || u.row === 'back'); return t.length ? t : getAlive(foes); }
     return [];
   }
 
@@ -8556,10 +8281,10 @@ function renderCommandPanel(runtime) {
     const isEditingBuiltin = item.id && BUILTIN_SKILLS[item.id];
     const editorTitle = isEditingBuiltin ? `내장 스킬 편집 — <span style="color:#3b82f6;">${escapeHtml(item.name || item.id)}</span>` : '커스텀 스킬 편집';
     return `
-      <div class="gb-panel">
+      ${builtins ? `<div class="gb-panel">
         <div class="gb-section-title">내장 스킬 <span class="gb-sub">(클릭하면 편집기에 불러옴)</span></div>
         <div class="gb-skill-list">${builtins}</div>
-      </div>
+      </div>` : ''}
       <div class="gb-grid db" style="margin-top:12px;">
         <div class="gb-panel"><div class="gb-section-title">커스텀 스킬 목록</div>${list || '<div class="gb-sub">등록된 커스텀 스킬 없음.</div>'}<div class="gb-btn-row"><button class="gb-btn" id="gb-skill-new">새 스킬</button><button class="gb-btn danger" id="gb-skill-clear-all">스킬 전체삭제</button></div></div>
         <div class="gb-panel">
@@ -8569,7 +8294,7 @@ function renderCommandPanel(runtime) {
             <label>이름<input class="gb-input" id="gb-skill-name" value="${escapeHtml(item.name)}" /></label>
             <label>랭크<select class="gb-input" id="gb-skill-grade">${GRADE_ORDER.map(g=>optionHtml(g,g,item.grade===g)).join('')}</select></label>
             <label>카테고리<select class="gb-input" id="gb-skill-category">${['singleAttack','aoeAttack','singleCC','aoeCC','singleHeal','aoeHeal','buff','utility'].map(v=>optionHtml(v,v,item.category===v)).join('')}</select></label>
-            <label>대상<select class="gb-input" id="gb-skill-target">${['singleEnemy','allEnemies','singleAlly','allAllies','self'].map(v=>optionHtml(v,v,item.target===v)).join('')}</select></label>
+            <label>대상<select class="gb-input" id="gb-skill-target">${['singleEnemy','allEnemies','rowFront','rowMid','rowBack','rowFrontMid','rowMidBack','singleAlly','allAllies','self'].map(v=>optionHtml(v,v,item.target===v)).join('')}</select></label>
             <label>계수<input class="gb-input" id="gb-skill-coef" type="number" step="0.001" value="${escapeHtml(item.coef)}" /></label>
             <label>MP 비용<input class="gb-input" id="gb-skill-mp" type="number" value="${escapeHtml(item.mp)}" /></label>
             <label>SP 비용<input class="gb-input" id="gb-skill-sp" type="number" value="${escapeHtml(item.sp)}" /></label>
@@ -8587,6 +8312,16 @@ function renderCommandPanel(runtime) {
           <label>설명<textarea class="gb-textarea short" id="gb-skill-desc">${escapeHtml(item.desc || '')}</textarea></label>
           <div class="gb-btn-row"><button class="gb-btn primary" id="gb-skill-save">저장</button>${isEditingBuiltin ? '<button class="gb-btn" id="gb-skill-restore" style="background:#ef4444;color:#fff;">원본 복원</button>' : '<button class="gb-btn" id="gb-skill-delete">삭제</button>'}</div>
           <div class="gb-sub">${isEditingBuiltin ? '내장 스킬을 수정하면 커스텀 오버라이드로 저장된다. "원본 복원"으로 되돌릴 수 있다.' : '광역 CC는 플러그인 공통 규칙으로 자동 보정된다. 즉 입력 계수는 단일CC 기준으로 넣고, 실제 적용은 1/2 계수 + 비용 2배다.'}</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(148,163,184,0.16);">
+        <div class="gb-section-title">스킬 JSON 가져오기 / 내보내기</div>
+        <div class="gb-sub">배열 <code>[...]</code> 또는 객체 <code>{"skills":[...]}</code> 둘 다 지원. 같은 ID는 덮어쓴다. 여러 스킬을 한번에 추가할 수 있다.</div>
+        <textarea class="gb-textarea short" id="gb-skill-json" placeholder='[{"id":"fireball","name":"파이어볼","grade":"C","category":"singleAttack","target":"singleEnemy","costs":{"mp":35},"coef":3.2,"statTypes":["int"],"damageType":"magic","element":"fire","desc":"화염 단일 공격"}]'></textarea>
+        <div class="gb-btn-row">
+          <button class="gb-btn" id="gb-skill-export-json">현재 스킬 내보내기</button>
+          <button class="gb-btn" id="gb-skill-import-json">JSON 가져오기</button>
+          <button class="gb-btn" id="gb-skill-copy-json">JSON 복사</button>
         </div>
       </div>
     `;
@@ -8980,6 +8715,40 @@ function readPartySlotsFromUI() {
     model.db.customSkills = [];
     model.state.selected.skills = '';
     await saveDb(); await saveState(); renderApp(); toast('커스텀 스킬 전체 삭제 완료');
+  }
+  function exportSkillsJsonText() {
+    return JSON.stringify({ skills: deepClone(model.db.customSkills || []) }, null, 2);
+  }
+  async function importSkillsJsonFromText(raw) {
+    const txt = String(raw || '').trim();
+    if (!txt) throw new Error('붙여넣은 JSON이 비어 있다.');
+    let parsed;
+    try { parsed = JSON.parse(txt); }
+    catch (e) { throw new Error('JSON 파싱 실패: ' + e.message); }
+    const rows = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.skills) ? parsed.skills : null);
+    if (!rows) throw new Error('형식이 맞지 않는다. 배열 [...] 또는 { "skills":[...] } 형식이어야 한다.');
+    if (!rows.length) throw new Error('가져올 스킬이 없다.');
+    let count = 0;
+    rows.forEach((row) => {
+      if (!row || typeof row !== 'object') return;
+      const item = deepClone(row);
+      if (!item.id) item.id = slugify(item.name || 'skill_' + count);
+      if (!item.name) return;
+      if (!item.grade) item.grade = 'E';
+      if (!item.category) item.category = 'singleAttack';
+      if (!item.target) item.target = 'singleEnemy';
+      if (!item.costs) item.costs = { mp:0, sp:0 };
+      if (item.coef == null) item.coef = 1.0;
+      if (!item.damageType) item.damageType = 'physical';
+      if (!item.element) item.element = 'none';
+      if (!item.statTypes) item.statTypes = ['str'];
+      if (!item.desc) item.desc = '';
+      upsertById(model.db.customSkills, item);
+      count += 1;
+    });
+    ensureSelections();
+    await saveDb(); await saveState(); renderApp();
+    toast(`스킬 ${count}개 가져오기 완료`);
   }
   
   async function saveMonsterFromForm() {
@@ -11023,6 +10792,23 @@ async function saveMaterialTraitFromForm() {
     on('#gb-skill-save', 'click', async () => { try { await saveSkillFromForm(); } catch (e) { toast(e.message || String(e), true); } });
     on('#gb-skill-delete', 'click', async () => { try { await deleteSelected('skills'); } catch (e) { toast(e.message || String(e), true); } });
     on('#gb-skill-clear-all', 'click', async () => { try { await clearAllCustomSkills(); } catch (e) { toast(e.message || String(e), true); } });
+    // 스킬 JSON 가져오기/내보내기
+    on('#gb-skill-export-json', 'click', async () => {
+      const el = model.root && model.root.querySelector('#gb-skill-json');
+      if (el) el.value = exportSkillsJsonText();
+      toast('스킬 JSON 내보내기 완료');
+    });
+    on('#gb-skill-import-json', 'click', async () => {
+      try { await importSkillsJsonFromText(fieldValue('#gb-skill-json')); }
+      catch (e) { toast(e.message || String(e), true); }
+    });
+    on('#gb-skill-copy-json', 'click', async () => {
+      try {
+        const text = fieldValue('#gb-skill-json') || exportSkillsJsonText();
+        await navigator.clipboard.writeText(text);
+        toast('스킬 JSON 복사 완료');
+      } catch (e) { toast('복사 실패', true); }
+    });
     // 내장 스킬 클릭 → 편집기로 불러오기
     on('[data-load-builtin-skill]', 'click', async (ev) => {
       const skillId = ev.currentTarget.getAttribute('data-load-builtin-skill');

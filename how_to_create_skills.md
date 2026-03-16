@@ -25,7 +25,7 @@
 | **이름** | 한글 스킬명 | `파이어볼`, `치유의 바람` |
 | **랭크** | E / D / C / B / A / S | `C` |
 | **카테고리** | 스킬 종류 (아래 표 참고) | `singleAttack` |
-| **대상** | 스킬 대상 | `singleEnemy` |
+| **대상** | 스킬 대상 (아래 대상 표 참고) | `singleEnemy` |
 | **계수** | 피해/회복 배율 (아래 기준표 참고) | `3.0` |
 | **MP 비용** | 마나 소모량 | `40` |
 | **SP 비용** | 스태미나 소모량 | `20` |
@@ -55,6 +55,25 @@
 | 광역힐 | `aoeHeal` | `allAllies` | 전체 아군 회복 |
 | 버프 | `buff` | `allAllies` / `self` | 스탯 증가 |
 | 유틸리티 | `utility` | 다양 | 자원 회복 등 |
+
+---
+
+## 3-1. 대상(Target) 종류
+
+| 대상 | 코드 | 설명 |
+|------|------|------|
+| 단일 적 | `singleEnemy` | 적 1체 |
+| 전체 적 | `allEnemies` | 모든 적 (광역) |
+| 전열 적 | `rowFront` | 전열(front) 적만 (반광역) |
+| 중열 적 | `rowMid` | 중열(mid) 적만 (반광역) |
+| 후열 적 | `rowBack` | 후열(back) 적만 (반광역) |
+| 전열+중열 | `rowFrontMid` | 전열+중열 적 (2열 공격) |
+| 중열+후열 | `rowMidBack` | 중열+후열 적 (2열 공격) |
+| 단일 아군 | `singleAlly` | 아군 1체 |
+| 전체 아군 | `allAllies` | 모든 아군 |
+| 자신 | `self` | 시전자 자신 |
+
+> 💡 **반광역/2열 공격**: 해당 열에 생존한 적이 없으면 전체 적을 대상으로 합니다.
 
 ---
 
@@ -210,9 +229,102 @@
 
 ## 10. 전체삭제
 
-**"스킬 전체삭제"** 버튼을 누르면 모든 커스텀 스킬이 삭제됩니다.  
-내장 스킬(BUILTIN_SKILLS 153종)은 삭제되지 않습니다.
+**"스킬 전체삭제"** 버튼을 누르면 모든 커스텀 스킬이 삭제됩니다.
 
 ---
 
-> 💡 **팁**: 내장 스킬을 참고해서 비슷한 구조로 만들면 실수를 줄일 수 있습니다.
+## 11. JSON으로 스킬 대량 추가
+
+플러그인의 스킬 편집기 아래쪽에 **스킬 JSON 가져오기 / 내보내기** 섹션이 있습니다.
+
+### 가져오기 (Import)
+
+1. JSON 텍스트를 텍스트 영역에 붙여넣기
+2. **"JSON 가져오기"** 버튼 클릭
+3. 같은 ID의 스킬이 있으면 덮어씀
+
+**지원 형식:**
+```json
+// 방법 1: 배열
+[
+  { "id": "fireball", "name": "파이어볼", "grade": "C", ... },
+  { "id": "iceSpear", "name": "아이스 스피어", "grade": "D", ... }
+]
+
+// 방법 2: 객체
+{
+  "skills": [
+    { "id": "fireball", "name": "파이어볼", "grade": "C", ... },
+    { "id": "iceSpear", "name": "아이스 스피어", "grade": "D", ... }
+  ]
+}
+```
+
+### 스킬 JSON 예시
+
+```json
+[
+  {
+    "id": "fireball",
+    "name": "파이어볼",
+    "grade": "C",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": { "mp": 35, "sp": 0 },
+    "coef": 3.2,
+    "statTypes": ["int"],
+    "damageType": "magic",
+    "element": "fire",
+    "desc": "C급 화염 단일 마법 공격."
+  },
+  {
+    "id": "frontSlash",
+    "name": "전열 참격",
+    "grade": "D",
+    "category": "singleAttack",
+    "target": "rowFront",
+    "costs": { "mp": 10, "sp": 25 },
+    "coef": 2.0,
+    "statTypes": ["str"],
+    "damageType": "physical",
+    "element": "none",
+    "desc": "전열 적 전체를 베는 반광역 공격."
+  },
+  {
+    "id": "aoeHealWind",
+    "name": "치유의 바람",
+    "grade": "D",
+    "category": "aoeHeal",
+    "target": "allAllies",
+    "costs": { "mp": 50, "sp": 0 },
+    "coef": 1.5,
+    "statTypes": ["int"],
+    "desc": "전체 아군 회복."
+  }
+]
+```
+
+### 필수 필드
+
+| 필드 | 필수 여부 | 기본값 |
+|------|:---------:|--------|
+| `id` | ⭕ (없으면 name에서 자동생성) | — |
+| `name` | ⭕ 필수 | — |
+| `grade` | ❌ | `E` |
+| `category` | ❌ | `singleAttack` |
+| `target` | ❌ | `singleEnemy` |
+| `costs` | ❌ | `{ mp:0, sp:0 }` |
+| `coef` | ❌ | `1.0` |
+| `damageType` | ❌ | `physical` |
+| `element` | ❌ | `none` |
+| `statTypes` | ❌ | `["str"]` |
+| `desc` | ❌ | `""` |
+
+### 내보내기 (Export)
+
+**"현재 스킬 내보내기"** 버튼을 누르면 현재 등록된 커스텀 스킬이 JSON으로 출력됩니다.
+이를 복사해서 다른 곳에 백업하거나 다른 사용자에게 공유할 수 있습니다.
+
+---
+
+> 💡 **팁**: `builtin_skills_export.json` 파일에 기존 153종 내장 스킬이 JSON으로 저장되어 있습니다. 이 파일을 복사해서 가져오기하면 내장 스킬을 복원할 수 있습니다.
