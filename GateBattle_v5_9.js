@@ -1545,7 +1545,7 @@ const RARE_FAMILY_PRESETS = {
       customSkills: [
         { id:'skill_guide', name:'⭐ 스킬가이드', grade:'E', category:'singleAttack', target:'singleEnemy',
           costs:{ mp:0, sp:0 }, coef:1.0, damageType:'physical', element:'none', statTypes:['str'], duration:0,
-          desc:'【스킬 만드는 법】\n1. "새 스킬" 클릭 → ID/이름 입력\n2. 카테고리: singleAttack(단일공격), aoeAttack(광역), singleCC(단일CC), aoeCC(광역CC), singleHeal(힐), aoeHeal(광역힐), buff(버프), utility(유틸)\n3. 대상 선택 시 계수 자동 입력=하한값 (수정 가능)\n4. 등급별 단일 계수 하한: E:1.2 / D:1.92 / C:2.88 / B:4.8 / A:7.68 / S:11.52\n5. 광역/열공격=단일×0.58\n6. 쿨타임(턴): 0=없음, 숫자 입력 시 사용 후 해당 턴 동안 재사용 불가\n7. JSON 가져오기로 여러 스킬 한번에 추가 가능\n\n이 스킬은 삭제해도 됩니다.' }
+          desc:'【스킬 만드는 법】\n1. "새 스킬" 클릭 → ID/이름 입력\n2. 각 항목을 설정 후 저장\n\n【카테고리 설명】\nsingleAttack = 단일 공격 (적 1체)\naoeAttack = 광역 공격 (전체 적)\nsingleCC = 단일 CC (적 1체 + 행동방해)\naoeCC = 광역 CC (전체 적 + 행동방해)\nsingleHeal = 단일 회복 (아군 1체)\naoeHeal = 광역 회복 (전체 아군)\nbuff = 버프 (자신/아군 강화)\nutility = 유틸리티 (자원/상태 관리)\n\n【대상 설명】\nsingleEnemy = 적 1체\nallEnemies = 전체 적 (광역)\nrowFront = 전열 적만 (전열 광역)\nrowMid = 중열 적만\nrowBack = 후열 적만\nrowFrontMid = 전열+중열 적\nrowMidBack = 중열+후열 적\nsingleAlly = 아군 1체\nallAllies = 전체 아군\nself = 자기 자신\n※ 열 공격: 해당 열이 비면 가장 앞 열의 적을 공격\n\n【CC 종류 설명】\nstun = 기절 (행동불가, 1턴, 이후 5턴 면역)\nbind = 속박 (이동불가)\nsleep = 수면 (행동불가, 피격 시 해제, 이후 5턴 면역)\nsilence = 침묵 (스킬 사용불가)\nslow = 둔화 (명중률-30%, 회피율-50%)\n※ CC 확률: 비우면 100%. 0~1 사이 소수로 입력 (예: 0.3=30%)\n\n【상태이상 설명】\npoison = 독 (매턴 지속피해, 최대 3중첩)\nbleed = 출혈 (지속피해 + 회복량 50% 감소)\nburn = 화상 (매턴 지속피해, 최대 5중첩)\ncurse = 저주 (받는 회복량 감소)\nsilence = 침묵 (스킬 사용불가)\nslow = 둔화 (명중/회피 감소)\n※ 상태이상 확률: 비우면 기본값 사용\n기본 확률: 독28%/출혈28%/화상28%/저주24%/침묵20%/둔화25%\n\n【등급별 계수 (단일 기준)】\n하한 → 상한\nE: 1.2 → 1.5\nD: 1.92 → 2.4\nC: 2.88 → 3.6\nB: 4.8 → 6.0\nA: 7.68 → 9.6\nS: 11.52 → 14.4\n광역/열공격 = 단일 × 0.58\n\n【데미지 공식】\n기본값 = (2 × 주스탯) + (3 × ATK)\n최종데미지 = 기본값 × 계수 × 크리배율 × 속성배율\n※ 크리티컬: ×1.5 / 속성유리: ×1.25 / 속성불리: ×0.75\n\n【상태이상 데미지 공식】\n독: 매턴 기본값 × 계수 × 0.2 × 중첩수 (최대3)\n화상: 매턴 기본값 × 계수 × 0.12 × 중첩수 (최대5)\n출혈: 해당 피해의 30% 추가피해 + 회복50%감소\n\n【E급 예시 (주스탯15, ATK5)】\n기본값 = (2×15)+(3×5) = 45\n단일공격 (계수1.35): 45×1.35 = 60.75\n광역공격 (계수0.78): 45×0.78 = 35.1\n\n상태이상 데미지 (계수1.35 기준):\n독 1중첩: 45×1.35×0.2 = 12.15/턴\n독 3중첩: 45×1.35×0.2×3 = 36.45/턴\n화상 1중첩: 45×1.35×0.12 = 7.29/턴\n화상 5중첩: 45×1.35×0.12×5 = 36.45/턴\n출혈: 60.75×0.3 = 18.23/턴 + 회복50%감소\n\n이 스킬은 삭제해도 됩니다.' }
       ],
       rareMaterialPack: deepClone(DEFAULT_RARE_MATERIAL_PACK),
       rareMaterialCatalog: [],
@@ -8273,17 +8273,19 @@ function renderCommandPanel(runtime) {
         duration: sk.duration || 0,
         ccType: (sk.cc && sk.cc.type) || '',
         ccTurns: (sk.cc && sk.cc.turns) || 1,
+        ccChance: (sk.cc && sk.cc.chance != null) ? sk.cc.chance : '',
         buffStat: (sk.buff && sk.buff.stats) ? Object.keys(sk.buff.stats)[0] || '' : '',
         buffValue: (sk.buff && sk.buff.stats) ? Object.values(sk.buff.stats)[0] || 0 : 0,
         statusType: (sk.status && sk.status.type) || '',
         statusTurns: (sk.status && sk.status.turns) || 2,
+        statusChance: (sk.status && sk.status.chance != null) ? sk.status.chance : '',
         cooldown: sk.cooldown || 0,
         desc: sk.desc || ''
       };
     } else {
       item = {
         id:'', name:'', grade:'E', category:'singleAttack', target:'singleEnemy', coef:1.0, mp:0, sp:0,
-        damageType:'physical', element:'none', statTypes:'str', duration:0, ccType:'', ccTurns:1, buffStat:'', buffValue:0, statusType:'', statusTurns:2, cooldown:0, desc:''
+        damageType:'physical', element:'none', statTypes:'str', duration:0, ccType:'', ccTurns:1, ccChance:'', buffStat:'', buffValue:0, statusType:'', statusTurns:2, statusChance:'', cooldown:0, desc:''
       };
     }
     const catLabels = { singleAttack:'단일공격', aoeAttack:'광역공격', singleCC:'단일CC', aoeCC:'광역CC', singleHeal:'힐', aoeHeal:'광역힐', buff:'버프', passive:'패시브', utility:'유틸' };
@@ -8359,10 +8361,12 @@ function renderCommandPanel(runtime) {
             <label>지속 턴<input class="gb-input" id="gb-skill-duration" type="number" value="${escapeHtml(item.duration)}" /></label>
             <label>CC 종류<select class="gb-input" id="gb-skill-cctype">${['','stun','bind','sleep','silence','slow'].map(v=>optionHtml(v,v||'(없음)',(item.ccType||'')===v)).join('')}</select></label>
             <label>CC 턴<input class="gb-input" id="gb-skill-ccturns" type="number" value="${escapeHtml(item.ccTurns)}" /></label>
+            <label>CC 확률(0~1)<input class="gb-input" id="gb-skill-ccchance" type="number" step="0.01" min="0" max="1" value="${escapeHtml(item.ccChance)}" placeholder="비우면 100%" /></label>
             <label>버프 스탯<select class="gb-input" id="gb-skill-buffstat">${['','str','con','int','agi','sense'].map(v=>optionHtml(v,v||'(없음)',(item.buffStat||'')===v)).join('')}</select></label>
             <label>버프 수치<input class="gb-input" id="gb-skill-buffvalue" type="number" value="${escapeHtml(item.buffValue)}" /></label>
             <label>상태이상<select class="gb-input" id="gb-skill-statustype">${['','poison','bleed','burn','curse','silence','slow'].map(v=>optionHtml(v,v||'(없음)',(item.statusType||'')===v)).join('')}</select></label>
             <label>상태이상 턴<input class="gb-input" id="gb-skill-statusturns" type="number" value="${escapeHtml(item.statusTurns)}" /></label>
+            <label>상태이상 확률(0~1)<input class="gb-input" id="gb-skill-statuschance" type="number" step="0.01" min="0" max="1" value="${escapeHtml(item.statusChance)}" placeholder="비우면 기본값" /></label>
             <label>쿨타임(턴)<input class="gb-input" id="gb-skill-cooldown" type="number" value="${escapeHtml(item.cooldown)}" placeholder="0=없음" /></label>
           </div>
           <label>설명<textarea class="gb-textarea short" id="gb-skill-desc">${escapeHtml(item.desc || '')}</textarea></label>
@@ -9126,8 +9130,18 @@ async function saveMaterialTraitFromForm() {
     const cooldownVal = Number(fieldValue('#gb-skill-cooldown') || 0);
     if (cooldownVal > 0) item.cooldown = cooldownVal;
     if (buffStat && buffValue) item.buff = { stats:{ [buffStat]: buffValue } };
-    if (ccType) item.cc = { type:ccType, turns:Number(fieldValue('#gb-skill-ccturns') || 1) };
-    if (statusType) item.status = { type:statusType, turns:Number(fieldValue('#gb-skill-statusturns') || 2) };
+    if (ccType) {
+      const ccObj = { type:ccType, turns:Number(fieldValue('#gb-skill-ccturns') || 1) };
+      const ccChanceVal = fieldValue('#gb-skill-ccchance').trim();
+      if (ccChanceVal !== '') ccObj.chance = Math.max(0, Math.min(1, Number(ccChanceVal)));
+      item.cc = ccObj;
+    }
+    if (statusType) {
+      const stObj = { type:statusType, turns:Number(fieldValue('#gb-skill-statusturns') || 2) };
+      const stChanceVal = fieldValue('#gb-skill-statuschance').trim();
+      if (stChanceVal !== '') stObj.chance = Math.max(0, Math.min(1, Number(stChanceVal)));
+      item.status = stObj;
+    }
     if (!item.name) throw new Error('스킬 이름이 비어 있다.');
     upsertById(model.db.customSkills, item);
     model.state.selected.skills = id;
