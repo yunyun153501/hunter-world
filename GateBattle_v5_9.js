@@ -20,7 +20,7 @@ try {
   // 등급별 주스탯 상한선
   const STAT_CAP_BY_RANK = { E:25, D:40, C:60, B:80, A:100, S:150 };
   const DAMAGE_ELEMENTS = ['none', 'water', 'fire', 'ice', 'earth', 'wind', 'electric', 'dark', 'light'];
-  const STATUS_KEYS = ['stun', 'bind', 'sleep', 'poison', 'bleed', 'burn', 'curse', 'silence', 'slow'];
+  const STATUS_KEYS = ['stun', 'bind', 'sleep', 'poison', 'bleed', 'burn', 'curse', 'silence'];
   const STATUS_DOT_KEYS = ['poison', 'bleed', 'burn'];
   const ELEMENT_CHAIN = ['dark', 'light', 'ice', 'fire', 'water', 'earth', 'wind', 'electric'];
 
@@ -922,8 +922,7 @@ const RARE_FAMILY_PRESETS = {
       '수면':'sleep', 'sleep':'sleep',
       '화상':'burn', 'burn':'burn',
       '저주':'curse', 'curse':'curse',
-      '침묵':'silence', 'silence':'silence',
-      '둔화':'slow', 'slow':'slow'
+      '침묵':'silence', 'silence':'silence'
     };
     return map[s] || '';
   }
@@ -1122,8 +1121,7 @@ const RARE_FAMILY_PRESETS = {
       bind:{ turns:2, chance:0.18, power:0 },
       sleep:{ turns:2, chance:0.16, power:0 },
       stun:{ turns:1, chance:0.16, power:0 },
-      silence:{ turns:3, chance:0.20, power:0 },
-      slow:{ turns:3, chance:0.20, power:0 }
+      silence:{ turns:3, chance:0.20, power:0 }
     };
     return Object.assign({ turns:2, chance:0.2, power:0 }, map[st] || {});
   }
@@ -1191,7 +1189,7 @@ const RARE_FAMILY_PRESETS = {
 
     // ─── §8 이사벨 헤이즈 ───
     holdTheLine: { id:'holdTheLine', name:'방어선 유지', grade:'D', category:'buff', target:'self', costs:{ mp:0, sp:40 }, duration:3, statTypes:['con'], buff:{ ccImmunity:true }, desc:'3턴 CC 완전 면역.' },
-    holyProvocation: { id:'holyProvocation', name:'신성한 도발', grade:'D', category:'buff', target:'singleEnemy', costs:{ mp:15, sp:15 }, duration:2, statTypes:['con'], buff:{ forcedTaunt:true }, cooldown:3, desc:'대상 1체를 2턴 강제 도발. 보스: 1턴.' },
+    holyProvocation: { id:'holyProvocation', name:'신성한 도발', grade:'D', category:'buff', target:'singleEnemy', costs:{ mp:15, sp:15 }, duration:2, statTypes:['con'], buff:{ forcedTaunt:true }, cooldown:3, desc:'대상 1체를 2턴 강제 도발. 해제 후 3턴 면역.' },
     divineProtection: { id:'divineProtection', name:'신의 보호', grade:'D', category:'singleHeal', target:'singleAlly', costs:{ mp:30, sp:0 }, coef:2.0, statTypes:['int'], desc:'치유 + 만HP 시 보호막 전환 (최대 HP 20%).' },
     holyLight: { id:'holyLight', name:'성스러운 빛', grade:'D', category:'singleAttack', target:'singleEnemy', costs:{ mp:30, sp:0 }, coef:1.92, statTypes:['int'], damageType:'magic', element:'light', desc:'빛 속성 단일 공격. 언데드/암흑 ×1.3.' },
     fragmentOfAthena: { id:'fragmentOfAthena', name:'아테나의 파편', grade:'D', rarity:'unique', category:'passive', statTypes:['con'], desc:'잠재/미발현. 진화 경로: Fragment → Successor → Avatar of Athena.' },
@@ -1326,7 +1324,7 @@ const RARE_FAMILY_PRESETS = {
     insight: { id:'insight', name:'통찰', grade:'S', category:'passive', statTypes:['sense'], passiveMods:{ evasionBonus:0.10 }, desc:'적 의도/궤적 선읽기 — 회피율 +10% 상시.' },
 
     // ─── 앨리스 크로프트 (A랭크 · 서포터 · 크로노스의 후계자) ───
-    slowTime: { id:'slowTime', name:'시간 감속', grade:'A', category:'aoeCC', target:'allEnemies', costs:{ mp:65, sp:0 }, duration:3, statTypes:['int'], damageType:'magic', element:'none', cc:{ type:'slow', turns:3 }, buff:{ stats:{ agi:-8 } }, desc:'적 AGI -8 / 아군 AGI +4, 3턴.' },
+    slowTime: { id:'slowTime', name:'시간 감속', grade:'A', category:'buff', target:'allEnemies', costs:{ mp:65, sp:0 }, duration:3, statTypes:['int'], damageType:'magic', element:'none', buff:{ stats:{ agi:-8 } }, desc:'적 전체 AGI -8 디버프 3턴. (아군 AGI +4는 hasteTime으로 별도 사용)' },
     hasteTime: { id:'hasteTime', name:'시간 가속', grade:'A', category:'buff', target:'allAllies', costs:{ mp:55, sp:0 }, duration:2, statTypes:['int'], buff:{ stats:{ agi:8 } }, desc:'전 아군 AGI +8, 2턴.' },
     temporalSense: { id:'temporalSense', name:'시간 감지', grade:'A', category:'passive', statTypes:['sense','int'], desc:'유사 시간 능력 탐지 및 분석적 교란.' },
     itemExtension: { id:'itemExtension', name:'소모품 연장', grade:'A', rarity:'unique', category:'passive', statTypes:['int'], passiveMods:{ itemDurationMul:1.20 }, desc:'소모품 효과 지속시간 +20%.' },
@@ -1386,7 +1384,7 @@ const RARE_FAMILY_PRESETS = {
 
     // ─── 채하윤 (前 E랭크 · 상태창 불신론자 부사령관) ───
     manaBullet: { id:'manaBullet', name:'마나 탄환', grade:'C', rarity:'rare', category:'singleAttack', target:'singleEnemy', costs:{ mp:20, sp:0 }, coef:3.0, statTypes:['int','agi'], damageType:'magic', element:'none', desc:'탄환 형태 변형 가능 (폭발/관통/추적).' },
-    piercingRound: { id:'piercingRound', name:'관통탄', grade:'C', rarity:'rare', category:'singleAttack', target:'singleEnemy', costs:{ mp:25, sp:0 }, coef:3.2, statTypes:['agi'], damageType:'physical', element:'none', passiveMods:{ defenseIgnore:0.30 }, desc:'방어 30% 무시.' },
+    piercingRound: { id:'piercingRound', name:'관통탄', grade:'C', rarity:'rare', category:'singleAttack', target:'singleEnemy', costs:{ mp:25, sp:0 }, coef:3.2, statTypes:['agi'], damageType:'physical', element:'none', passiveMods:{ bonusDamage:0.30 }, desc:'관통 효과로 최종 피해 +30%.' },
     explosiveRound: { id:'explosiveRound', name:'폭발탄', grade:'C', rarity:'rare', category:'aoeAttack', target:'allEnemies', costs:{ mp:30, sp:0 }, coef:1.8, statTypes:['int'], damageType:'magic', element:'none', desc:'소범위 폭발.' },
     homingRound: { id:'homingRound', name:'추적탄', grade:'C', rarity:'rare', category:'singleAttack', target:'singleEnemy', costs:{ mp:35, sp:0 }, coef:2.5, statTypes:['sense'], damageType:'magic', element:'none', desc:'회피 불가 (은신 대상 추적).' }
   };
@@ -4175,10 +4173,6 @@ function getBuffedStat(unit, statKey) {
     (unit.buffs || []).forEach(buff => {
       if (buff && buff.stats && buff.stats[statKey]) value += Number(buff.stats[statKey]);
     });
-    // 둔화: AGI 30% 감소
-    if (statKey === 'agi' && Number((unit.statuses && unit.statuses.slow) || 0) > 0) {
-      value = Math.floor(value * 0.7);
-    }
     return value;
   }
   const CURSE_PERCENT_BY_RANK = { E:0.10, D:0.12, C:0.15, B:0.20, A:0.25, S:0.30 };
@@ -4372,21 +4366,21 @@ function getBuffedStat(unit, statKey) {
     }
     const rawDamage = rawBase * coef * critMult * resistMult * elementMul * typeMul * incomingMul * outgoingMul * terrainMul;
     // 물리/마법 피해감소 공식: 피해감소율 = DEF / (DEF + 1.5 × rawDamage)
-    let effectiveDef = def;
-    // 패시브: 방어 무시 (관통탄 등)
-    if (skill && attacker.passiveMods && Number(attacker.passiveMods.defenseIgnore || 0) > 0) {
-      effectiveDef = Math.max(0, effectiveDef * (1 - attacker.passiveMods.defenseIgnore));
-    }
-    // 스킬별 방어 무시 (passiveMods가 스킬에 직접 있는 경우)
-    if (skill && skill.passiveMods && Number(skill.passiveMods.defenseIgnore || 0) > 0) {
-      effectiveDef = Math.max(0, effectiveDef * (1 - skill.passiveMods.defenseIgnore));
-    }
-    const defReduction = (effectiveDef > 0 && rawDamage > 0) ? effectiveDef / (effectiveDef + 1.5 * rawDamage) : 0;
+    const defReduction = (def > 0 && rawDamage > 0) ? def / (def + 1.5 * rawDamage) : 0;
     let afterStatDef = rawDamage * (1 - defReduction);
     // 패시브: 물리 피해 감소 (충격 감소 등)
     if (damageType === 'physical' && target.passiveMods && Number(target.passiveMods.physicalDmgReduce || 0) > 0) {
       afterStatDef *= (1 - target.passiveMods.physicalDmgReduce);
     }
+    // 보너스 피해 (관통탄 등 — 최종 피해에 곱연산)
+    let bonusMul = 1;
+    if (skill && skill.passiveMods && Number(skill.passiveMods.bonusDamage || 0) > 0) {
+      bonusMul += skill.passiveMods.bonusDamage;
+    }
+    if (attacker.passiveMods && Number(attacker.passiveMods.bonusDamage || 0) > 0) {
+      bonusMul += attacker.passiveMods.bonusDamage;
+    }
+    afterStatDef *= bonusMul;
     return Math.max(1, Math.round(afterStatDef));
   }
   function computeHeal(caster, skill) {
@@ -4505,6 +4499,10 @@ function getBuffedStat(unit, statKey) {
     if (turns <= 0 || !skill.buff) return [];
     const changed = [];
     targets.forEach(target => {
+      // 도발 면역 체크: tauntResistTimer > 0이면 강제 도발 무효
+      if (skill.buff.forcedTaunt && Number(target.statuses && target.statuses.tauntResistTimer || 0) > 0) {
+        return; // 면역 — 스킵
+      }
       target.buffs = target.buffs || [];
       const buffEntry = {
         sourceSkill:skill.id, name:skill.name, turns,
@@ -4530,6 +4528,11 @@ function getBuffedStat(unit, statKey) {
   function removeExpiredBuffEffects(unit, expired) {
     expired.forEach(buff => {
       if (buff.threatBonus) unit.threatBonus = Math.max(0, unit.threatBonus - Number(buff.threatBonus || 0));
+      // 도발 해제 시 3턴 면역 부여
+      if (buff.forcedTaunt) {
+        unit.statuses = unit.statuses || {};
+        unit.statuses.tauntResistTimer = 3;
+      }
     });
   }
   function applyCc(targets, skill, summary, sourceName, runtime) {
@@ -4691,9 +4694,6 @@ function getBuffedStat(unit, statKey) {
       if (kind === 'boss') t = Math.min(t, 1);
       else if (kind === 'elite') t = Math.min(t, 2);
       target.statuses.silence = Math.max(Number(target.statuses.silence || 0), t);
-    } else if (type === 'slow') {
-      // 둔화: AGI 30% 감소
-      target.statuses.slow = Math.max(Number(target.statuses.slow || 0), turns);
     }
     addRoundHighlight(summary, `${sourceName}의 ${skill?.name || '공격'} → ${target.name} ${type}`);
     pushBattleLog(runtime, `${sourceName} 사용: ${skill?.name || '공격'} → ${target.name} ${type}`);
@@ -5092,7 +5092,7 @@ function getBuffedStat(unit, statKey) {
       }
 
       // 상태이상 턴 감소
-      ['stun','bind','sleep','poison','bleed','burn','curse','silence','slow'].forEach(key => {
+      ['stun','bind','sleep','poison','bleed','burn','curse','silence'].forEach(key => {
         unit.statuses[key] = Math.max(0, Number(unit.statuses[key] || 0) - 1);
       });
       // 독/화상: 턴이 0이 되면 스택 초기화
@@ -5102,12 +5102,15 @@ function getBuffedStat(unit, statKey) {
       if (Number(unit.statuses.bleedHealReduction || 0) > 0) {
         unit.statuses.bleedHealReduction = Math.max(0, unit.statuses.bleedHealReduction - 1);
       }
-      // 기절/수면 저항 타이머 감소
+      // 기절/수면/도발 저항 타이머 감소
       if (Number(unit.statuses.stunResistTimer || 0) > 0) {
         unit.statuses.stunResistTimer = Math.max(0, unit.statuses.stunResistTimer - 1);
       }
       if (Number(unit.statuses.sleepResistTimer || 0) > 0) {
         unit.statuses.sleepResistTimer = Math.max(0, unit.statuses.sleepResistTimer - 1);
+      }
+      if (Number(unit.statuses.tauntResistTimer || 0) > 0) {
+        unit.statuses.tauntResistTimer = Math.max(0, unit.statuses.tauntResistTimer - 1);
       }
       Object.keys(unit.cooldowns || {}).forEach(key => {
         unit.cooldowns[key] = Math.max(0, Number(unit.cooldowns[key] || 0) - 1);
@@ -5171,7 +5174,7 @@ function getBuffedStat(unit, statKey) {
     partyAlive.forEach(u => {
       const buffs = (u.buffs || []).map(b => `${b.name}(${b.turns})`).join(', ');
       const states = [];
-      ['stun','bind','sleep','poison','bleed','burn','curse','silence','slow'].forEach(k => { if (u.statuses[k] > 0) states.push(`${k}:${u.statuses[k]}`); });
+      ['stun','bind','sleep','poison','bleed','burn','curse','silence'].forEach(k => { if (u.statuses[k] > 0) states.push(`${k}:${u.statuses[k]}`); });
       if (buffs) states.push(`buff:${buffs}`);
       lines.push(`- ${u.name} [${rowLabel(u.row)}]: HP ${u.hp}/${u.maxHp}, MP ${u.mp}/${u.maxMp}, SP ${u.sp}/${u.maxSp}${states.length ? ' ['+states.join(' | ')+']' : ''}`);
     });
