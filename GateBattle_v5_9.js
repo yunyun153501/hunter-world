@@ -1388,7 +1388,40 @@ const RARE_FAMILY_PRESETS = {
     manaBullet: { id:'manaBullet', name:'마나 탄환', grade:'C', rarity:'rare', category:'singleAttack', target:'singleEnemy', costs:{ mp:20, sp:0 }, coef:3.0, statTypes:['int','agi'], damageType:'magic', element:'none', desc:'탄환 형태 변형 가능 (폭발/관통/추적).' },
     piercingRound: { id:'piercingRound', name:'관통탄', grade:'C', rarity:'rare', category:'singleAttack', target:'singleEnemy', costs:{ mp:25, sp:0 }, coef:3.2, statTypes:['agi'], damageType:'physical', element:'none', passiveMods:{ bonusDamage:0.30 }, desc:'관통 효과로 최종 피해 +30%.' },
     explosiveRound: { id:'explosiveRound', name:'폭발탄', grade:'C', rarity:'rare', category:'aoeAttack', target:'allEnemies', costs:{ mp:30, sp:0 }, coef:1.8, statTypes:['int'], damageType:'magic', element:'none', desc:'소범위 폭발.' },
-    homingRound: { id:'homingRound', name:'추적탄', grade:'C', rarity:'rare', category:'singleAttack', target:'singleEnemy', costs:{ mp:35, sp:0 }, coef:2.5, statTypes:['sense'], damageType:'magic', element:'none', desc:'회피 불가 (은신 대상 추적).' }
+    homingRound: { id:'homingRound', name:'추적탄', grade:'C', rarity:'rare', category:'singleAttack', target:'singleEnemy', costs:{ mp:35, sp:0 }, coef:2.5, statTypes:['sense'], damageType:'magic', element:'none', desc:'회피 불가 (은신 대상 추적).' },
+
+    // ─── 리베아 (D랭크 · 잊혀진 신격) ───
+    manaDrain: { id:'manaDrain', name:'마나 드레인', grade:'D', category:'singleAttack', target:'singleEnemy', costs:{ mp:25, sp:0 }, coef:2.0, statTypes:['int'], damageType:'magic', element:'none', desc:'접촉 시 대상 마나 흡수. 과사용 시 자해 위험.' },
+    lordOfAdversity: { id:'lordOfAdversity', name:'역경의 군주', grade:'D', rarity:'unique', category:'singleCC', target:'singleEnemy', costs:{ mp:40, sp:0 }, coef:1.2, statTypes:['int'], damageType:'magic', element:'none', cc:{ type:'silence', turns:2 }, desc:'대상 스킬 일시 봉인(침묵). 강한 사용 시 반동.' },
+
+    // ─── 민채린 (B랭크 · 딜러/암살자 · Shadow Hunter) ───
+    shadowCloak: { id:'shadowCloak', name:'그림자 은폐', grade:'B', category:'buff', target:'self', costs:{ mp:30, sp:20 }, duration:3, statTypes:['agi'], buff:{ stats:{ agi:8 } }, desc:'어둠 속 존재감 제거. AGI +8, 3턴.' },
+    shadowStrike: { id:'shadowStrike', name:'그림자 기습', grade:'B', category:'singleAttack', target:'singleEnemy', costs:{ mp:25, sp:35 }, coef:5.5, statTypes:['agi'], damageType:'physical', element:'dark', desc:'그림자를 통한 순간 기습. 후열 공격 가능.' },
+    twinDaggerSlash: { id:'twinDaggerSlash', name:'쌍검 난무', grade:'B', category:'singleAttack', target:'singleEnemy', costs:{ mp:0, sp:45 }, coef:5.0, statTypes:['agi','sense'], damageType:'physical', element:'none', desc:'쌍 단검 연속 공격.' },
+
+    // ─── 유선화 (A랭크 · 회피형 격투가) ───
+    quickStep: { id:'quickStep', name:'퀵 스텝', grade:'A', rarity:'rare', category:'buff', target:'self', costs:{ mp:20, sp:35 }, duration:2, statTypes:['agi'], buff:{ stats:{ agi:10 } }, desc:'고속 이동. AGI +10, 2턴.' },
+    counterStance: { id:'counterStance', name:'카운터', grade:'A', rarity:'rare', category:'utility', target:'self', costs:{ mp:0, sp:30 }, statTypes:['agi','sense'], buff:{ parryStance:true, parryCoef:3.5 }, desc:'회피/패리 성공 후 반격. 계수 3.5.' },
+    risingSpirit: { id:'risingSpirit', name:'투지 상승', grade:'A', rarity:'rare', category:'buff', target:'self', costs:{ mp:40, sp:30 }, duration:3, statTypes:['str','agi'], buff:{ stats:{ str:10, agi:8 } }, desc:'전투 의지 고양. STR +10, AGI +8, 3턴.' },
+
+    // ─── 주아람 (B랭크 · 전략가) ───
+    redThread: { id:'redThread', name:'홍선', grade:'B', rarity:'unique', category:'buff', target:'allAllies', costs:{ mp:50, sp:0 }, duration:5, statTypes:['sense'], buff:{ stats:{ sense:4 } }, desc:'최대 5명에 투명한 실 연결. 위치·상태 감지. SENSE +4, 5턴.' },
+    tacticalCommand: { id:'tacticalCommand', name:'전술 지시', grade:'B', category:'buff', target:'allAllies', costs:{ mp:35, sp:0 }, duration:2, statTypes:['int','sense'], buff:{ stats:{ agi:4, sense:4 } }, desc:'전술 지시. 전 아군 AGI +4, SENSE +4, 2턴.' },
+
+    // ─── 진소희 (A랭크 · 딜러/서포터 · 퇴마사) ───
+    exorcismExplosion: { id:'exorcismExplosion', name:'폭파부', grade:'A', rarity:'unique', category:'singleAttack', target:'singleEnemy', costs:{ mp:55, sp:0 }, coef:8.0, statTypes:['int'], damageType:'magic', element:'light', desc:'퇴마부: 폭파부. 집중 마법 폭발.' },
+    exorcismLightning: { id:'exorcismLightning', name:'전격부', grade:'A', rarity:'unique', category:'singleAttack', target:'singleEnemy', costs:{ mp:45, sp:0 }, coef:7.68, statTypes:['int'], damageType:'magic', element:'electric', desc:'퇴마부: 전격부. 신속 전격.' },
+    exorcismBinding: { id:'exorcismBinding', name:'속박부', grade:'A', rarity:'unique', category:'singleCC', target:'singleEnemy', costs:{ mp:50, sp:0 }, coef:4.0, statTypes:['int'], damageType:'magic', element:'none', cc:{ type:'bind', turns:2 }, desc:'퇴마부: 속박부. 단기 속박 사슬.' },
+    exorcismBarrier: { id:'exorcismBarrier', name:'결계부', grade:'A', rarity:'unique', category:'buff', target:'singleAlly', costs:{ mp:45, sp:0 }, duration:2, statTypes:['int'], buff:{ stats:{ con:8 } }, desc:'퇴마부: 결계부. 단기 방어 결계. CON +8, 2턴.' },
+
+    // ─── 최태준 (A랭크 · 커맨더) ───
+    commandOrder: { id:'commandOrder', name:'전술 명령', grade:'A', category:'buff', target:'allAllies', costs:{ mp:50, sp:0 }, duration:2, statTypes:['int','sense'], buff:{ stats:{ str:6, agi:6, con:4 } }, desc:'전술 명령. 전 아군 STR +6, AGI +6, CON +4, 2턴.' },
+    infoLink: { id:'infoLink', name:'정보 공유', grade:'A', rarity:'unique', category:'buff', target:'allAllies', costs:{ mp:40, sp:0 }, duration:3, statTypes:['int','sense'], buff:{ stats:{ sense:8 } }, desc:'정보 흐름 공유. 전 아군 SENSE +8, 3턴.' },
+    repositioning: { id:'repositioning', name:'재배치', grade:'A', category:'utility', target:'singleAlly', costs:{ mp:30, sp:0 }, statTypes:['sense'], desc:'포지셔닝 컨트롤. 대상 아군 전열 변경.' },
+
+    // ─── 최태현 (B랭크 · 근접 딜러) ───
+    soulHold: { id:'soulHold', name:'소울 홀드', grade:'B', rarity:'unique', category:'singleAttack', target:'singleEnemy', costs:{ mp:30, sp:30 }, coef:5.0, statTypes:['str','agi'], damageType:'physical', element:'none', desc:'첫 타격 시 대상 스탯 10~20% 탈취, 숨 참는 동안 지속.' },
+    blackThornSlash: { id:'blackThornSlash', name:'검은 가시 참격', grade:'B', category:'singleAttack', target:'singleEnemy', costs:{ mp:0, sp:40 }, coef:5.5, statTypes:['str','agi'], damageType:'physical', element:'none', desc:'검은 가시 롱소드의 긴 리치 활용 참격.' }
   };
 
   function buildSampleCharacters() {
@@ -1492,11 +1525,11 @@ const RARE_FAMILY_PRESETS = {
         note:'비전투 대장장이' },
 
       // §16 한아람 — E랭크 비전투/전열보조 짐꾼 Lv.4
-      { id:'char_aram', name:'한아람', job:'무직업', position:'비전투', row:'front', rank:'E', level:4,
+      { id:'char_aram', name:'한아람', job:'무직업', position:'근거리물리', row:'front', rank:'E', level:4,
         stats:{ str:14, con:13, int:3, agi:11, sense:10 },
         damageType:'physical', attackStat:'str',
-        skills:['hiddenMight','cargoSupport','emergencyDodge'],
-        note:'비전투 포터/전열 보조' },
+        skills:['fistStrike','hiddenMight','cargoSupport','emergencyDodge'],
+        note:'Melee Dealer/Porter · 신체강화형' },
 
       // ═══════════════════════════════════════════════════════════
       //  부록 A: 고랭크 NPC
@@ -1637,7 +1670,58 @@ const RARE_FAMILY_PRESETS = {
         stats:{ str:15, con:20, int:48, agi:45, sense:35 },
         damageType:'magic', attackStat:'int',
         skills:['manaBullet','piercingRound','explosiveRound','homingRound'],
-        note:'前 E랭크 · 상태창 불신론자 부사령관 · 마나 탄환' }
+        note:'前 E랭크 · 상태창 불신론자 부사령관 · 마나 탄환' },
+
+      // ─── 추가 캐릭터: 로어북 누락 7명 ───
+
+      // 리베아 — D랭크 · 잊혀진 신격 (Hidden)
+      { id:'char_rivea', name:'리베아', job:'잊혀진 신격', position:'원거리마법', row:'back', rank:'D', level:20,
+        stats:{ str:5, con:12, int:30, agi:10, sense:18 },
+        damageType:'magic', attackStat:'int',
+        skills:['manaDrain','lordOfAdversity'],
+        note:'공식 D랭크 / 실제 불명 · Forgotten Divinity (Hidden)' },
+
+      // 민채린 — B랭크 · Shadow Hunter
+      { id:'char_chaerin', name:'민채린', job:'Shadow Hunter', position:'근거리물리', row:'mid', rank:'B', level:42,
+        stats:{ str:30, con:25, int:12, agi:68, sense:48 },
+        damageType:'physical', attackStat:'agi',
+        skills:['shadowCloak','shadowStrike','twinDaggerSlash'],
+        note:'딜러/암살자 · 어둠 은신, 쌍 단검' },
+
+      // 유선화 — A랭크 · 회피형 격투가
+      { id:'char_sunhwa', name:'유선화', job:'격투가', position:'전열딜러', row:'front', rank:'A', level:62,
+        stats:{ str:55, con:40, int:10, agi:82, sense:45 },
+        damageType:'physical', attackStat:'agi',
+        skills:['quickStep','counterStance','risingSpirit'],
+        note:'Tank/Dealer 하이브리드 · 회피형 · Talos의 의지(Unique 건틀릿)' },
+
+      // 주아람 — B랭크 · 전략가/후방 코디네이터
+      { id:'char_ahram', name:'주아람', job:'무직업', position:'후열서포터', row:'back', rank:'B', level:40,
+        stats:{ str:15, con:22, int:55, agi:20, sense:60 },
+        damageType:'magic', attackStat:'sense',
+        skills:['redThread','tacticalCommand'],
+        note:'전략가 · 홍선(Unique) · 5명 위치/상태 감지' },
+
+      // 진소희 — A랭크 · 딜러/서포터 · 퇴마사
+      { id:'char_sohee', name:'진소희', job:'무직업', position:'원거리마법', row:'back', rank:'A', level:60,
+        stats:{ str:12, con:30, int:80, agi:22, sense:55 },
+        damageType:'magic', attackStat:'int',
+        skills:['exorcismExplosion','exorcismLightning','exorcismBinding','exorcismBarrier'],
+        note:'퇴마부(Unique) — 폭파/전격/속박/결계 4종' },
+
+      // 최태준 — A랭크 · 커맨더
+      { id:'char_taejoon', name:'최태준', job:'커맨더', position:'후열서포터', row:'back', rank:'A', level:58,
+        stats:{ str:25, con:35, int:60, agi:30, sense:70 },
+        damageType:'magic', attackStat:'int',
+        skills:['commandOrder','infoLink','repositioning'],
+        note:'전략/커맨더 · Dimension Ring(Unique, 단일 텔레포트 6h쿨)' },
+
+      // 최태현 — B랭크 · 근접 딜러
+      { id:'char_taehyun', name:'최태현', job:'무직업', position:'근거리물리', row:'front', rank:'B', level:45,
+        stats:{ str:55, con:35, int:8, agi:52, sense:28 },
+        damageType:'physical', attackStat:'str',
+        skills:['soulHold','blackThornSlash'],
+        note:'소울 홀드(Unique) · 검은 가시 롱소드(Rare)' }
     ];
   }
   function buildSampleMonsters() {
