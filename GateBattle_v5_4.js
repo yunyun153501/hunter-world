@@ -1147,7 +1147,12 @@ const RARE_FAMILY_PRESETS = {
     blessingOfLight: { id:'blessingOfLight', name:'빛의 축복', grade:'D', category:'buff', target:'allAllies', costs:{ mp:25, sp:0 }, duration:3, statTypes:['int','sense'], buff:{ stats:{ int:4 } }, desc:'3턴 동안 전 아군 INT +4.' },
     powerShot: { id:'powerShot', name:'파워샷', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:20, sp:20 }, coef:1.5, statTypes:['agi'], damageType:'physical', element:'none', desc:'집중 화살. 단일 고계수.' },
     quickShot: { id:'quickShot', name:'퀵샷', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:0, sp:15 }, coef:1.2, statTypes:['agi'], damageType:'physical', element:'none', desc:'저비용 단일 공격.' },
-    fullArrowRecovery: { id:'fullArrowRecovery', name:'Full Arrow Recovery', grade:'E', rarity:'rare', category:'utility', target:'self', costs:{ mp:30, sp:0 }, statTypes:['agi'], resourceRestore:{ sp:25 }, desc:'SP 25 회복.' },
+    fullArrowRecovery: {
+      id:'fullArrowRecovery', name:'전탄회수', grade:'E', rarity:'rare', category:'aoeAttack', target:'allEnemies',
+      statTypes:['agi'], damageType:'physical', element:'none', resourceRestore:{ sp:25 },
+      byRank:{ E:{ coef:0.875, costs:{ mp:40, sp:0 } }, D:{ coef:1.4, costs:{ mp:50, sp:0 } }, C:{ coef:2.1, costs:{ mp:60, sp:0 } }, B:{ coef:3.5, costs:{ mp:70, sp:0 } }, A:{ coef:5.6, costs:{ mp:80, sp:0 } }, S:{ coef:8.4, costs:{ mp:100, sp:0 } } },
+      desc:'성장형 전탄회수. 화살 회수 + 전체 적 광역 피해. SP 25 회복.'
+    },
     tripleShot: {
       id:'tripleShot', name:'트리플샷', grade:'E', rarity:'rare', category:'singleAttack', target:'singleEnemy',
       statTypes:['agi'], damageType:'physical', element:'none',
