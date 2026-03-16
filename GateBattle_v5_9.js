@@ -1317,7 +1317,7 @@ const RARE_FAMILY_PRESETS = {
 
     // ─── 박준호 (S랭크 · 탱커 · 적호) ───
     byeokryeokjang: { id:'byeokryeokjang', name:'벽력장', grade:'S', category:'buff', target:'self', costs:{ mp:80, sp:60 }, duration:5, statTypes:['con','str'], buff:{ stats:{ pdef:20, mdef:15 }, onContactStun:{ chance:0.25, turns:1 } }, desc:'번개 갑주. P.DEF +20, M.DEF +15, 접촉 stun 25% 1턴, 5턴.' },
-    uraegyeok: { id:'uraegyeok', name:'우레격', grade:'S', category:'aoeCC', target:'allEnemies', costs:{ mp:100, sp:80 }, coef:9.0, statTypes:['con','str'], damageType:'physical', element:'lightning', cc:{ type:'stun', turns:1, chance:0.20 }, cooldown:8, desc:'광역 stun 20% 1턴. 쿨 8턴.' },
+    uraegyeok: { id:'uraegyeok', name:'우레격', grade:'S', category:'aoeCC', target:'allEnemies', costs:{ mp:100, sp:80 }, coef:9.0, statTypes:['con','str'], damageType:'physical', element:'electric', cc:{ type:'stun', turns:1, chance:0.20 }, cooldown:8, desc:'광역 stun 20% 1턴. 쿨 8턴.' },
 
     // ─── 하월영 (S랭크 · 탱커(?) · 무소속) ───
     shunpo: { id:'shunpo', name:'순보', grade:'S', rarity:'rare', category:'utility', target:'self', costs:{ mp:0, sp:40 }, statTypes:['agi'], desc:'초고속 이동.' },

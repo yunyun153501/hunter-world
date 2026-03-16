@@ -2123,7 +2123,7 @@
       "str"
     ],
     "damageType": "physical",
-    "element": "lightning",
+    "element": "electric",
     "cc": {
       "type": "stun",
       "turns": 1,
