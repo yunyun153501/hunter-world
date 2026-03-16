@@ -189,10 +189,10 @@
       "name": "파동",
       "category": "aoeCC",
       "target": "allEnemies",
-      "baseCoef": 0.875,
-      "baseCosts": { "mp": 20, "sp": 20 },
+      "baseCoef": 0.4375,
+      "baseCosts": { "mp": 40, "sp": 40 },
       "cc": { "type": "stun", "turns": 1 },
-      "desc": "광역 CC. baseCoef는 단일CC 기준값이며, 실제 적용 시 자동보정: 계수½→0.4375, 비용2배→MP40/SP40"
+      "desc": "광역 CC. 계수와 비용은 최종값을 직접 입력 (단일CC 대비 계수½, 비용2배 적용 후 수치)"
     },
     {
       "id": "heal",
