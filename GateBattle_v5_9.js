@@ -1545,7 +1545,7 @@ const RARE_FAMILY_PRESETS = {
       customSkills: [
         { id:'skill_guide', name:'⭐ 스킬가이드', grade:'E', category:'singleAttack', target:'singleEnemy',
           costs:{ mp:0, sp:0 }, coef:1.0, damageType:'physical', element:'none', statTypes:['str'], duration:0,
-          desc:'【스킬 만드는 법】\n1. "새 스킬" 클릭 → ID/이름 입력\n2. 카테고리: singleAttack(단일공격), aoeAttack(광역), singleCC(단일CC), aoeCC(광역CC), singleHeal(힐), aoeHeal(광역힐), buff(버프), utility(유틸)\n3. 대상 선택 시 계수 자동 입력 (수정 가능)\n4. 등급별 계수 기준: E:1.35 / D:2.16 / C:3.24 / B:5.4 / A:8.64 / S:12.96\n5. 광역=단일×0.58, 반광역(열)=단일×0.75\n6. JSON 가져오기로 여러 스킬 한번에 추가 가능\n\n이 스킬은 삭제해도 됩니다.' }
+          desc:'【스킬 만드는 법】\n1. "새 스킬" 클릭 → ID/이름 입력\n2. 카테고리: singleAttack(단일공격), aoeAttack(광역), singleCC(단일CC), aoeCC(광역CC), singleHeal(힐), aoeHeal(광역힐), buff(버프), utility(유틸)\n3. 대상 선택 시 계수 자동 입력=하한값 (수정 가능)\n4. 등급별 단일 계수 하한: E:1.2 / D:1.92 / C:2.88 / B:4.8 / A:7.68 / S:11.52\n5. 광역=단일×0.58, 반광역(열)=단일×0.75\n6. 쿨타임(턴): 0=없음, 숫자 입력 시 사용 후 해당 턴 동안 재사용 불가\n7. JSON 가져오기로 여러 스킬 한번에 추가 가능\n\n이 스킬은 삭제해도 됩니다.' }
       ],
       rareMaterialPack: deepClone(DEFAULT_RARE_MATERIAL_PACK),
       rareMaterialCatalog: [],
@@ -8235,12 +8235,13 @@ function renderCommandPanel(runtime) {
         buffValue: (sk.buff && sk.buff.stats) ? Object.values(sk.buff.stats)[0] || 0 : 0,
         statusType: (sk.status && sk.status.type) || '',
         statusTurns: (sk.status && sk.status.turns) || 2,
+        cooldown: sk.cooldown || 0,
         desc: sk.desc || ''
       };
     } else {
       item = {
         id:'', name:'', grade:'E', category:'singleAttack', target:'singleEnemy', coef:1.0, mp:0, sp:0,
-        damageType:'physical', element:'none', statTypes:'str', duration:0, ccType:'', ccTurns:1, buffStat:'', buffValue:0, statusType:'', statusTurns:2, desc:''
+        damageType:'physical', element:'none', statTypes:'str', duration:0, ccType:'', ccTurns:1, buffStat:'', buffValue:0, statusType:'', statusTurns:2, cooldown:0, desc:''
       };
     }
     const catLabels = { singleAttack:'단일공격', aoeAttack:'광역공격', singleCC:'단일CC', aoeCC:'광역CC', singleHeal:'힐', aoeHeal:'광역힐', buff:'버프', passive:'패시브', utility:'유틸' };
@@ -8279,6 +8280,7 @@ function renderCommandPanel(runtime) {
       if (sk.resourceRestore) extras.push('회복:' + Object.entries(sk.resourceRestore).map(([k,v])=>k.toUpperCase()+'+'+v).join(','));
       if (sk.passiveBonuses) extras.push('패시브:' + Object.entries(sk.passiveBonuses).map(([s,n])=>s.toUpperCase()+'+'+n).join(','));
       if (sk.statTypes) extras.push('스탯:' + (Array.isArray(sk.statTypes) ? sk.statTypes : [sk.statTypes]).join('/'));
+      if (sk.cooldown) extras.push('쿨타임:' + sk.cooldown + '턴');
       const extraStr = extras.join(' · ');
       return `<div class="gb-skill-row" data-load-builtin-skill="${escapeHtml(sk.id)}" style="padding:6px 0;border-bottom:1px solid rgba(148,163,184,0.1);cursor:pointer;" title="클릭하면 편집기로 불러옵니다">
         <div><strong>${escapeHtml(sk.name)}</strong> <span class="gb-badge">${escapeHtml(grade)}</span>${rarity} <span class="gb-badge">${escapeHtml(cat)}</span> <span class="gb-badge">${escapeHtml(sk.id)}</span>${overrideBadge}</div>
@@ -8319,6 +8321,7 @@ function renderCommandPanel(runtime) {
             <label>버프 수치<input class="gb-input" id="gb-skill-buffvalue" type="number" value="${escapeHtml(item.buffValue)}" /></label>
             <label>상태이상<select class="gb-input" id="gb-skill-statustype">${['','poison','bleed','burn','curse','silence','slow'].map(v=>optionHtml(v,v||'(없음)',(item.statusType||'')===v)).join('')}</select></label>
             <label>상태이상 턴<input class="gb-input" id="gb-skill-statusturns" type="number" value="${escapeHtml(item.statusTurns)}" /></label>
+            <label>쿨타임(턴)<input class="gb-input" id="gb-skill-cooldown" type="number" value="${escapeHtml(item.cooldown)}" placeholder="0=없음" /></label>
           </div>
           <label>설명<textarea class="gb-textarea short" id="gb-skill-desc">${escapeHtml(item.desc || '')}</textarea></label>
           <div class="gb-btn-row"><button class="gb-btn primary" id="gb-skill-save">저장</button>${isEditingBuiltin ? '<button class="gb-btn" id="gb-skill-restore" style="background:#ef4444;color:#fff;">원본 복원</button>' : '<button class="gb-btn" id="gb-skill-delete">삭제</button>'}</div>
@@ -9078,6 +9081,8 @@ async function saveMaterialTraitFromForm() {
       duration:Number(fieldValue('#gb-skill-duration') || 0),
       desc:fieldValue('#gb-skill-desc')
     };
+    const cooldownVal = Number(fieldValue('#gb-skill-cooldown') || 0);
+    if (cooldownVal > 0) item.cooldown = cooldownVal;
     if (buffStat && buffValue) item.buff = { stats:{ [buffStat]: buffValue } };
     if (ccType) item.cc = { type:ccType, turns:Number(fieldValue('#gb-skill-ccturns') || 1) };
     if (statusType) item.status = { type:statusType, turns:Number(fieldValue('#gb-skill-statusturns') || 2) };
@@ -10807,8 +10812,8 @@ async function saveMaterialTraitFromForm() {
     on('#gb-skill-target', 'change', () => {
       const grade = fieldValue('#gb-skill-grade') || 'E';
       const target = fieldValue('#gb-skill-target') || 'singleEnemy';
-      const singleCoefs = { E:1.35, D:2.16, C:3.24, B:5.4, A:8.64, S:12.96 };
-      const baseCoef = singleCoefs[grade] || 1.35;
+      const singleCoefs = { E:1.2, D:1.92, C:2.88, B:4.8, A:7.68, S:11.52 };
+      const baseCoef = singleCoefs[grade] || 1.2;
       let coef = baseCoef;
       if (target === 'allEnemies' || target === 'allAllies') coef = Math.round(baseCoef * 0.58 * 1000) / 1000;
       else if (target.startsWith('row')) coef = Math.round(baseCoef * 0.75 * 1000) / 1000;
@@ -10818,8 +10823,8 @@ async function saveMaterialTraitFromForm() {
     on('#gb-skill-grade', 'change', () => {
       const grade = fieldValue('#gb-skill-grade') || 'E';
       const target = fieldValue('#gb-skill-target') || 'singleEnemy';
-      const singleCoefs = { E:1.35, D:2.16, C:3.24, B:5.4, A:8.64, S:12.96 };
-      const baseCoef = singleCoefs[grade] || 1.35;
+      const singleCoefs = { E:1.2, D:1.92, C:2.88, B:4.8, A:7.68, S:11.52 };
+      const baseCoef = singleCoefs[grade] || 1.2;
       let coef = baseCoef;
       if (target === 'allEnemies' || target === 'allAllies') coef = Math.round(baseCoef * 0.58 * 1000) / 1000;
       else if (target.startsWith('row')) coef = Math.round(baseCoef * 0.75 * 1000) / 1000;
