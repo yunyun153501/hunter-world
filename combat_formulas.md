@@ -86,7 +86,7 @@ rawBase = monsterBaseDamage × (스킬 사용 시 monsterSkillMul, 기본공격 
 
 ```
 1. rank + kind → MONSTER_COMBAT_TABLE에서 범위 선택
-2. hash seed = "id|rank|kind|position|row" → 0~1 사이 결정론적 값(t) 생성
+2. hash seed = "id|rank|kind|position|row" → FNV-1a 해시로 0~1 사이 결정론적 값(t) 생성
 3. 열(row)에 따른 보정:
    - front: HP +12%, DMG +8%
    - mid:   HP +3%,  DMG +2%
@@ -109,7 +109,7 @@ rawBase = monsterBaseDamage × (스킬 사용 시 monsterSkillMul, 기본공격 
 | A (4) | 0 | 70 | 90 | 30 |
 | S (5) | 0 | 90 | 120 | 40 |
 
-> 마법 스킬이 있는 물리형 몬스터는 기본 MP의 25% 확보
+> 마법 스킬이 있는 물리형 몬스터는 기본 MP의 25% 확보 (판정: skills 중 damageType='magic' 또는 statTypes에 'int' 포함 또는 category에 'heal'/'buff' 포함)
 > 마법형 몬스터 중 물리 스킬 없으면 SP 70%만 확보
 
 #### 몬스터 공격 예시
