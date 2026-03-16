@@ -963,8 +963,8 @@ const RARE_FAMILY_PRESETS = {
   function inferRow(position, job) {
     const t = ((position || '') + ' ' + (job || '')).toLowerCase();
     if (t.includes('탱커') || t.includes('근거리')) return 'front';
-    if (t.includes('원거리물리') || t.includes('궁수') || t.includes('투척')) return 'mid';
-    if (t.includes('힐러') || t.includes('서포터') || t.includes('마법') || t.includes('법사') || t.includes('정령') || t.includes('소환')) return 'back';
+    if (t.includes('투척')) return 'mid';
+    if (t.includes('원거리') || t.includes('궁수') || t.includes('힐러') || t.includes('서포터') || t.includes('마법') || t.includes('법사') || t.includes('정령') || t.includes('소환')) return 'back';
     return 'mid';
   }
   function inferThreatBase(position, row) {
@@ -1531,12 +1531,22 @@ const RARE_FAMILY_PRESETS = {
   function buildDefaultDb() {
     return {
       inventory: buildDefaultInventory(),
-      characters: [],
+      characters: [
+        { id:'char_guide', name:'⭐ 캐릭터 가이드', job:'무직업', position:'전열탱커', row:'front', rank:'E', level:1,
+          stats:{ str:10, con:10, int:10, agi:10, sense:10 },
+          hp:100, mp:100, sp:100, atk:0, pdef:0, mdef:0,
+          damageType:'physical', attackStat:'str', skills:[],
+          note:'【캐릭터 만드는 법】\n1. "새 캐릭터" 클릭 → ID/이름/직업/포지션 입력\n2. 스탯 최소값=10. 모든 스탯 10일 때 HP=MP=SP=100\n3. HP=100+(CON-10)×10+(STR-10)×3\n4. MP=100+(INT-10)×10+(SEN-10)×3\n5. SP=100+(AGI-10)×10+(SEN-10)×3\n6. ATK/물방/마방은 기본 0 (장비·스킬로 증가)\n7. HP/MP/SP를 0으로 두면 스탯 기반 자동 계산\n8. 전열: front(탱커/근접) / mid(투척) / back(원거리/궁수/마법/힐러)\n9. 등급별 스탯합 기준: E:~70 / D:70~90 / C:90~120 / B:120~160 / A:160~200 / S:200~\n\n이 캐릭터는 삭제해도 됩니다.' }
+      ],
       monsters: buildSampleMonsters(),
       personas: [
         { id:'persona_main', name:'기본 페르소나', text:'헌터 세계관용 기본 페르소나 메모.' }
       ],
-      customSkills: [],
+      customSkills: [
+        { id:'skill_guide', name:'⭐ 스킬가이드', grade:'E', category:'singleAttack', target:'singleEnemy',
+          costs:{ mp:0, sp:0 }, coef:1.0, damageType:'physical', element:'none', statTypes:['str'], duration:0,
+          desc:'【스킬 만드는 법】\n1. "새 스킬" 클릭 → ID/이름 입력\n2. 카테고리: singleAttack(단일공격), aoeAttack(광역), singleCC(단일CC), aoeCC(광역CC), singleHeal(힐), aoeHeal(광역힐), buff(버프), utility(유틸)\n3. 대상 선택 시 계수 자동 입력 (수정 가능)\n4. 등급별 계수 기준: E:1.35 / D:2.16 / C:3.24 / B:5.4 / A:8.64 / S:12.96\n5. 광역=단일×0.58, 반광역(열)=단일×0.75\n6. JSON 가져오기로 여러 스킬 한번에 추가 가능\n\n이 스킬은 삭제해도 됩니다.' }
+      ],
       rareMaterialPack: deepClone(DEFAULT_RARE_MATERIAL_PACK),
       rareMaterialCatalog: [],
       normalMaterialCatalog: [],
@@ -1719,9 +1729,9 @@ function buildDefaultState() {
     const monsterProfile = isMonster ? monsterProfileForEntry(entry) : null;
     // 몬스터: 개별 스탯 없음, HP/ATK만 프로필 테이블에서 가져옴
     const stats = isMonster ? { str:0, con:0, int:0, agi:0, sense:0 } : normaliseStats(entry.stats);
-    const baseHp = Number(isMonster ? monsterProfile.hp : (entry.hp || (100 + stats.con * 10 + stats.str * 3)));
-    const defaultMp = isMonster ? monsterProfile.mp : (100 + stats.int * 10 + stats.sense * 3);
-    const defaultSp = isMonster ? monsterProfile.sp : (100 + stats.agi * 10 + stats.sense * 3);
+    const baseHp = Number(isMonster ? monsterProfile.hp : (entry.hp || (100 + (stats.con - 10) * 10 + (stats.str - 10) * 3)));
+    const defaultMp = isMonster ? monsterProfile.mp : (100 + (stats.int - 10) * 10 + (stats.sense - 10) * 3);
+    const defaultSp = isMonster ? monsterProfile.sp : (100 + (stats.agi - 10) * 10 + (stats.sense - 10) * 3);
     const allSkillMap = getAllSkillMap();
     const hasMagicSkill = Array.isArray(entry.skills) && entry.skills.some(id => {
       const sk = allSkillMap[String(id || '').trim()];
@@ -1750,9 +1760,9 @@ function buildDefaultState() {
       mp: Number(entry.currentMp != null ? entry.currentMp : baseMp), maxMp: baseMp,
       sp: Number(entry.currentSp != null ? entry.currentSp : baseSp), maxSp: baseSp,
       // 몬스터: ATK = 프로필 damage, pdef/mdef = 0 (개별 스탯 없음)
-      atk: Number(isMonster ? monsterProfile.damage : (entry.atk != null ? entry.atk : Math.round(defaultAtkByRank(rank) + stats.str * 0.2 + stats.agi * 0.2 + stats.int * 0.3))),
-      pdef: Number(isMonster ? 0 : (entry.pdef != null ? entry.pdef : Math.floor(stats.con * 0.4))),
-      mdef: Number(isMonster ? 0 : (entry.mdef != null ? entry.mdef : Math.floor((stats.int + stats.sense) * 0.25))),
+      atk: Number(isMonster ? monsterProfile.damage : (entry.atk != null ? entry.atk : 0)),
+      pdef: Number(isMonster ? 0 : (entry.pdef != null ? entry.pdef : 0)),
+      mdef: Number(isMonster ? 0 : (entry.mdef != null ? entry.mdef : 0)),
       damageType: entry.damageType || inferDamageType(entry.position, entry.job),
       attackStat: entry.attackStat || inferAttackStat(entry.position, entry.job),
       skills: Array.isArray(entry.skills) ? entry.skills.slice() : [],
@@ -7843,7 +7853,7 @@ function renderCommandPanel(runtime) {
     ensureSelections();
     const item = deepClone(getCharById(model.state.selected.characters) || {
       id:'', name:'', job:'', position:'', row:'mid', rank:'E',
-      stats:{ str:5, con:5, int:5, agi:5, sense:5 }, hp:165, mp:165, sp:165, atk:9, pdef:3, mdef:3,
+      stats:{ str:10, con:10, int:10, agi:10, sense:10 }, hp:100, mp:100, sp:100, atk:0, pdef:0, mdef:0,
       damageType:'physical', attackStat:'str', skills:[], note:'',
       level:1, exp:0, totalExp:0
     });
@@ -7876,6 +7886,7 @@ function renderCommandPanel(runtime) {
             <label>기본 위협값<input class="gb-input" id="gb-char-threat" type="number" value="${escapeHtml(item.threatBase != null ? item.threatBase : inferThreatBase(item.position,item.row))}" /></label>
             <label>스킬 ID(쉼표구분)<input class="gb-input" id="gb-char-skills" value="${escapeHtml((item.skills||[]).join(', '))}" /></label>
           </div>
+          <div class="gb-sub" style="margin:6px 0;">💡 HP/MP/SP는 비워두면(0) 스탯 기준 자동 계산: HP=100+(CON-10)×10+(STR-10)×3, MP=100+(INT-10)×10+(SEN-10)×3, SP=100+(AGI-10)×10+(SEN-10)×3. ATK/물방/마방은 기본 0 (스킬·장비로만 증가).</div>
           <label>메모<textarea class="gb-textarea short" id="gb-char-note">${escapeHtml(item.note || '')}</textarea></label>
           <div style="margin-top:10px;border-top:1px solid rgba(148,163,184,0.2);padding-top:8px;">
             <div class="gb-section-title">📈 레벨 / 경험치 (DB 직접 수정)</div>
@@ -8302,11 +8313,11 @@ function renderCommandPanel(runtime) {
             <label>속성<select class="gb-input" id="gb-skill-element">${DAMAGE_ELEMENTS.map(v=>optionHtml(v,v,item.element===v)).join('')}</select></label>
             <label>스탯 타입(쉼표구분)<input class="gb-input" id="gb-skill-stattypes" value="${escapeHtml(item.statTypes)}" /></label>
             <label>지속 턴<input class="gb-input" id="gb-skill-duration" type="number" value="${escapeHtml(item.duration)}" /></label>
-            <label>CC 종류<input class="gb-input" id="gb-skill-cctype" value="${escapeHtml(item.ccType)}" placeholder="stun/bind/sleep" /></label>
+            <label>CC 종류<select class="gb-input" id="gb-skill-cctype">${['','stun','bind','sleep','silence','slow'].map(v=>optionHtml(v,v||'(없음)',(item.ccType||'')===v)).join('')}</select></label>
             <label>CC 턴<input class="gb-input" id="gb-skill-ccturns" type="number" value="${escapeHtml(item.ccTurns)}" /></label>
-            <label>버프 스탯<input class="gb-input" id="gb-skill-buffstat" value="${escapeHtml(item.buffStat)}" placeholder="agi/int/str..." /></label>
+            <label>버프 스탯<select class="gb-input" id="gb-skill-buffstat">${['','str','con','int','agi','sense'].map(v=>optionHtml(v,v||'(없음)',(item.buffStat||'')===v)).join('')}</select></label>
             <label>버프 수치<input class="gb-input" id="gb-skill-buffvalue" type="number" value="${escapeHtml(item.buffValue)}" /></label>
-            <label>상태이상<input class="gb-input" id="gb-skill-statustype" value="${escapeHtml(item.statusType)}" placeholder="poison/bleed/burn/curse/bind/sleep" /></label>
+            <label>상태이상<select class="gb-input" id="gb-skill-statustype">${['','poison','bleed','burn','curse','silence','slow'].map(v=>optionHtml(v,v||'(없음)',(item.statusType||'')===v)).join('')}</select></label>
             <label>상태이상 턴<input class="gb-input" id="gb-skill-statusturns" type="number" value="${escapeHtml(item.statusTurns)}" /></label>
           </div>
           <label>설명<textarea class="gb-textarea short" id="gb-skill-desc">${escapeHtml(item.desc || '')}</textarea></label>
@@ -8688,6 +8699,10 @@ function readPartySlotsFromUI() {
         sense:Number(fieldValue('#gb-char-sense') || 0)
       }
     };
+    // HP/MP/SP가 0이면 스탯 기반 자동 계산
+    if (item.hp <= 0) item.hp = 100 + (item.stats.con - 10) * 10 + (item.stats.str - 10) * 3;
+    if (item.mp <= 0) item.mp = 100 + (item.stats.int - 10) * 10 + (item.stats.sense - 10) * 3;
+    if (item.sp <= 0) item.sp = 100 + (item.stats.agi - 10) * 10 + (item.stats.sense - 10) * 3;
     if (existingChar.inventory) item.inventory = existingChar.inventory;
     if (!item.name) throw new Error('캐릭터 이름이 비어 있다.');
     upsertById(model.db.characters, item);
@@ -10786,6 +10801,30 @@ async function saveMaterialTraitFromForm() {
         await navigator.clipboard.writeText(text);
         toast('희귀재료 특성 JSON 복사 완료');
       } catch (e) { toast('복사 실패', true); }
+    });
+
+    // 대상 선택 시 계수 자동 채우기 (수정 가능)
+    on('#gb-skill-target', 'change', () => {
+      const grade = fieldValue('#gb-skill-grade') || 'E';
+      const target = fieldValue('#gb-skill-target') || 'singleEnemy';
+      const singleCoefs = { E:1.35, D:2.16, C:3.24, B:5.4, A:8.64, S:12.96 };
+      const baseCoef = singleCoefs[grade] || 1.35;
+      let coef = baseCoef;
+      if (target === 'allEnemies' || target === 'allAllies') coef = Math.round(baseCoef * 0.58 * 1000) / 1000;
+      else if (target.startsWith('row')) coef = Math.round(baseCoef * 0.75 * 1000) / 1000;
+      const el = model.root && model.root.querySelector('#gb-skill-coef');
+      if (el) el.value = coef;
+    });
+    on('#gb-skill-grade', 'change', () => {
+      const grade = fieldValue('#gb-skill-grade') || 'E';
+      const target = fieldValue('#gb-skill-target') || 'singleEnemy';
+      const singleCoefs = { E:1.35, D:2.16, C:3.24, B:5.4, A:8.64, S:12.96 };
+      const baseCoef = singleCoefs[grade] || 1.35;
+      let coef = baseCoef;
+      if (target === 'allEnemies' || target === 'allAllies') coef = Math.round(baseCoef * 0.58 * 1000) / 1000;
+      else if (target.startsWith('row')) coef = Math.round(baseCoef * 0.75 * 1000) / 1000;
+      const el = model.root && model.root.querySelector('#gb-skill-coef');
+      if (el) el.value = coef;
     });
 
     on('#gb-skill-new', 'click', async () => { model.state.selected.skills = ''; await saveState(); renderApp(); });
