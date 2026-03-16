@@ -17,13 +17,15 @@ try {
   const MAX_PARTY = 8;
   const MAX_ENEMIES = 10;
   const GRADE_ORDER = ['E','D','C','B','A','S'];
+  // 등급별 주스탯 상한선
+  const STAT_CAP_BY_RANK = { E:25, D:40, C:60, B:80, A:100, S:150 };
   const DAMAGE_ELEMENTS = ['none', 'water', 'fire', 'ice', 'earth', 'wind', 'electric', 'dark', 'light'];
   const STATUS_KEYS = ['stun', 'bind', 'sleep', 'poison', 'bleed', 'burn', 'curse'];
   const STATUS_DOT_KEYS = ['poison', 'bleed', 'burn'];
   const ELEMENT_CHAIN = ['dark', 'light', 'ice', 'fire', 'water', 'earth', 'wind', 'electric'];
 
 const ELEMENTS = DAMAGE_ELEMENTS;
-const SPECIES_LABELS = { undead:'언데드', ghost:'고스트', beast:'야수', plant:'식물', slime:'슬라임', construct:'구조체', elemental:'정령' };
+const SPECIES_LABELS = { undead:'언데드', ghost:'고스트', beast:'야수', plant:'식물', slime:'슬라임', construct:'구조체', elemental:'정령', demon:'악마', frost:'빙정', celestial:'천사체' };
 const SPECIES_KEY_BY_LABEL = Object.fromEntries(Object.entries(SPECIES_LABELS).map(([k,v]) => [v, k]));
 const PICKAXE_WEIGHT_G = 2500;
 const EQUIP_WEIGHT_G = { weapon:1000, subweapon:1000, armor:1000, accessory:200 };
@@ -32,19 +34,23 @@ const GATE_SIZE_META = {
   medium:{ key:'medium', label:'중형', nodes:[11,15], normal:[50,60], elite:[2,3], boss:[1,1], veins:[1,3], previewNormal:[5,7], previewElite:[1,1], previewBossChance:0.05, options:4 },
   large:{ key:'large', label:'대형', nodes:[18,23], normal:[100,125], elite:[4,6], boss:[1,2], veins:[2,5], previewNormal:[6,8], previewElite:[1,2], previewBossChance:0.1, options:4 }
 };
+const GATE_SIZE_WEIGHTS = [['small',55],['medium',35],['large',10]];
 const GATE_RANK_WEIGHTS = {
-  small:[['E',52],['D',28],['C',14],['B',5],['A',1]],
-  medium:[['D',34],['C',36],['B',20],['A',8],['S',2]],
-  large:[['C',30],['B',32],['A',24],['S',14]]
+  small:[['E',50],['D',26],['C',13],['B',5],['A',3],['S',3]],
+  medium:[['E',5],['D',30],['C',33],['B',18],['A',9],['S',5]],
+  large:[['E',2],['D',5],['C',25],['B',30],['A',24],['S',14]]
 };
 const GATE_SPECIES_COMPAT = {
-  undead:['ghost','elemental'],
-  ghost:['undead','elemental'],
+  undead:['ghost','elemental','demon'],
+  ghost:['undead','elemental','demon','celestial'],
   beast:['elemental','plant'],
   plant:['slime','elemental','beast'],
   slime:['plant','elemental'],
-  construct:['elemental'],
-  elemental:['construct','beast','plant','slime','ghost']
+  construct:['elemental','frost'],
+  elemental:['construct','beast','plant','slime','ghost','undead','demon','frost','celestial'],
+  demon:['undead','ghost','elemental'],
+  frost:['elemental','construct'],
+  celestial:['elemental','ghost']
 };
 const GATE_NAME_PARTS = {
   undead:{ adjectives:['썩은','장송의','침잠한','무너진','흑빛의'], places:['골목','묘역','회랑','납골당','안치소'] },
@@ -53,7 +59,10 @@ const GATE_NAME_PARTS = {
   plant:{ adjectives:['뒤틀린','뿌리내린','가시돋친','포자 낀','메마른'], places:['온실','정원','수림','회랑','습지'] },
   slime:{ adjectives:['끈적한','젖은','출렁이는','탁한','미끌거리는'], places:['수로','늪지','웅덩이','습지','저수실'] },
   construct:{ adjectives:['과충전된','녹슨','경보 울리는','비정상 가동의','벼락 새긴'], places:['송전실','정거장','격납고','기계묘지','철탑군'] },
-  elemental:{ adjectives:['갈라진','타오르는','서리 맺힌','범람하는','번쩍이는'], places:['균열','핵심부','심장부','파편역','층계'] }
+  elemental:{ adjectives:['갈라진','타오르는','서리 맺힌','범람하는','번쩍이는'], places:['균열','핵심부','심장부','파편역','층계'] },
+  demon:{ adjectives:['타락한','암흑의','불타는','저주받은','사악한'], places:['화염구','지옥문','마계','암흑사원','불의제단'] },
+  frost:{ adjectives:['얼어붙은','냉혹한','동결된','서리내린','극한의'], places:['빙궁','동토','설산','빙하','냉기굴'] },
+  celestial:{ adjectives:['성스러운','빛나는','정화의','축복받은','신성한'], places:['신전','광명탑','성역','천상문','빛의성소'] }
 };
 const GATE_COMBO_PLACES = {
   'ghost+undead':['썩은 골목','영곡 회랑','침잠한 안치소','묘역 틈새'],
@@ -62,7 +71,14 @@ const GATE_COMBO_PLACES = {
   'beast+elemental':['울부짖는 초원','폭풍 수렵장','갈라진 능선','재해 사냥터'],
   'beast+plant':['가시 수렵장','피비린내 나는 수림','뒤틀린 초원','뿌리 돋은 사냥터'],
   'elemental+ghost':['얼어붙은 예배당','비명 핵심부','그림자 파편역','서리 장막'],
-  'elemental+slime':['범람하는 수로','청람의 습지','미끌거리는 균열','출렁이는 핵실']
+  'elemental+slime':['범람하는 수로','청람의 습지','미끌거리는 균열','출렁이는 핵실'],
+  'demon+undead':['타락한 묘역','지옥의 안치소','불타는 골목','암흑 납골당'],
+  'demon+ghost':['사악한 장막','불타는 영안실','저주의 회랑','암흑 빈터'],
+  'demon+elemental':['불타는 핵심부','마염의 균열','타락한 심장부','화염 파편역'],
+  'elemental+frost':['서리 균열','냉기 핵심부','동결된 파편역','빙하 심장부'],
+  'construct+frost':['얼어붙은 격납고','냉기 송전실','동결 기계묘지','서리 철탑군'],
+  'celestial+elemental':['빛나는 균열','성광 핵심부','신성한 파편역','축복의 심장부'],
+  'celestial+ghost':['정화의 장막','빛의 영안실','성스러운 회랑','신성한 빈터']
 };
 const ROOM_UNIT_LIMITS = { small:[3,5], medium:[4,7], large:[6,10] };
 const GATE_STAGE_TEMPLATES = {
@@ -125,7 +141,7 @@ const RARE_TRAIT_LABELS = {
   wind_damage:'바람 속성 피해 증가', lightning_damage:'전기 속성 피해 증가',
   light_damage:'빛 속성 피해 증가', dark_damage:'어둠 속성 피해 증가',
   crit_chance:'치명타 확률 증가', crit_damage:'치명타 피해 증가',
-  physical_defense:'물리 방어 증가', magic_defense:'마법 방어 증가',
+  physical_defense:'물리피해감소 증가', magic_defense:'마법피해감소 증가',
   fire_resist:'불 속성 저항', water_resist:'물 속성 저항',
   ice_resist:'얼음 속성 저항', earth_resist:'대지 속성 저항',
   wind_resist:'바람 속성 저항', lightning_resist:'전기 속성 저항',
@@ -139,16 +155,18 @@ const RARE_TRAIT_LABELS = {
   threat_up:'위협 수치 증가', threat_down:'위협 수치 감소',
   // ── 구버전 camelCase 패밀리 (하위 호환) ─────────────────────────────
   physicalDamage:'물리 피해 증가', magicDamage:'마법 피해 증가',
-  elementalDamage:'속성 피해 증가', physicalDefense:'물리 방어 증가',
-  magicDefense:'마법 방어 증가', elementalDefense:'속성 저항',
+  elementalDamage:'속성 피해 증가', physicalDefense:'물리피해감소 증가',
+  magicDefense:'마법피해감소 증가', elementalDefense:'속성 저항',
   increasedHealing:'치유 증가',
 };
 const MANA_STONE_LABELS = { E:'최하급 마정석', D:'하급 마정석', C:'중급 마정석', B:'중상급 마정석', A:'상급 마정석', S:'최상급 마정석' };
 // Settlement price tables ─────────────────────────────────────────────────────
-// 마정석: 1% 순도당 원화 가치 (E 기준 1,000원/%, 등급별 ×4 배율)
-const MANA_STONE_WON_PER_PCT = { E:1000, D:4000, C:16000, B:64000, A:256000, S:1000000 };
-// 일반재료 fallback 단가 — E:2,000~4,000 / D:1만~2만 / C:10만~20만 / B:150만~300만 / A:4,000만~8,000만 / S:17.5억~32.5억
-const NORMAL_MATERIAL_BASE_WON = { E:3000, D:15000, C:150000, B:2250000, A:60000000, S:2500000000 };
+// 마정석: 1% 순도당 원화 가치
+const MANA_STONE_WON_PER_PCT = { E:1000, D:6000, C:60000, B:900000, A:25000000, S:1000000000 };
+// 일반재료 가격 범위 — 랜덤 설정
+const NORMAL_MATERIAL_WON_RANGE = { E:[2000,4000], D:[10000,20000], C:[100000,200000], B:[1500000,3000000], A:[40000000,80000000], S:[1750000000,3250000000] };
+function normalMaterialBaseWon(rank) { const r = String(rank||'E').toUpperCase(); const range = NORMAL_MATERIAL_WON_RANGE[r] || NORMAL_MATERIAL_WON_RANGE.E; return randInt(range[0], range[1]); }
+const NORMAL_MATERIAL_BASE_WON = { E:3000, D:15000, C:150000, B:2250000, A:60000000, S:2500000000 }; // legacy fallback
 // 희귀재료 등급·티어별 기준가 (JSON suggestedPrice를 런타임에 덮어씀)
 // E:6.25만~18.75만 / D:37.5만~112.5만 / C:375만~1,125만 / B:5,500만~1.7억 / A:13.75억~45억 / S:62.5억~1,875억
 const RARE_PRICE_BY_RANK_TIER = {
@@ -190,7 +208,8 @@ const EXP_KIND_MULT_RANGE = {
   Elite:   [20, 40 ],
   Boss:    [100,200],
 };
-const EXP_MAX_LEVEL = 100;
+const EXP_MAX_LEVEL = 120;
+const MAX_LEVEL_BY_RANK = { E:15, D:25, C:40, B:60, A:80, S:120 };
 
 // ── Equipment System ──────────────────────────────────────────────────────────
 // Equipment part types
@@ -218,7 +237,7 @@ const EQUIP_MAX_ENHANCE = { weapon:5, subweapon:0, armor:5, accessory:5 };
 const WEAPON_ENHANCE_ATK = { E:1, D:1, C:2, B:3, A:4, S:5 };
 // Base weapon ATK by rank
 const WEAPON_BASE_ATK = { E:5, D:15, C:25, B:45, A:70, S:100 };
-// Armor base stats (main stat per enhance, armor P.DEF/M.DEF range, resistance)
+// Armor base stats (main stat per enhance, armor 물리방어/마법방어 range, resistance → 물리피해감소/마법피해감소)
 const ARMOR_STAT_BY_RANK = {
   E: { totalStatSum:0,  defRange:[0,5],   resistance:1, enhanceStat:1 },
   D: { totalStatSum:2,  defRange:[0,15],  resistance:2, enhanceStat:2 },
@@ -236,10 +255,10 @@ const ACCESSORY_STAT_BY_RANK = {
   A: { totalStatSum:8,   traits:1, enhanceStat:5 },
   S: { totalStatSum:12,  traits:1, enhanceStat:6 },
 };
-// Shield: P.DEF = half armor value; ATK = -(P.DEF/2)
+// Shield: 물리방어 = half armor value; ATK = -(물리방어/2)
 const SUBWEAPON_DEF_RATIO = 0.5;
 // Max infusion by part
-const EQUIP_MAX_INFUSE = { weapon:2, subweapon:1, armor:2, accessory:1 };
+const EQUIP_MAX_INFUSE = { weapon:2, subweapon:2, armor:2, accessory:1 };
 
 // Repair fee base price per 1% durability lost (₩) — Weapon is ×2
 const REPAIR_FEE_BASE = { E:0, D:10000, C:100000, B:1000000, A:20000000, S:750000000 };
@@ -293,7 +312,7 @@ const EQUIP_TRAIT_LABELS = {
   wind_damage:'바람 속성 피해 증가', lightning_damage:'전기 속성 피해 증가',
   light_damage:'빛 속성 피해 증가', dark_damage:'어둠 속성 피해 증가',
   crit_chance:'치명타 확률 증가', crit_damage:'치명타 피해 증가',
-  physical_defense:'물리 방어 증가', magic_defense:'마법 방어 증가',
+  physical_defense:'물리피해감소 증가', magic_defense:'마법피해감소 증가',
   fire_resist:'불 속성 저항', water_resist:'물 속성 저항',
   ice_resist:'얼음 속성 저항', earth_resist:'대지 속성 저항',
   wind_resist:'바람 속성 저항', lightning_resist:'전기 속성 저항',
@@ -307,7 +326,7 @@ const EQUIP_TRAIT_LABELS = {
   threat_up:'위협 수치 증가', threat_down:'위협 수치 감소',
   // 구버전 camelCase (하위 호환)
   physicalDamage:'물리 피해', magicDamage:'마법 피해', elementalDamage:'속성 피해',
-  physicalDefense:'물리 방어', magicDefense:'마법 방어', elementalDefense:'속성 저항',
+  physicalDefense:'물리피해감소', magicDefense:'마법피해감소', elementalDefense:'속성 저항',
   increasedHealing:'치유 증가'
 };
 // Trait effect % by rank — fallback for legacy camelCase traits not in the pack
@@ -420,6 +439,9 @@ const PARTY_BAGS = {
 };
 const INVENTORY_BASE_SLOTS = 8;
 const INVENTORY_BASE_MAX_WEIGHT_G = 6000;
+const PERSONAL_INV_BASE_SLOTS = 8;
+const PERSONAL_INV_BASE_MAX_WEIGHT_G = 6000;
+const SHARED_INV_BAG_RATIO = 0.20; // 가방 보너스의 20%만 공용인벤에 적용
 const NORMAL_MATERIAL_WEIGHT_G = { E:20, D:25, C:30, B:35, A:40, S:50 };
 const RARE_MATERIAL_WEIGHT_G = 100;
 const MANA_STONE_WEIGHT_G = { E:50, D:80, C:120, B:180, A:300, S:500 };
@@ -572,13 +594,13 @@ const DEFAULT_RARE_MATERIAL_PACK = {
     },
     {
       "id": "physical_defense",
-      "name": "물리 방어 증가",
+      "name": "물리피해감소 증가",
       "category": "defense",
       "scale": "percentSmall"
     },
     {
       "id": "magic_defense",
-      "name": "마법 방어 증가",
+      "name": "마법피해감소 증가",
       "category": "defense",
       "scale": "percentSmall"
     },
@@ -980,7 +1002,10 @@ const RARE_FAMILY_PRESETS = {
     plant: { speciesLabel:'식물', defaultElement:'earth', immunities:['bleed'], regenPct:0.03, regenBlockedBy:['burn'] },
     slime: { speciesLabel:'슬라임', defaultElement:'water', immunities:['bleed'], damageTakenMods:{ physical:0.70, magic:1.10 } },
     construct: { speciesLabel:'구조체', defaultElement:'electric', immunities:['poison','bleed','sleep'], damageTakenMods:{ magic:0.80, physical:1.15 } },
-    elemental: { speciesLabel:'정령', defaultElement:'none' }
+    elemental: { speciesLabel:'정령', defaultElement:'none' },
+    demon: { speciesLabel:'악마', defaultElement:'fire', immunities:['burn'], damageTakenMods:{ dark:0.70 } },
+    frost: { speciesLabel:'빙정', defaultElement:'ice', immunities:['sleep'], damageTakenMods:{ physical:0.80 } },
+    celestial: { speciesLabel:'천사체', defaultElement:'light', immunities:['curse'], damageTakenMods:{ magic:0.80 } }
   };
   function inferSpecies(raw) {
     const s = String(raw || '').toLowerCase();
@@ -992,6 +1017,9 @@ const RARE_FAMILY_PRESETS = {
     if (s.includes('슬라임') || s.includes('slime')) return 'slime';
     if (s.includes('구조체') || s.includes('construct')) return 'construct';
     if (s.includes('정령') || s.includes('elemental')) return 'elemental';
+    if (s.includes('악마') || s.includes('demon')) return 'demon';
+    if (s.includes('빙정') || s.includes('frost') || s.includes('얼음아인')) return 'frost';
+    if (s.includes('천사체') || s.includes('celestial')) return 'celestial';
     return '';
   }
   function createDefaultMeta() {
@@ -1061,6 +1089,13 @@ const RARE_FAMILY_PRESETS = {
     while ((m = reduceRe.exec(note))) {
       meta.damageTakenMods[m[1] === '물리' ? 'physical' : 'magic'] = 1 - (Number(m[2]) / 100);
     }
+    // 속성별 받는데미지 반감 (예: 어둠속성 받는데미지 30%반감)
+    const elemReduceRe = /(어둠|빛|불|물|얼음|대지|바람|전기)\s*속성\s*받는\s*데미지\s*(\d+)%\s*반감/g;
+    const elemNameMap = {'어둠':'dark','빛':'light','불':'fire','물':'water','얼음':'ice','대지':'earth','바람':'wind','전기':'electric'};
+    while ((m = elemReduceRe.exec(note))) {
+      const eKey = elemNameMap[m[1]];
+      if (eKey) meta.damageTakenMods[eKey] = 1 - (Number(m[2]) / 100);
+    }
     const bleedBonus = note.match(/출혈\s*상태의\s*적\s*공격\s*시\s*(\d+)%\s*피해\s*증가/);
     if (bleedBonus) meta.bonusVsBleeding = 1 + (Number(bleedBonus[1]) / 100);
     const aloneInc = note.match(/혼자\s*남았을\s*때\s*받는\s*피해\s*(\d+)%\s*증가/);
@@ -1078,12 +1113,12 @@ const RARE_FAMILY_PRESETS = {
   function getStatusDefaultProfile(type) {
     const st = normStatus(type);
     const map = {
-      poison:{ turns:2, chance:0.28, power:0.04 },
-      bleed:{ turns:2, chance:0.28, power:0.05 },
-      burn:{ turns:2, chance:0.28, power:0.03 },
-      curse:{ turns:2, chance:0.24, power:0 },
-      bind:{ turns:1, chance:0.18, power:0 },
-      sleep:{ turns:1, chance:0.16, power:0 },
+      poison:{ turns:3, chance:0.28, power:0 },
+      bleed:{ turns:3, chance:0.28, power:0 },
+      burn:{ turns:5, chance:0.28, power:0 },
+      curse:{ turns:3, chance:0.24, power:0 },
+      bind:{ turns:2, chance:0.18, power:0 },
+      sleep:{ turns:2, chance:0.16, power:0 },
       stun:{ turns:1, chance:0.16, power:0 }
     };
     return Object.assign({ turns:2, chance:0.2, power:0 }, map[st] || {});
@@ -1105,33 +1140,33 @@ const RARE_FAMILY_PRESETS = {
     energyBolt: { id:'energyBolt', name:'에너지볼트', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:30, sp:0 }, coef:1.5, statTypes:['int'], damageType:'magic', element:'none', desc:'기본 단일 마법 공격.' },
     energyShower: { id:'energyShower', name:'에너지샤워', grade:'E', category:'aoeAttack', target:'allEnemies', costs:{ mp:40, sp:0 }, coef:0.875, statTypes:['int'], damageType:'magic', element:'none', desc:'기본 광역 마법 공격.' },
     shieldBash: { id:'shieldBash', name:'실드강타', grade:'E', category:'singleCC', target:'singleEnemy', costs:{ mp:20, sp:20 }, coef:0.875, statTypes:['con'], damageType:'physical', element:'none', cc:{ type:'stun', turns:1 }, desc:'단일 CC. 1턴 기절.' },
-    shockwave: { id:'shockwave', name:'충격파', grade:'E', category:'aoeCC', target:'allEnemies', baseSingleCoef:0.875, costs:{ mp:20, sp:20 }, statTypes:['con'], damageType:'physical', element:'none', cc:{ type:'stun', turns:1 }, desc:'광역 CC. 단일 CC 대비 계수 1/2, 비용 2배.' },
-    haste: { id:'haste', name:'헤이스트', grade:'D', category:'buff', target:'singleAlly', costs:{ mp:25, sp:0 }, duration:3, statTypes:['int','sense'], buff:{ stats:{ agi:4 } }, desc:'3턴 동안 AGI +4.' },
+    shockwave: { id:'shockwave', name:'충격파', grade:'E', category:'aoeCC', target:'allEnemies', coef:0.4375, costs:{ mp:40, sp:40 }, statTypes:['con'], damageType:'physical', element:'none', cc:{ type:'stun', turns:1 }, desc:'광역 CC. 계수 0.4375, MP 40 / SP 40. 1턴 기절.' },
+    haste: { id:'haste', name:'헤이스트', grade:'D', category:'buff', target:'allAllies', costs:{ mp:25, sp:0 }, duration:3, statTypes:['int','sense'], buff:{ stats:{ agi:4 } }, desc:'3턴 동안 파티원 AGI +4.' },
     heal: { id:'heal', name:'힐', grade:'D', category:'singleHeal', target:'singleAlly', costs:{ mp:40, sp:0 }, coef:2.0, statTypes:['int'], desc:'기본 단일 회복.' },
     pray: { id:'pray', name:'기도', grade:'D', category:'singleHeal', target:'singleAlly', costs:{ mp:45, sp:0 }, coef:2.2, statTypes:['int'], desc:'힐보다 조금 강한 단일 회복.' },
-    blessingOfLight: { id:'blessingOfLight', name:'빛의 축복', grade:'D', category:'buff', target:'allAllies', costs:{ mp:35, sp:0 }, duration:3, statTypes:['int','sense'], buff:{ stats:{ int:4 } }, desc:'3턴 동안 전 아군 INT +4.' },
-    powerShot: { id:'powerShot', name:'Power Shot', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:10, sp:20 }, coef:1.5, statTypes:['agi'], damageType:'physical', element:'none', desc:'집중 화살. 단일 고계수.' },
-    quickShot: { id:'quickShot', name:'Quick Shot', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:0, sp:15 }, coef:1.2, statTypes:['agi'], damageType:'physical', element:'none', desc:'저비용 단일 공격.' },
+    blessingOfLight: { id:'blessingOfLight', name:'빛의 축복', grade:'D', category:'buff', target:'allAllies', costs:{ mp:25, sp:0 }, duration:3, statTypes:['int','sense'], buff:{ stats:{ int:4 } }, desc:'3턴 동안 전 아군 INT +4.' },
+    powerShot: { id:'powerShot', name:'파워샷', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:20, sp:20 }, coef:1.5, statTypes:['agi'], damageType:'physical', element:'none', desc:'집중 화살. 단일 고계수.' },
+    quickShot: { id:'quickShot', name:'퀵샷', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:0, sp:15 }, coef:1.2, statTypes:['agi'], damageType:'physical', element:'none', desc:'저비용 단일 공격.' },
     fullArrowRecovery: { id:'fullArrowRecovery', name:'Full Arrow Recovery', grade:'E', rarity:'rare', category:'utility', target:'self', costs:{ mp:30, sp:0 }, statTypes:['agi'], resourceRestore:{ sp:25 }, desc:'SP 25 회복.' },
     tripleShot: {
-      id:'tripleShot', name:'Triple Shot', grade:'E', rarity:'rare', category:'singleAttack', target:'singleEnemy',
+      id:'tripleShot', name:'트리플샷', grade:'E', rarity:'rare', category:'singleAttack', target:'singleEnemy',
       statTypes:['agi'], damageType:'physical', element:'none',
-      byRank:{ E:{ coef:1.5, costs:{ mp:15, sp:15 } }, D:{ coef:2.0, costs:{ mp:20, sp:20 } }, C:{ coef:2.8, costs:{ mp:20, sp:20 } }, B:{ coef:4.6, costs:{ mp:25, sp:25 } }, A:{ coef:7.0, costs:{ mp:35, sp:35 } }, S:{ coef:10.5, costs:{ mp:45, sp:45 } } },
+      byRank:{ E:{ coef:1.5, costs:{ mp:15, sp:15 } }, D:{ coef:2.4, costs:{ mp:15, sp:15 } }, C:{ coef:3.6, costs:{ mp:18, sp:18 } }, B:{ coef:6.0, costs:{ mp:25, sp:25 } }, A:{ coef:9.6, costs:{ mp:30, sp:30 } }, S:{ coef:14.4, costs:{ mp:40, sp:40 } } },
       desc:'성장형 3연타. 총계수만 적용.'
     },
-    quickThrow: { id:'quickThrow', name:'Quick Throw', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:0, sp:25 }, coef:1.5, statTypes:['agi','sense'], damageType:'physical', element:'none', desc:'투척 단일 공격.' },
-    knifeRecall: { id:'knifeRecall', name:'Basic Knife Recall', grade:'E', category:'utility', target:'singleEnemy', costs:{ mp:20, sp:0 }, coef:1.5, statTypes:['agi','sense'], damageType:'physical', element:'none', resourceRestore:{ sp:10 }, desc:'공격 후 SP 10 회복.' },
+    quickThrow: { id:'quickThrow', name:'퀵스로', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:0, sp:40 }, coef:1.5, statTypes:['agi','sense'], damageType:'physical', element:'none', desc:'투척 단일 공격.' },
+    knifeRecall: { id:'knifeRecall', name:'무기회수', grade:'E', category:'utility', target:'singleEnemy', costs:{ mp:20, sp:0 }, coef:1.5, procChance:0.3, statTypes:['agi','sense'], damageType:'physical', element:'none', resourceRestore:{ sp:10 }, desc:'무기회수 + 30% 확률로 x1.5 계수 공격.' },
     preciseAim: {
-      id:'preciseAim', name:'Precise Aim', grade:'E', rarity:'rare', category:'buff', target:'self', duration:3, statTypes:['agi','sense'],
-      byRank:{ E:{ costs:{ mp:25, sp:0 }, buff:{ stats:{ agi:2 } } }, D:{ costs:{ mp:30, sp:0 }, buff:{ stats:{ agi:4 } } }, C:{ costs:{ mp:40, sp:0 }, buff:{ stats:{ agi:6 } } }, B:{ costs:{ mp:50, sp:0 }, buff:{ stats:{ agi:8 } } }, A:{ costs:{ mp:65, sp:0 }, buff:{ stats:{ agi:10 } } }, S:{ costs:{ mp:85, sp:0 }, buff:{ stats:{ agi:12 } } } },
-      desc:'성장형 버프. 3턴 AGI 증가.'
+      id:'preciseAim', name:'민첩한 조준', grade:'E', rarity:'rare', category:'buff', target:'allAllies', duration:3, statTypes:['agi','sense'],
+      byRank:{ E:{ costs:{ mp:25, sp:0 }, buff:{ stats:{ agi:2, sense:2 } } }, D:{ costs:{ mp:30, sp:0 }, buff:{ stats:{ agi:4, sense:4 } } }, C:{ costs:{ mp:40, sp:0 }, buff:{ stats:{ agi:6, sense:6 } } }, B:{ costs:{ mp:50, sp:0 }, buff:{ stats:{ agi:8, sense:8 } } }, A:{ costs:{ mp:65, sp:0 }, buff:{ stats:{ agi:10, sense:10 } } }, S:{ costs:{ mp:85, sp:0 }, buff:{ stats:{ agi:12, sense:12 } } } },
+      desc:'성장형 광역버프. 3턴 파티원 AGI·SENSE 증가.'
     },
     smallGarden: {
       id:'smallGarden', name:'작은 정원', grade:'E', rarity:'rare', category:'aoeHeal', target:'allAllies', statTypes:['int'],
       byRank:{ E:{ coef:0.875, costs:{ mp:30, sp:0 } }, D:{ coef:1.4, costs:{ mp:35, sp:0 } }, C:{ coef:2.1, costs:{ mp:40, sp:0 } }, B:{ coef:3.5, costs:{ mp:50, sp:0 } }, A:{ coef:5.6, costs:{ mp:65, sp:0 } }, S:{ coef:8.4, costs:{ mp:90, sp:0 } } },
-      desc:'성장형 광역 회복. 총 회복량 분배.'
+      desc:'성장형 광역 회복. 각 대상에게 계수 기반 회복.'
     },
-    steelAnvil: { id:'steelAnvil', name:'Steel Anvil', grade:'E', rarity:'rare', category:'passive', statTypes:['con'], byRank:{ E:{ passiveBonuses:{ pdef:1, mdef:1 } }, D:{ passiveBonuses:{ pdef:3, mdef:3 } }, C:{ passiveBonuses:{ pdef:5, mdef:5 } }, B:{ passiveBonuses:{ pdef:7, mdef:7 } }, A:{ passiveBonuses:{ pdef:9, mdef:9 } }, S:{ passiveBonuses:{ pdef:11, mdef:11 } } }, desc:'P.DEF/M.DEF 증가.' },
+    steelAnvil: { id:'steelAnvil', name:'Steel Anvil', grade:'E', rarity:'rare', category:'passive', statTypes:['con'], byRank:{ E:{ passiveBonuses:{ pdef:1, mdef:1 } }, D:{ passiveBonuses:{ pdef:3, mdef:3 } }, C:{ passiveBonuses:{ pdef:5, mdef:5 } }, B:{ passiveBonuses:{ pdef:7, mdef:7 } }, A:{ passiveBonuses:{ pdef:9, mdef:9 } }, S:{ passiveBonuses:{ pdef:11, mdef:11 } } }, desc:'물리방어/마법방어 증가.' },
     shieldProficiency: { id:'shieldProficiency', name:'Shield Proficiency', grade:'E', category:'passive', statTypes:['con'], passiveMods:{ shieldSpMul:0.9 }, desc:'방패 계열 SP 10% 감소.' },
     daggerHandling: { id:'daggerHandling', name:'Dagger Handling', grade:'E', category:'passive', statTypes:['agi','sense'], passiveMods:{ daggerSpMul:0.9 }, desc:'단검/투척 계열 SP 10% 감소.' },
     fistStrike: { id:'fistStrike', name:'정권', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:20, sp:20 }, coef:1.5, statTypes:['str','con'], damageType:'physical', element:'none', desc:'근접 단일 공격.' },
@@ -1141,12 +1176,12 @@ const RARE_FAMILY_PRESETS = {
 
   function buildSampleCharacters() {
     return [
-      { id:'char_bran', name:'브란', job:'크루세이더', position:'탱커', row:'front', rank:'D', stats:{ str:13, con:15, int:4, agi:7, sense:8 }, hp:300, mp:55, sp:120, atk:16, pdef:18, mdef:10, damageType:'physical', attackStat:'con', skills:['shieldBash','steelAnvil','shieldProficiency','shockwave','taunt'], note:'전열 탱커' },
-      { id:'char_doyun', name:'도윤', job:'무투가', position:'근거리물리', row:'front', rank:'E', stats:{ str:14, con:12, int:3, agi:11, sense:9 }, hp:230, mp:40, sp:110, atk:6, pdef:8, mdef:3, skills:['fistStrike','hiddenMight'], note:'전열 근딜' },
-      { id:'char_lin', name:'린', job:'궁수', position:'원거리물리', row:'mid', rank:'E', stats:{ str:7, con:9, int:4, agi:15, sense:13 }, hp:180, mp:55, sp:100, atk:6, pdef:4, mdef:2, skills:['quickShot','powerShot','preciseAim','tripleShot'] },
-      { id:'char_kain', name:'카인', job:'투척가', position:'원거리물리', row:'mid', rank:'E', stats:{ str:8, con:9, int:4, agi:14, sense:14 }, hp:175, mp:60, sp:110, atk:6, pdef:4, mdef:3, skills:['quickThrow','knifeRecall','daggerHandling'] },
-      { id:'char_ibel', name:'이벨', job:'마법사', position:'원거리마법', row:'back', rank:'E', stats:{ str:4, con:7, int:16, agi:9, sense:10 }, hp:155, mp:170, sp:55, atk:5, pdef:3, mdef:7, damageType:'magic', attackStat:'int', skills:['energyBolt','energyShower','haste'] },
-      { id:'char_sera', name:'세라', job:'클레릭', position:'힐러', row:'back', rank:'D', stats:{ str:5, con:9, int:16, agi:8, sense:11 }, hp:210, mp:160, sp:70, atk:5, pdef:5, mdef:8, damageType:'magic', attackStat:'int', skills:['heal','pray','blessingOfLight','smallGarden'] }
+      { id:'char_bran', name:'브란', job:'크루세이더', position:'탱커', row:'front', rank:'D', stats:{ str:13, con:15, int:4, agi:7, sense:8 }, hp:289, mp:164, sp:194, atk:20, pdef:18, mdef:10, damageType:'physical', attackStat:'con', skills:['shieldBash','steelAnvil','shieldProficiency','shockwave','taunt'], note:'전열 탱커' },
+      { id:'char_doyun', name:'도윤', job:'무투가', position:'근거리물리', row:'front', rank:'E', stats:{ str:14, con:12, int:3, agi:11, sense:9 }, hp:262, mp:157, sp:237, atk:11, pdef:8, mdef:3, skills:['fistStrike','hiddenMight'], note:'전열 근딜' },
+      { id:'char_lin', name:'린', job:'궁수', position:'원거리물리', row:'mid', rank:'E', stats:{ str:7, con:9, int:4, agi:15, sense:13 }, hp:211, mp:179, sp:289, atk:11, pdef:4, mdef:2, skills:['quickShot','powerShot','preciseAim','tripleShot'] },
+      { id:'char_kain', name:'카인', job:'투척가', position:'원거리물리', row:'mid', rank:'E', stats:{ str:8, con:9, int:4, agi:14, sense:14 }, hp:214, mp:182, sp:282, atk:11, pdef:4, mdef:3, skills:['quickThrow','knifeRecall','daggerHandling'] },
+      { id:'char_ibel', name:'이벨', job:'마법사', position:'원거리마법', row:'back', rank:'E', stats:{ str:4, con:7, int:16, agi:9, sense:10 }, hp:182, mp:290, sp:220, atk:12, pdef:3, mdef:7, damageType:'magic', attackStat:'int', skills:['energyBolt','energyShower','haste'] },
+      { id:'char_sera', name:'세라', job:'클레릭', position:'힐러', row:'back', rank:'D', stats:{ str:5, con:9, int:16, agi:8, sense:11 }, hp:205, mp:293, sp:213, atk:22, pdef:5, mdef:8, damageType:'magic', attackStat:'int', skills:['heal','pray','blessingOfLight','smallGarden'] }
     ];
   }
   function buildSampleMonsters() {
@@ -1381,9 +1416,8 @@ function buildDefaultState() {
         }
       });
     }
-    if (skill.category === 'aoeCC') {
-      const baseCoef = skill.baseSingleCoef != null ? skill.baseSingleCoef : (skill.coef != null ? skill.coef : 0.875);
-      skill.coef = round3(baseCoef * 0.5);
+    if (skill.category === 'aoeCC' && skill.baseSingleCoef != null) {
+      skill.coef = round3(skill.baseSingleCoef * 0.5);
       skill.costs = skill.costs || { mp:0, sp:0 };
       skill.costs.mp = Math.ceil((skill.costs.mp || 0) * 2);
       skill.costs.sp = Math.ceil((skill.costs.sp || 0) * 2);
@@ -1421,14 +1455,15 @@ function buildDefaultState() {
   }
   function buildUnit(entry, side, slotIndex) {
     const rank = String(entry.rank || 'E').toUpperCase();
-    const stats = normaliseStats(entry.stats);
     const row = normRow(entry.row) || inferRow(entry.position, entry.job);
     const meta = parseMonsterMeta(entry);
     const isMonster = side === 'enemies';
     const monsterProfile = isMonster ? monsterProfileForEntry(entry) : null;
-    const baseHp = Number(isMonster ? monsterProfile.hp : (entry.hp || (120 + stats.con * 10 + rankBonus(rank))));
-    const defaultMp = isMonster ? monsterProfile.mp : (30 + stats.int * 8 + Math.floor(rankBonus(rank) * 0.3));
-    const defaultSp = isMonster ? monsterProfile.sp : (35 + (stats.str + stats.agi + stats.con) * 2 + Math.floor(rankBonus(rank) * 0.2));
+    // 몬스터: 개별 스탯 없음, HP/ATK만 프로필 테이블에서 가져옴
+    const stats = isMonster ? { str:0, con:0, int:0, agi:0, sense:0 } : normaliseStats(entry.stats);
+    const baseHp = Number(isMonster ? monsterProfile.hp : (entry.hp || (100 + stats.con * 10 + stats.str * 3)));
+    const defaultMp = isMonster ? monsterProfile.mp : (100 + stats.int * 10 + stats.sense * 3);
+    const defaultSp = isMonster ? monsterProfile.sp : (100 + stats.agi * 10 + stats.sense * 3);
     const allSkillMap = getAllSkillMap();
     const hasMagicSkill = Array.isArray(entry.skills) && entry.skills.some(id => {
       const sk = allSkillMap[String(id || '').trim()];
@@ -1456,15 +1491,16 @@ function buildDefaultState() {
       hp: Number(entry.currentHp != null ? entry.currentHp : baseHp), maxHp: baseHp,
       mp: Number(entry.currentMp != null ? entry.currentMp : baseMp), maxMp: baseMp,
       sp: Number(entry.currentSp != null ? entry.currentSp : baseSp), maxSp: baseSp,
-      atk: Number(isMonster ? (entry.atk != null ? entry.atk : monsterProfile.damage) : (entry.atk != null ? entry.atk : defaultAtkByRank(rank))),
-      pdef: Number(entry.pdef != null ? entry.pdef : Math.floor(stats.con * 0.4)),
-      mdef: Number(entry.mdef != null ? entry.mdef : Math.floor((stats.int + stats.sense) * 0.25)),
+      // 몬스터: ATK = 프로필 damage, pdef/mdef = 0 (개별 스탯 없음)
+      atk: Number(isMonster ? monsterProfile.damage : (entry.atk != null ? entry.atk : Math.round(defaultAtkByRank(rank) + stats.str * 0.2 + stats.agi * 0.2 + stats.int * 0.3))),
+      pdef: Number(isMonster ? 0 : (entry.pdef != null ? entry.pdef : Math.floor(stats.con * 0.4))),
+      mdef: Number(isMonster ? 0 : (entry.mdef != null ? entry.mdef : Math.floor((stats.int + stats.sense) * 0.25))),
       damageType: entry.damageType || inferDamageType(entry.position, entry.job),
       attackStat: entry.attackStat || inferAttackStat(entry.position, entry.job),
       skills: Array.isArray(entry.skills) ? entry.skills.slice() : [],
       ai: entry.ai || null,
       buffs: Array.isArray(entry.buffs) ? deepClone(entry.buffs) : [],
-      statuses: Object.assign({ stun:0, bind:0, sleep:0, poison:0, bleed:0, burn:0, curse:0, poisonPower:0, bleedPower:0, burnPower:0 }, deepClone(entry.statuses || {})),
+      statuses: Object.assign({ stun:0, bind:0, sleep:0, poison:0, bleed:0, burn:0, curse:0, poisonStacks:0, poisonPower:0, bleedPower:0, burnStacks:0, burnPower:0, stunResistTimer:0, sleepResistTimer:0, bleedHealReduction:0 }, deepClone(entry.statuses || {})),
       cooldowns: {},
       lastAction:'',
       dead:false,
@@ -1652,18 +1688,25 @@ function applyExpToCharacter(charEntry, expGained) {
   if (!charEntry.level || charEntry.level < 1) charEntry.level = 1;
   if (charEntry.exp == null) charEntry.exp = 0;
   if (charEntry.totalExp == null) charEntry.totalExp = 0;
+  if (charEntry.freeStatPoints == null) charEntry.freeStatPoints = 0;
   charEntry.exp = Number(charEntry.exp) + expGained;
   charEntry.totalExp = Number(charEntry.totalExp) + expGained;
   const oldLevel = charEntry.level;
   const messages = [];
-  while (charEntry.level < EXP_MAX_LEVEL) {
+  const maxLv = MAX_LEVEL_BY_RANK[String(charEntry.rank||'E').toUpperCase()] || EXP_MAX_LEVEL;
+  while (charEntry.level < maxLv) {
     const needed = expNeededForLevel(charEntry.level);
     if (charEntry.exp < needed) break;
     charEntry.exp -= needed;
     charEntry.level += 1;
-    messages.push(`${charEntry.name} Lv${charEntry.level - 1} → Lv${charEntry.level} (레벨업!)`);
+    charEntry.freeStatPoints = (charEntry.freeStatPoints || 0) + 2;
+    // 레벨업 보상: HP+2, MP+2, SP+2
+    charEntry.hp = (Number(charEntry.hp) || 0) + 2;
+    charEntry.mp = (Number(charEntry.mp) || 0) + 2;
+    charEntry.sp = (Number(charEntry.sp) || 0) + 2;
+    messages.push(`${charEntry.name} Lv${charEntry.level - 1} → Lv${charEntry.level} (레벨업! 스탯포인트 +2)`);
   }
-  if (charEntry.level >= EXP_MAX_LEVEL) { charEntry.exp = 0; }
+  if (charEntry.level >= maxLv) { charEntry.exp = 0; }
   return { levelsGained: charEntry.level - oldLevel, newLevel: charEntry.level, oldLevel, messages };
 }
 
@@ -1704,7 +1747,7 @@ function getAvailableSpeciesFromDb() {
     if (sp) set.add(sp);
   });
   const arr = Array.from(set);
-  return arr.length ? arr : ['undead','ghost','beast','plant','slime','construct','elemental'];
+  return arr.length ? arr : ['undead','ghost','beast','plant','slime','construct','elemental','demon','frost','celestial'];
 }
 function pickGateSpeciesPair() {
   const available = getAvailableSpeciesFromDb();
@@ -1765,7 +1808,8 @@ function buildGatePreviewEncounter(gate) {
   const preview = [];
   const normalCount = randInt(sizeMeta.previewNormal[0], sizeMeta.previewNormal[1]);
   const eliteCount = randInt(sizeMeta.previewElite[0], sizeMeta.previewElite[1]);
-  const bossCount = chance(sizeMeta.previewBossChance || 0) && gradeIndex(gate.rank) >= 2 ? 1 : 0;
+  // 보스는 게이트 마지막방에 무조건 등장
+  const bossCount = randInt(sizeMeta.boss[0], sizeMeta.boss[1]);
   for (let i = 0; i < normalCount; i += 1) {
     const species = chooseSpeciesWeighted(gate.primarySpecies, gate.secondarySpecies, 0.7);
     const pool = findMonsterCandidates([species], gate.rank, 'Normal');
@@ -1795,6 +1839,25 @@ function buildGatePreviewEncounter(gate) {
   while (enemyIds.length < MAX_ENEMIES) enemyIds.push('');
   return { enemySlots: enemyIds.slice(0, MAX_ENEMIES), preview };
 }
+// 광맥 주사위 시스템
+function rollVeinCount(sizeKey) {
+  const roll = randInt(1, 100);
+  if (sizeKey === 'small') {
+    if (roll <= 20) return 0;
+    if (roll <= 70) return 1;
+    return 2;
+  }
+  if (sizeKey === 'medium') {
+    if (roll <= 20) return 1;
+    if (roll <= 70) return 2;
+    return 3;
+  }
+  // large
+  if (roll <= 15) return 2;
+  if (roll <= 55) return 3;
+  if (roll <= 85) return 4;
+  return 5;
+}
 function generateGateOption(size, idx, forcedRank) {
   const sizeKey = normGateSize(size);
   const sizeMeta = GATE_SIZE_META[sizeKey] || GATE_SIZE_META.small;
@@ -1803,7 +1866,7 @@ function generateGateOption(size, idx, forcedRank) {
   const normalCount = randInt(sizeMeta.normal[0], sizeMeta.normal[1]);
   const eliteCount = randInt(sizeMeta.elite[0], sizeMeta.elite[1]);
   const bossCount = randInt(sizeMeta.boss[0], sizeMeta.boss[1]);
-  const veinCount = randInt(sizeMeta.veins[0], sizeMeta.veins[1]);
+  const veinCount = rollVeinCount(sizeKey);
   const nodeCount = randInt(sizeMeta.nodes[0], sizeMeta.nodes[1]);
   const title = gateNameFor(primarySpecies, secondarySpecies);
   const preview = buildGatePreviewEncounter({ size:sizeKey, rank, primarySpecies, secondarySpecies });
@@ -2218,8 +2281,9 @@ function getPartyCharBags() {
 }
 function inventoryCapacity() {
   const bags = getPartyCharBags();
-  const totalSlotBonus = bags.reduce((s, b) => s + Number(b.slotBonus || 0), 0);
-  const totalWeightBonus = bags.reduce((s, b) => s + Number(b.maxWeightBonusG || 0), 0);
+  // 공용인벤은 가방 보너스의 20%만 적용 (나머지 80%는 개인 짐)
+  const totalSlotBonus = Math.floor(bags.reduce((s, b) => s + Number(b.slotBonus || 0), 0) * SHARED_INV_BAG_RATIO);
+  const totalWeightBonus = Math.floor(bags.reduce((s, b) => s + Number(b.maxWeightBonusG || 0), 0) * SHARED_INV_BAG_RATIO);
   const bestWeightMul = bags.length > 0 ? Math.min(...bags.map(b => Number(b.weightMul || 1))) : 1.0;
   return { slots: INVENTORY_BASE_SLOTS + totalSlotBonus, maxWeightG: INVENTORY_BASE_MAX_WEIGHT_G + totalWeightBonus, weightMul: bestWeightMul, bags };
 }
@@ -2976,28 +3040,27 @@ function enterGateRoom(run) {
 function randomAlivePartyIndices(run) {
   return (run.partyState || []).map((u, idx) => ({ u, idx })).filter(row => Number(row.u.currentHp || row.u.hp || 0) > 0);
 }
+const SENSE_CHECK_BY_RANK = { E:15, D:30, C:50, B:65, A:80, S:100 };
 function resolveTrapRoom(run, room) {
   room.discovered = true;
   const alive = randomAlivePartyIndices(run);
-  const targets = shuffle(alive).slice(0, Math.max(1, Math.min(2, alive.length)));
-  const kinds = ['damage','bleed','burn','curse','bind'];
-  const kind = sampleOne(kinds) || 'damage';
   const lines = [];
-  targets.forEach(row => {
-    const unit = row.u;
-    const maxHp = Number(unit.hp || unit.maxHp || 1);
-    const dmg = randInt(Math.max(8, Math.floor(maxHp * 0.08)), Math.max(14, Math.floor(maxHp * 0.18)));
-    unit.currentHp = Math.max(1, Number(unit.currentHp != null ? unit.currentHp : unit.hp) - dmg);
-    lines.push(`${unit.name} HP -${dmg}`);
-    if (kind !== 'damage') {
-      unit.statuses = Object.assign({ stun:0, bind:0, sleep:0, poison:0, bleed:0, burn:0, curse:0, poisonPower:0, bleedPower:0, burnPower:0 }, unit.statuses || {});
-      if (kind in unit.statuses) unit.statuses[kind] = Math.max(Number(unit.statuses[kind] || 0), 1);
-      if (kind === 'bleed') unit.statuses.bleedPower = Math.max(Number(unit.statuses.bleedPower || 0), 0.05);
-      if (kind === 'burn') unit.statuses.burnPower = Math.max(Number(unit.statuses.burnPower || 0), 0.04);
-      if (kind === 'poison') unit.statuses.poisonPower = Math.max(Number(unit.statuses.poisonPower || 0), 0.04);
-      lines.push(`${unit.name} ${roomLabel(kind) || kind} 노출`);
-    }
-  });
+  // 파티원 중 최고 감각 기준 함정 무력화 판정
+  const maxSense = Math.max(0, ...alive.map(row => Number((row.u.stats && row.u.stats.sense) || row.u.sense || 0)));
+  const threshold = SENSE_CHECK_BY_RANK[String(run.rank||'E').toUpperCase()] || 15;
+  if (maxSense > threshold) {
+    lines.push(`감각 ${maxSense} > ${threshold}: 함정 무력화 성공!`);
+  } else {
+    // 실패: 전원 최대 HP의 10~40% 피해
+    alive.forEach(row => {
+      const unit = row.u;
+      const maxHp = Number(unit.hp || unit.maxHp || 1);
+      const pct = randInt(10, 40);
+      const dmg = Math.max(1, Math.floor(maxHp * pct / 100));
+      unit.currentHp = Math.max(1, Number(unit.currentHp != null ? unit.currentHp : unit.hp) - dmg);
+      lines.push(`${unit.name} HP -${dmg} (${pct}%)`);
+    });
+  }
   room.rewardLines = lines;
   room.cleared = true;
   pushGateLog(run, `함정 발동: ${lines.join(' / ')}`);
@@ -3035,14 +3098,15 @@ function buildDropEquipment(rank, forcePart) {
   const r = String(rank || 'E').toUpperCase();
   const part = forcePart || EQUIP_PARTS[Math.floor(Math.random() * EQUIP_PARTS.length)];
   const maxInfuseBase = EQUIP_MAX_INFUSE[part] || 1;
-  const hasTrait = Math.random() < 0.20;
+  // 보조무기는 기본 특성 1개 보유; 그 외 장비는 20% 확률
+  const hasTrait = part === 'subweapon' ? true : (Math.random() < 0.20);
   const traits = [];
   let maxInfuse = maxInfuseBase;
   let traitName = '';
   if (hasTrait) {
     const traitId = EQUIP_TRAIT_TYPES[Math.floor(Math.random() * EQUIP_TRAIT_TYPES.length)];
     traits.push(traitId);
-    maxInfuse = maxInfuseBase + 1;
+    if (part !== 'subweapon') maxInfuse = maxInfuseBase + 1;
     traitName = EQUIP_TRAIT_LABELS[traitId] || traitId;
   }
   const basePrice = calcEquipBasePrice(r, part);
@@ -3275,12 +3339,23 @@ function resolveCombatRoomRewards(run, room) {
 function resolvePuzzleRoom(run, room) {
   room.discovered = true;
   const bundle = createRewardBucket();
-  if (Math.random() < GATE_PUZZLE_ELITE_REWARD_CHANCE) {
-    addEliteLoot(bundle, run.rank);
-    bundle.notes.push('퍼즐 보상 판정: 엘리트급 보상');
+  // 파티원 중 최고 감각 기준 퍼즐 판정
+  const alive = randomAlivePartyIndices(run);
+  const maxSense = Math.max(0, ...alive.map(row => Number((row.u.stats && row.u.stats.sense) || row.u.sense || 0)));
+  const threshold = SENSE_CHECK_BY_RANK[String(run.rank||'E').toUpperCase()] || 15;
+  if (maxSense > threshold) {
+    // 감각 통과: 70% 엘리트, 30% 일반재료
+    if (Math.random() < 0.70) {
+      addEliteLoot(bundle, run.rank);
+      bundle.notes.push(`퍼즐 보상 판정 (감각 ${maxSense} > ${threshold}): 엘리트급 보상`);
+    } else {
+      addNormalMaterial(bundle, run.rank, randInt(2, 4));
+      bundle.notes.push(`퍼즐 보상 판정 (감각 ${maxSense} > ${threshold}): 일반재료`);
+    }
   } else {
+    // 감각 미달: 일반재료만
     addNormalMaterial(bundle, run.rank, randInt(2, 4));
-    bundle.notes.push('퍼즐 보상 판정: 일반재료');
+    bundle.notes.push(`퍼즐 보상 판정 (감각 ${maxSense} ≤ ${threshold}): 일반재료`);
   }
   mergeRewardBucket(run.stash, bundle);
   const invLogs = depositRewardBucketToInventory(bundle);
@@ -3460,7 +3535,8 @@ function campGateParty(run) {
     unit.currentMp = clamp(Number(unit.currentMp || 0) + mpGain, 0, maxMp);
     unit.currentSp = clamp(Number(unit.currentSp || 0) + spGain, 0, maxSp);
     if (unit.statuses) {
-      ['poison','bleed','burn','curse'].forEach(k => { if (Number(unit.statuses[k] || 0) > 0) unit.statuses[k] = Math.max(0, Number(unit.statuses[k]) - 1); });
+      ['poison','bleed','burn','curse','bind','stun','sleep'].forEach(k => { if (Number(unit.statuses[k] || 0) > 0) unit.statuses[k] = 0; });
+      ['poisonPower','bleedPower','burnPower'].forEach(k => { if (unit.statuses[k]) unit.statuses[k] = 0; });
     }
     lines.push(`${unit.name} HP+${hpGain}${mpGain ? ` / MP+${mpGain}` : ''}${spGain ? ` / SP+${spGain}` : ''}`);
   });
@@ -3645,6 +3721,12 @@ function getBuffedStat(unit, statKey) {
     });
     return value;
   }
+  const CURSE_PERCENT_BY_RANK = { E:0.10, D:0.12, C:0.15, B:0.20, A:0.25, S:0.30 };
+  function getCursePenalty(unit) {
+    if (Number(unit.statuses.curse || 0) <= 0) return 0;
+    const rank = normalizeRank(unit.rank);
+    return CURSE_PERCENT_BY_RANK[rank] || 0.10;
+  }
   function getIncomingDamageMul(unit) {
     let mul = (unit.buffs || []).reduce((acc, buff) => acc * Number(buff.damageTakenMul || 1), 1);
     if (unit && unit.damageTakenMods) {
@@ -3654,11 +3736,18 @@ function getBuffedStat(unit, statKey) {
       const sideUnits = unit.side === 'party' ? model.state.runtime.party : model.state.runtime.enemies;
       if (getAlive(sideUnits).length === 1) mul *= Number(unit.aloneDamageTaken || 1);
     }
+    // Curse: rank-based incoming damage increase
+    const cursePct = getCursePenalty(unit);
+    if (cursePct > 0) mul *= (1 + cursePct);
+    // Burn: +10% incoming damage (does not stack)
+    if (Number(unit.statuses.burn || 0) > 0) mul *= 1.10;
     return mul;
   }
   function getOutgoingMul(unit, target, skill) {
     let mul = 1;
-    if (Number(unit.statuses.curse || 0) > 0) mul *= 0.85;
+    // Curse: rank-based attack decrease
+    const cursePct = getCursePenalty(unit);
+    if (cursePct > 0) mul *= (1 - cursePct);
     if (unit.species === 'beast' && target && Number(target.statuses.bleed || 0) > 0) mul *= Number(unit.bonusVsBleeding || 1.2);
     return mul;
   }
@@ -3694,22 +3783,53 @@ function getBuffedStat(unit, statKey) {
     return cost;
   }
   function critChance(unit) {
-    return clamp(0.25 * (getBuffedStat(unit, 'agi') + getBuffedStat(unit, 'sense')), 3, 35) / 100;
+    let bonus = 0;
+    (unit.buffs || []).forEach(b => { if (b.critChanceBonus) bonus += Number(b.critChanceBonus); });
+    let sense = getBuffedStat(unit, 'sense');
+    // Bind: 속박된헌터 감각 -50%
+    if (!unit.isMonster && Number(unit.statuses.bind || 0) > 0) sense = Math.floor(sense * 0.5);
+    return clamp(0.25 * (getBuffedStat(unit, 'agi') + sense) + bonus, 3, 35) / 100;
+  }
+  const EVASION_BY_RANK = { E:0.03, D:0.05, C:0.07, B:0.10, A:0.12, S:0.15 };
+
+  function getBaseEvasion(unit) {
+    const rank = normalizeRank(unit.rank);
+    return EVASION_BY_RANK[rank] || 0.03;
   }
   function hitChance(attacker, target, skill) {
-    const attackerSense = getBuffedStat(attacker, 'sense') - (Number(attacker.statuses.bind || 0) > 0 ? 4 : 0);
-    const attackerAgi = getBuffedStat(attacker, 'agi') - (Number(attacker.statuses.bind || 0) > 0 ? 4 : 0);
-    const targetSense = getBuffedStat(target, 'sense') - (Number(target.statuses.bind || 0) > 0 ? 2 : 0);
-    const targetAgi = getBuffedStat(target, 'agi') - (Number(target.statuses.bind || 0) > 0 ? 2 : 0);
-    const senseDiff = attackerSense - targetSense;
-    const agiDiff = attackerAgi - targetAgi;
-    let base = 0.84 + (senseDiff * 0.008) + (agiDiff * 0.004);
-    if (skill && skill.category === 'aoeAttack') base -= 0.05;
-    if (skill && skill.category === 'aoeCC') base -= 0.08;
-    return clamp(base, 0.55, 0.98);
+    let accuracy;
+    if (attacker.isMonster) {
+      // 몬스터 기본명중률 100%
+      accuracy = 1.0;
+      // 속박된 몬스터: 명중률 -50%
+      if (Number(attacker.statuses.bind || 0) > 0) accuracy *= 0.5;
+    } else {
+      // 헌터 명중률 = 70 + 감각 * 0.5
+      let sense = getBuffedStat(attacker, 'sense');
+      // 속박된 헌터: 감각 -50%, 명중률 -50%
+      if (Number(attacker.statuses.bind || 0) > 0) sense = Math.floor(sense * 0.5);
+      accuracy = (70 + sense * 0.5) / 100;
+      if (Number(attacker.statuses.bind || 0) > 0) accuracy *= 0.5;
+    }
+    // 대상 회피율 계산 (등급별)
+    let evasion = 0;
+    if (!target.isMonster) {
+      evasion = getBaseEvasion(target);
+      // 공격자 등급 > 대상 등급 → 대상 회피율 0%
+      if (rankIndex(attacker.rank) > rankIndex(target.rank)) {
+        evasion = 0;
+      }
+      // 몬스터가 공격자일시 동급헌터의 회피율을 50%만 적용
+      if (attacker.isMonster) {
+        evasion *= 0.5;
+      }
+    }
+    // 최종 적중률 = 명중률 - 대상 회피율, 100% 이상 → 무조건 적중
+    return accuracy - evasion;
   }
   function performHit(attacker, target, skill) {
-    const hit = Math.random() <= hitChance(attacker, target, skill);
+    const hitRate = hitChance(attacker, target, skill);
+    const hit = hitRate >= 1.0 || Math.random() <= hitRate;
     const crit = hit && Math.random() <= critChance(attacker);
     return { hit, crit };
   }
@@ -3717,7 +3837,6 @@ function getBuffedStat(unit, statKey) {
     const coef = Number(skill && skill.coef != null ? skill.coef : 1.0);
     const damageType = (skill && skill.damageType) || attacker.damageType || 'physical';
     const def = getEffectiveDefense(target, damageType === 'magic' ? 'magic' : 'physical');
-    const coefAfterDef = coef * (100 / (100 + def));
     const critMult = crit ? 1.5 : 1.0;
     const element = normElement((skill && skill.element && skill.element !== 'none') ? skill.element : (attacker.baseElement || 'none'));
     const resistMult = element !== 'none' ? Number((target.resists || {})[element] || 1) : 1;
@@ -3733,13 +3852,20 @@ function getBuffedStat(unit, statKey) {
       const mainStat = getStatPower(attacker, skill);
       rawBase = (2 * mainStat) + (3 * Number(attacker.atk || 0));
     }
-    return Math.max(1, Math.round(rawBase * coefAfterDef * critMult * resistMult * elementMul * typeMul * incomingMul * outgoingMul));
+    // 방어 전 피해량 (rawDamage)
+    const rawDamage = rawBase * coef * critMult * resistMult * elementMul * typeMul * incomingMul * outgoingMul;
+    // 물리/마법 피해감소 공식: 피해감소율 = DEF / (DEF + 1.5 × rawDamage)
+    const defReduction = (def > 0 && rawDamage > 0) ? def / (def + 1.5 * rawDamage) : 0;
+    const afterStatDef = rawDamage * (1 - defReduction);
+    return Math.max(1, Math.round(afterStatDef));
   }
   function computeHeal(caster, skill) {
     const mainStat = getStatPower(caster, skill);
     const ss = (2 * mainStat) + (3 * Number(caster.atk || 0));
     const coef = Number(skill && skill.coef != null ? skill.coef : 1.0);
-    const curseMul = Number(caster.statuses.curse || 0) > 0 ? 0.85 : 1;
+    // Curse reduces outgoing heal by rank-based %
+    const cursePct = getCursePenalty(caster);
+    const curseMul = cursePct > 0 ? (1 - cursePct) : 1;
     return Math.max(1, Math.round(ss * coef * curseMul));
   }
   function getAlive(units) { return units.filter(u => !u.dead && u.hp > 0); }
@@ -3817,8 +3943,13 @@ function getBuffedStat(unit, statKey) {
     if (target.hp <= 0) target.dead = true;
   }
   function applyHeal(target, heal) {
+    // Bleed reduces healing received by 50%
+    let effectiveHeal = heal;
+    if (Number(target.statuses.bleedHealReduction || 0) > 0) {
+      effectiveHeal = Math.max(1, Math.round(heal * 0.5));
+    }
     const before = target.hp;
-    target.hp = Math.min(target.maxHp, target.hp + heal);
+    target.hp = Math.min(target.maxHp, target.hp + effectiveHeal);
     return target.hp - before;
   }
   function applyBuff(targets, skill, sourceUnit) {
@@ -3848,14 +3979,50 @@ function getBuffedStat(unit, statKey) {
     if (!skill.cc) return;
     targets.forEach(target => {
       if (target.dead) return;
-      if (skill.cc.type === 'stun') {
-        target.statuses.stun = Math.max(Number(target.statuses.stun || 0), Number(skill.cc.turns || 1));
+      const type = normStatus(skill.cc.type);
+      if (!type) return;
+      if (unitHasImmunity(target, type)) {
+        addRoundHighlight(summary, `${target.name}은(는) ${type} 면역`);
+        pushBattleLog(runtime, `${target.name}은(는) ${type} 면역`);
+        return;
+      }
+      if (type === 'stun') {
+        // Stun resistance: immune for 5 turns after being stunned
+        if (Number(target.statuses.stunResistTimer || 0) > 0) {
+          addRoundHighlight(summary, `${target.name} 기절 저항 (면역 상태)`);
+          pushBattleLog(runtime, `${target.name} 기절 저항 활성 중`);
+          return;
+        }
+        let turns = Number(skill.cc.turns || 1);
+        const kind = String(target.kind || '').toLowerCase();
+        if (kind === 'boss') turns = Math.min(turns, 1);
+        else if (kind === 'elite') turns = Math.min(turns, 2);
+        target.statuses.stun = Math.max(Number(target.statuses.stun || 0), turns);
+        target.statuses.stunResistTimer = 5; // 5-turn immunity after stun
         addRoundHighlight(summary, `${sourceName}의 ${skill.name} → ${target.name} 기절`);
         pushBattleLog(runtime, `${sourceName} 사용: ${skill.name} → ${target.name} 기절`);
+      } else if (type === 'sleep') {
+        // Sleep resistance: immune for 5 turns after being slept
+        if (Number(target.statuses.sleepResistTimer || 0) > 0) {
+          addRoundHighlight(summary, `${target.name} 수면 저항 (면역 상태)`);
+          pushBattleLog(runtime, `${target.name} 수면 저항 활성 중`);
+          return;
+        }
+        let turns = Number(skill.cc.turns || 2);
+        const kind = String(target.kind || '').toLowerCase();
+        if (kind === 'boss' || kind === 'elite') turns = Math.min(turns, 2);
+        target.statuses.sleep = Math.max(Number(target.statuses.sleep || 0), turns);
+        target.statuses.sleepResistTimer = 5; // 5-turn immunity after sleep
+        addRoundHighlight(summary, `${sourceName}의 ${skill.name} → ${target.name} 수면`);
+        pushBattleLog(runtime, `${sourceName} 사용: ${skill.name} → ${target.name} 수면`);
+      } else {
+        target.statuses[type] = Math.max(Number(target.statuses[type] || 0), Number(skill.cc.turns || 1));
+        addRoundHighlight(summary, `${sourceName}의 ${skill.name} → ${target.name} ${type}`);
+        pushBattleLog(runtime, `${sourceName} 사용: ${skill.name} → ${target.name} ${type}`);
       }
     });
   }
-  function applyStatus(target, skill, summary, sourceName, forcedStatus, runtime) {
+  function applyStatus(target, skill, summary, sourceName, forcedStatus, runtime, sourceUnit) {
     const srcStatus = forcedStatus ? { type: forcedStatus } : (skill && skill.status);
     if (!srcStatus || !srcStatus.type || target.dead) return false;
     const type = normStatus(srcStatus.type);
@@ -3869,22 +4036,69 @@ function getBuffedStat(unit, statKey) {
     const chance = srcStatus.chance == null ? profile.chance : Number(srcStatus.chance);
     if (Math.random() > chance) return false;
     const turns = Number(srcStatus.turns || profile.turns);
-    const power = Number(srcStatus.power || profile.power || 0);
-    if (['stun','bind','sleep','curse'].includes(type)) {
-      target.statuses[type] = Math.max(Number(target.statuses[type] || 0), turns);
-      addRoundHighlight(summary, `${sourceName}의 ${skill?.name || '공격'} → ${target.name} ${type}`);
-      pushBattleLog(runtime, `${sourceName} 사용: ${skill?.name || '공격'} → ${target.name} ${type}`);
-      return true;
-    }
-    if (type === 'poison') {
-      target.statuses.poison = Math.max(Number(target.statuses.poison || 0), turns);
-      target.statuses.poisonPower = Math.max(Number(target.statuses.poisonPower || 0), power || 0.04);
+
+    if (type === 'stun') {
+      if (Number(target.statuses.stunResistTimer || 0) > 0) return false;
+      let t = turns;
+      const kind = String(target.kind || '').toLowerCase();
+      if (kind === 'boss') t = Math.min(t, 1);
+      else if (kind === 'elite') t = Math.min(t, 2);
+      target.statuses.stun = Math.max(Number(target.statuses.stun || 0), t);
+      target.statuses.stunResistTimer = 5;
+    } else if (type === 'sleep') {
+      if (Number(target.statuses.sleepResistTimer || 0) > 0) return false;
+      let t = turns;
+      const kind = String(target.kind || '').toLowerCase();
+      if (kind === 'boss' || kind === 'elite') t = Math.min(t, 2);
+      target.statuses.sleep = Math.max(Number(target.statuses.sleep || 0), t);
+      target.statuses.sleepResistTimer = 5;
+    } else if (type === 'bind') {
+      target.statuses.bind = Math.max(Number(target.statuses.bind || 0), turns);
+    } else if (type === 'curse') {
+      target.statuses.curse = Math.max(Number(target.statuses.curse || 0), turns);
+    } else if (type === 'poison') {
+      // Stack-based: max 3 stacks, 3 turns
+      const curStacks = Number(target.statuses.poisonStacks || 0);
+      if (curStacks < 3) {
+        target.statuses.poisonStacks = curStacks + 1;
+      }
+      target.statuses.poison = 3; // always reset to 3 turns
+      // Calculate poison power per stack from source
+      if (sourceUnit) {
+        if (sourceUnit.isMonster) {
+          // Monster poison: monsterDamage * 40%
+          target.statuses.poisonPower = Number(sourceUnit.monsterBaseDamage || 0) * 0.4;
+        } else {
+          // Hunter poison: (2*MainStat + 3*ATK) * skillCoef * 0.2
+          const mainStat = getStatPower(sourceUnit, skill);
+          const coef = Number(skill && skill.coef != null ? skill.coef : 1.0);
+          target.statuses.poisonPower = (2 * mainStat + 3 * Number(sourceUnit.atk || 0)) * coef * 0.2;
+        }
+      }
     } else if (type === 'bleed') {
-      target.statuses.bleed = Math.max(Number(target.statuses.bleed || 0), turns);
-      target.statuses.bleedPower = Math.max(Number(target.statuses.bleedPower || 0), power || 0.05);
+      // Bleed: 30% of triggering damage as extra, 3-turn healing -50%
+      target.statuses.bleed = Math.max(Number(target.statuses.bleed || 0), 3);
+      target.statuses.bleedHealReduction = 3; // 3 turns of 50% healing reduction
+      // bleedPower is set by the caller based on damage dealt
     } else if (type === 'burn') {
-      target.statuses.burn = Math.max(Number(target.statuses.burn || 0), turns);
-      target.statuses.burnPower = Math.max(Number(target.statuses.burnPower || 0), power || 0.03);
+      // Stack-based: max 5 stacks, 5 turns
+      const curStacks = Number(target.statuses.burnStacks || 0);
+      if (curStacks < 5) {
+        target.statuses.burnStacks = curStacks + 1;
+      }
+      target.statuses.burn = 5; // always reset to 5 turns
+      // Calculate burn power per stack from source
+      if (sourceUnit) {
+        if (sourceUnit.isMonster) {
+          // Monster burn: monsterDamage * 20%
+          target.statuses.burnPower = Number(sourceUnit.monsterBaseDamage || 0) * 0.2;
+        } else {
+          // Hunter burn: (2*MainStat + 3*ATK) * skillCoef * 0.12
+          const mainStat = getStatPower(sourceUnit, skill);
+          const coef = Number(skill && skill.coef != null ? skill.coef : 1.0);
+          target.statuses.burnPower = (2 * mainStat + 3 * Number(sourceUnit.atk || 0)) * coef * 0.12;
+        }
+      }
     }
     addRoundHighlight(summary, `${sourceName}의 ${skill?.name || '공격'} → ${target.name} ${type}`);
     pushBattleLog(runtime, `${sourceName} 사용: ${skill?.name || '공격'} → ${target.name} ${type}`);
@@ -3990,7 +4204,11 @@ function getBuffedStat(unit, statKey) {
       const hpBefore = Number(target.hp || 0);
       applyDamage(target, dmg);
       if (Number(target.statuses.sleep || 0) > 0) target.statuses.sleep = 0;
-      if (actor.onHitStatus) applyStatus(target, { name:'기본 공격', status:{ type:actor.onHitStatus, chance:actor.onHitChance, turns:actor.onHitTurns } }, summary, actor.name, null, runtime);
+      if (actor.onHitStatus) applyStatus(target, { name:'기본 공격', status:{ type:actor.onHitStatus, chance:actor.onHitChance, turns:actor.onHitTurns } }, summary, actor.name, null, runtime, actor);
+      // 출혈: 해당 라운드가 끝난뒤 출혈을 일으킨 피해의 30% 추가피해
+      if (Number(target.statuses.bleed || 0) > 0) {
+        target.statuses.bleedPower = Math.round(dmg * 0.3);
+      }
       actor.lastAction = `기본 공격 → ${target.name} ${dmg}`;
       if (actor.side === 'party') summary.partyDamage += dmg; else summary.enemyDamage += dmg;
       if (target.dead) {
@@ -4034,10 +4252,9 @@ function getBuffedStat(unit, statKey) {
     if (skill.category === 'aoeHeal') {
       const targets = getTargetListForAction(runtime, actor, action, skill).filter(u => u.hp < u.maxHp);
       if (!targets.length) return;
-      const totalHeal = computeHeal(actor, skill);
-      const perTarget = Math.max(1, Math.floor(totalHeal / targets.length));
+      const healPerTarget = computeHeal(actor, skill);
       let actualSum = 0;
-      targets.forEach(t => { const before = Number(t.hp || 0); const actual = applyHeal(t, perTarget); actualSum += actual; pushHealEventLog(runtime, actor, t, skill.name, actual, before); });
+      targets.forEach(t => { const before = Number(t.hp || 0); const actual = applyHeal(t, healPerTarget); actualSum += actual; pushHealEventLog(runtime, actor, t, skill.name, actual, before); });
       if (actor.side === 'party') summary.partyHealing += actualSum; else summary.enemyHealing += actualSum;
       addRoundHighlight(summary, `${actor.name}의 ${skill.name} → ${targets.length}명 총 회복 ${actualSum}`);
       pushBattleLog(runtime, `${actor.name}의 ${skill.name} 총 회복 ${actualSum} (${targets.length}명)`);
@@ -4047,7 +4264,8 @@ function getBuffedStat(unit, statKey) {
 
     if (skill.category === 'utility') {
       const targets = getTargetListForAction(runtime, actor, action, skill);
-      if (skill.coef && targets[0] && skill.target !== 'self') {
+      const procOk = skill.procChance == null || Math.random() < skill.procChance;
+      if (procOk && skill.coef && targets[0] && skill.target !== 'self') {
         const target = targets[0];
         const hit = performHit(actor, target, skill);
         if (hit.hit) {
@@ -4055,7 +4273,7 @@ function getBuffedStat(unit, statKey) {
           const hpBefore = Number(target.hp || 0);
           applyDamage(target, dmg);
           if (Number(target.statuses.sleep || 0) > 0) target.statuses.sleep = 0;
-          if (actor.onHitStatus) applyStatus(target, { name:skill.name, status:{ type:actor.onHitStatus, chance:actor.onHitChance, turns:actor.onHitTurns } }, summary, actor.name, null, runtime);
+          if (actor.onHitStatus) applyStatus(target, { name:skill.name, status:{ type:actor.onHitStatus, chance:actor.onHitChance, turns:actor.onHitTurns } }, summary, actor.name, null, runtime, actor);
           if (actor.side === 'party') summary.partyDamage += dmg; else summary.enemyDamage += dmg;
           if (target.dead) {
             if (actor.side === 'party') { summary.partyKills += 1; recordKillExp(runtime, target); } else summary.enemyKills += 1;
@@ -4089,8 +4307,12 @@ function getBuffedStat(unit, statKey) {
       applyDamage(target, dmg);
       if (Number(target.statuses.sleep || 0) > 0) target.statuses.sleep = 0;
       if (skill.cc) ccTargets.push(target);
-      applyStatus(target, skill, summary, actor.name, null, runtime);
-      if (actor.onHitStatus) applyStatus(target, { name:skill.name, status:{ type:actor.onHitStatus, chance:actor.onHitChance, turns:actor.onHitTurns } }, summary, actor.name, null, runtime);
+      applyStatus(target, skill, summary, actor.name, null, runtime, actor);
+      if (actor.onHitStatus) applyStatus(target, { name:skill.name, status:{ type:actor.onHitStatus, chance:actor.onHitChance, turns:actor.onHitTurns } }, summary, actor.name, null, runtime, actor);
+      // 출혈: 해당 라운드가 끝난뒤 출혈을 일으킨 피해의 30% 추가피해
+      if (Number(target.statuses.bleed || 0) > 0) {
+        target.statuses.bleedPower = Math.round(dmg * 0.3);
+      }
       if (target.dead) { killedNames.push(target.name); if (actor.side === 'party') recordKillExp(runtime, target); }
       if (hit.crit) addRoundHighlight(summary, `${actor.name} 치명타`);
       pushDamageEventLog(runtime, actor, target, skill.name, dmg, hit.crit, target.dead);
@@ -4122,23 +4344,36 @@ function getBuffedStat(unit, statKey) {
       });
       removeExpiredBuffEffects(unit, expired);
 
+      // 독: 방어무시 절대데미지, 스택당 poisonPower 피해
       if (Number(unit.statuses.poison || 0) > 0) {
-        const dmg = Math.max(1, Math.round(unit.maxHp * Number(unit.statuses.poisonPower || 0.04)));
-        applyDamage(unit, dmg);
-        addRoundHighlight(summary, `${unit.name} 독 피해 ${dmg}`);
-        pushBattleLog(runtime, `${unit.name} 독 피해 ${dmg}`);
+        const stacks = Math.min(3, Number(unit.statuses.poisonStacks || 1));
+        const perStack = Math.max(1, Math.round(Number(unit.statuses.poisonPower || 0)));
+        const dmg = perStack * stacks;
+        if (dmg > 0) {
+          applyDamage(unit, dmg);
+          addRoundHighlight(summary, `${unit.name} 독 피해 ${dmg} (${stacks}중첩)`);
+          pushBattleLog(runtime, `${unit.name} 독 피해 ${dmg} (${stacks}중첩)`);
+        }
       }
+      // 출혈: 출혈을 일으킨 피해의 30% 추가피해 (bleedPower에 저장됨)
       if (!unit.dead && Number(unit.statuses.bleed || 0) > 0) {
-        const dmg = Math.max(1, Math.round(unit.maxHp * Number(unit.statuses.bleedPower || 0.05)));
-        applyDamage(unit, dmg);
-        addRoundHighlight(summary, `${unit.name} 출혈 피해 ${dmg}`);
-        pushBattleLog(runtime, `${unit.name} 출혈 피해 ${dmg}`);
+        const dmg = Math.max(1, Math.round(Number(unit.statuses.bleedPower || 0)));
+        if (dmg > 0) {
+          applyDamage(unit, dmg);
+          addRoundHighlight(summary, `${unit.name} 출혈 피해 ${dmg}`);
+          pushBattleLog(runtime, `${unit.name} 출혈 피해 ${dmg}`);
+        }
       }
+      // 화상: 방어무시 절대데미지, 스택당 burnPower 피해
       if (!unit.dead && Number(unit.statuses.burn || 0) > 0) {
-        const dmg = Math.max(1, Math.round(unit.maxHp * Number(unit.statuses.burnPower || 0.03)));
-        applyDamage(unit, dmg);
-        addRoundHighlight(summary, `${unit.name} 화상 피해 ${dmg}`);
-        pushBattleLog(runtime, `${unit.name} 화상 피해 ${dmg}`);
+        const stacks = Math.min(5, Number(unit.statuses.burnStacks || 1));
+        const perStack = Math.max(1, Math.round(Number(unit.statuses.burnPower || 0)));
+        const dmg = perStack * stacks;
+        if (dmg > 0) {
+          applyDamage(unit, dmg);
+          addRoundHighlight(summary, `${unit.name} 화상 피해 ${dmg} (${stacks}중첩)`);
+          pushBattleLog(runtime, `${unit.name} 화상 피해 ${dmg} (${stacks}중첩)`);
+        }
       }
       if (!unit.dead && Number(unit.regenPct || 0) > 0) {
         const blocked = (unit.regenBlockedBy || []).some(key => Number(unit.statuses[key] || 0) > 0);
@@ -4149,9 +4384,24 @@ function getBuffedStat(unit, statKey) {
         }
       }
 
+      // 상태이상 턴 감소
       ['stun','bind','sleep','poison','bleed','burn','curse'].forEach(key => {
         unit.statuses[key] = Math.max(0, Number(unit.statuses[key] || 0) - 1);
       });
+      // 독/화상: 턴이 0이 되면 스택 초기화
+      if (Number(unit.statuses.poison || 0) <= 0) unit.statuses.poisonStacks = 0;
+      if (Number(unit.statuses.burn || 0) <= 0) unit.statuses.burnStacks = 0;
+      // 출혈 치유량 감소 타이머
+      if (Number(unit.statuses.bleedHealReduction || 0) > 0) {
+        unit.statuses.bleedHealReduction = Math.max(0, unit.statuses.bleedHealReduction - 1);
+      }
+      // 기절/수면 저항 타이머 감소
+      if (Number(unit.statuses.stunResistTimer || 0) > 0) {
+        unit.statuses.stunResistTimer = Math.max(0, unit.statuses.stunResistTimer - 1);
+      }
+      if (Number(unit.statuses.sleepResistTimer || 0) > 0) {
+        unit.statuses.sleepResistTimer = Math.max(0, unit.statuses.sleepResistTimer - 1);
+      }
       Object.keys(unit.cooldowns || {}).forEach(key => {
         unit.cooldowns[key] = Math.max(0, Number(unit.cooldowns[key] || 0) - 1);
       });
@@ -4239,6 +4489,10 @@ function getBuffedStat(unit, statKey) {
       if (checkBattleEnd(runtime)) break;
       if (Number(actor.statuses.stun || 0) > 0) {
         addRoundHighlight(summary, `${actor.name} 기절로 행동 불가`);
+        continue;
+      }
+      if (Number(actor.statuses.sleep || 0) > 0) {
+        addRoundHighlight(summary, `${actor.name} 수면으로 행동 불가`);
         continue;
       }
       const action = actor.side === 'party' ? resolvePartyAction(runtime, actor, allies, foes) : chooseEnemyAction(actor, allies, foes, false);
@@ -4522,16 +4776,24 @@ function renderHub() {
         <div class="gb-card-title">🗡️ 전투</div>
         <div class="gb-sub">파티/적 편성, 전열/중열/후열, 수동 행동 선택.</div>
       </button>
+      <button class="gb-card-nav" data-go="party">
+        <div class="gb-card-title">👥 파티</div>
+        <div class="gb-sub">파티 편성, 스탯포인트 배분, 전투 출격 관리.</div>
+      </button>
+      <button class="gb-card-nav" data-go="character">
+        <div class="gb-card-title">🧑 캐릭터</div>
+        <div class="gb-sub">페르소나 관리, 장비, 스킬, 레벨 확인.</div>
+      </button>
+    </div>
+    <div class="gb-grid four">
       <button class="gb-card-nav" data-go="inventory">
-        <div class="gb-card-title">🎒 인벤토리</div>
+        <div class="gb-card-title">🎒 공용인벤</div>
         <div class="gb-sub">페르소나 공용 인벤, 가방, 무게, 돈 편집.</div>
       </button>
       <button class="gb-card-nav" data-go="db">
         <div class="gb-card-title">🗂️ DB</div>
         <div class="gb-sub">캐릭터, 페르소나, 스킬, 몬스터를 직접 입력/수정.</div>
       </button>
-    </div>
-    <div class="gb-grid four">
       <button class="gb-card-nav" data-go="association">
         <div class="gb-card-title">🏛️ 협회</div>
         <div class="gb-sub">게이트 신청·정산, 경매장, 브리핑룸. 정산은 이곳에서.</div>
@@ -4540,6 +4802,8 @@ function renderHub() {
         <div class="gb-card-title">🛒 상점</div>
         <div class="gb-sub">편의점, 백화점, 헌터거리 (수리점·대장간·물약·소모품·재료).</div>
       </button>
+    </div>
+    <div class="gb-grid four">
       <button class="gb-card-nav" data-go="home">
         <div class="gb-card-title">🏠 집</div>
         <div class="gb-sub">구매 또는 임대 가능한 주거 매물 목록. 계약금·월세 정보 포함.</div>
@@ -4554,7 +4818,7 @@ function renderHub() {
     ${currentInfo}
     <div class="gb-panel">
       <div class="gb-section-title">v2.2 범위</div>
-      <div class="gb-sub">허브 / 협회(정산·경매) / 상점 / 주거 / 길드 / 공용 인벤토리 / 가방·무게 / 게이트 자동 생성 / 방 단위 진행 / 광맥 채굴.</div>
+      <div class="gb-sub">허브 / 게이트 / 전투 / 파티 / 캐릭터 / 공용인벤 / DB / 협회(정산·경매) / 상점 / 주거 / 길드 / 가방·무게 / 게이트 자동 생성 / 방 단위 진행 / 광맥 채굴.</div>
       <div class="gb-rule">광역CC = 단일CC의 1/2 계수 + 자원 소모 2배</div>
     </div>
   `;
@@ -5195,6 +5459,7 @@ const SHOP_CATEGORIES = [
 ];
 const HUNTER_STREET_SUBS = [
   { id:'vehicle',    label:'헌터 차량 판매점', desc:'전술 차량, 오토바이, 장갑차 등. (예정)' },
+  { id:'equip',      label:'⚔️ 장비상점',     desc:'무기, 방어구, 헌터 전용 장비 구매·판매.' },
   { id:'repair',     label:'수리점',           desc:'무기/방어구 내구도 회복. E등급 무료. 수리마다 최대내구도 -1 (최소 80).' },
   { id:'forge',      label:'대장간',           desc:'같은 등급 마정석(순도 80~100%)으로 장비 강화. 실패 시 마정석 소멸, 장비 유지.' },
   { id:'potion',     label:'물약 상점',        desc:'회복약, 마나포션, 버프 아이템. (예정)' },
@@ -5340,7 +5605,7 @@ function renderEquipShopHtml() {
         const price = Number(e.price || calcEquipEnhancedPrice(calcEquipBasePrice(e.rank, e.part), e.enhance||0, e.rank));
         const canAfford = gold >= price;
         const traitTags = (e.traits||[]).map(t => `<span class="gb-badge">${escapeHtml(equipTraitDisplay(t, e.rank))}</span>`).join(' ');
-        const atkLine = e.part==='weapon' ? `ATK+${e.atk||WEAPON_BASE_ATK[e.rank]||0}` : e.part==='subweapon' ? `P.DEF+${e.pdef||0} / ATK${-Math.ceil((e.pdef||0)/2)}` : e.part==='armor' ? `P.DEF+${e.pdef||0} / M.DEF+${e.mdef||0}${e.resistType?` / ${escapeHtml(EQUIP_TRAIT_LABELS[''+e.resistType]||e.resistType)} 저항 ${e.resistPct||0}%`:''}` : e.part==='accessory' ? (e.traits&&e.traits.length ? `특성: ${(e.traits||[]).map(t=>equipTraitDisplay(t,e.rank)).join(', ')}` : '특성 없음') : '';
+        const atkLine = e.part==='weapon' ? `ATK+${e.atk||WEAPON_BASE_ATK[e.rank]||0}` : e.part==='subweapon' ? `물리방어+${e.pdef||0} / ATK${-Math.ceil((e.pdef||0)/2)}` : e.part==='armor' ? `물리방어+${e.pdef||0} / 마법방어+${e.mdef||0}${e.resistType?` / ${escapeHtml(EQUIP_TRAIT_LABELS[''+e.resistType]||e.resistType)} 저항 ${e.resistPct||0}%`:''}` : e.part==='accessory' ? (e.traits&&e.traits.length ? `특성: ${(e.traits||[]).map(t=>equipTraitDisplay(t,e.rank)).join(', ')}` : '특성 없음') : '';
         const fmt = n => n >= 1e8 ? `${(n/1e8).toFixed(2)}억` : n >= 10000 ? `${Math.round(n/10000)}만` : n.toLocaleString('en-US');
         return `<div class="gb-unit">
           <div class="gb-unit-top">
@@ -5482,8 +5747,8 @@ function renderHunterMarketHtml() {
       const durColor = dur < 30 ? '#ef4444' : dur < 60 ? '#f97316' : '#22c55e';
       const statParts = [];
       if (Number(it.atk||0) > 0)  statParts.push(`⚔️ ATK +${it.atk}`);
-      if (Number(it.pdef||0) > 0) statParts.push(`🛡️ P.DEF +${it.pdef}`);
-      if (Number(it.mdef||0) > 0) statParts.push(`✨ M.DEF +${it.mdef}`);
+      if (Number(it.pdef||0) > 0) statParts.push(`🛡️ 물리방어 +${it.pdef}`);
+      if (Number(it.mdef||0) > 0) statParts.push(`✨ 마법방어 +${it.mdef}`);
       if (it.mainStat)             statParts.push(`주스탯: ${it.mainStat.toUpperCase()}`);
       if ((it.traits||[]).length)  statParts.push(`특성: ${(it.traits||[]).map(t=>EQUIP_TRAIT_LABELS[t]||t).join(', ')}`);
       const statsLine = statParts.length
@@ -5529,8 +5794,8 @@ function renderHunterMarketHtml() {
     const lines = [`${e.name}${e.rank ? ` [${e.rank}급]` : ''}`, `부위: ${EQUIP_PART_LABELS[e.part||'weapon']||e.part||''}  |  내구도: ${Number(e.durability??100)}/${Number(e.maxDurability??100)}`];
     if (e.enhance > 0) lines.push(`강화: +${e.enhance}`);
     if (Number(e.atk||0) > 0) lines.push(`ATK: +${e.atk}`);
-    if (Number(e.pdef||0) > 0) lines.push(`P.DEF: +${e.pdef}`);
-    if (Number(e.mdef||0) > 0) lines.push(`M.DEF: +${e.mdef}`);
+    if (Number(e.pdef||0) > 0) lines.push(`물리방어: +${e.pdef}`);
+    if (Number(e.mdef||0) > 0) lines.push(`마법방어: +${e.mdef}`);
     if (e.mainStat) lines.push(`주 스탯: ${e.mainStat.toUpperCase()}`);
     if (Array.isArray(e.traits) && e.traits.length) lines.push(`특성: ${e.traits.map(t=>EQUIP_TRAIT_LABELS[t]||t).join(', ')}`);
     if (e.resistType && e.resistPct) lines.push(`${EQUIP_TRAIT_LABELS[e.resistType]||e.resistType} 저항 ${e.resistPct}%`);
@@ -5552,8 +5817,8 @@ function renderHunterMarketHtml() {
         // 스탯 항상 표시
         const statParts = [];
         if (Number(e.atk||0) > 0)  statParts.push(`⚔️ ATK +${e.atk}`);
-        if (Number(e.pdef||0) > 0) statParts.push(`🛡️ P.DEF +${e.pdef}`);
-        if (Number(e.mdef||0) > 0) statParts.push(`✨ M.DEF +${e.mdef}`);
+        if (Number(e.pdef||0) > 0) statParts.push(`🛡️ 물리방어 +${e.pdef}`);
+        if (Number(e.mdef||0) > 0) statParts.push(`✨ 마법방어 +${e.mdef}`);
         if (e.mainStat)             statParts.push(`주스탯: ${e.mainStat.toUpperCase()}`);
         if (e.enhance > 0)          statParts.push(`강화: +${e.enhance}`);
         if (e.maxInfuse)            statParts.push(`주입: ${e.infuse||0}/${e.maxInfuse}회`);
@@ -6089,12 +6354,13 @@ function renderShopView() {
     if (hunterSub === 'material')   itemsHtml = renderMaterialShopHtml();
     if (hunterSub === 'repair')     itemsHtml = renderRepairShopHtml();
     if (hunterSub === 'forge')      itemsHtml = renderForgeShopHtml();
+    if (hunterSub === 'equip')      itemsHtml = renderEquipShopHtml();
     return `
       <div class="gb-panel">
         <div class="gb-section-title">${escapeHtml(title)}</div>
         ${goldLine}
       </div>
-      ${(hunterSub === 'material' || hunterSub === 'repair' || hunterSub === 'forge') ? itemsHtml : `<div class="gb-panel">${itemsHtml}</div>`}
+      ${(hunterSub === 'material' || hunterSub === 'repair' || hunterSub === 'forge' || hunterSub === 'equip') ? itemsHtml : `<div class="gb-panel">${itemsHtml}</div>`}
       <div class="gb-btn-row"><button class="gb-btn" data-shop-hunter-sub="">← 헌터거리로</button> <button class="gb-btn" data-go="hub">← 허브로</button></div>`;
   }
 
@@ -6463,8 +6729,13 @@ function renderGoldTransferPanel() {
   const allPersonas = model.db.personas || [];
   const fmtG = n => n >= 1e8 ? `${(n/1e8).toFixed(2)}억원` : n >= 10000 ? `${Math.round(n/10000)}만원` : `${n.toLocaleString('en-US')}원`;
 
-  const charRows = [...allChars.map(c => ({ ...c, _type:'char' })), ...allPersonas.map(p => ({ ...p, _type:'persona' }))].map(m => {
-    const g = Number((m.inventory && m.inventory.gold) || 0);
+  // 파티에 편성된 캐릭터만 표시
+  const partySlotIds = ((model.db.battleSetup || {}).partySlots || []).filter(Boolean);
+  const allUnits = [...allChars.map(c => ({ ...c, _type:'char' })), ...allPersonas.map(p => ({ ...p, _type:'persona' }))];
+  const partyMembers = partySlotIds.map(id => allUnits.find(u => u.id === id)).filter(Boolean);
+
+  const charRows = partyMembers.map(m => {
+    const g = Number((m.inventory && m.inventory.gold) || m.gold || 0);
     return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(148,163,184,0.08);">
       <span style="flex:1;font-size:12px;"><strong>${escapeHtml(m.name||m.id)}</strong> <span class="gb-badge">${m._type === 'char' ? '캐릭터' : '페르소나'}</span> ${fmtG(g)}</span>
       <input type="number" min="1" placeholder="금액" style="width:90px;" class="gb-input" id="gb-gold-xfer-amt-${escapeHtml(m.id)}" value="">
@@ -6475,8 +6746,8 @@ function renderGoldTransferPanel() {
 
   return `<div class="gb-panel">
     <div class="gb-section-title">💸 골드 이동</div>
-    <div class="gb-sub" style="margin-bottom:6px;">공용 인벤 ↔ 캐릭터/페르소나 사이에 골드를 이동한다. <strong>공용: ${fmtG(sharedGold)}</strong></div>
-    ${charRows || '<div class="gb-sub">캐릭터/페르소나 없음.</div>'}
+    <div class="gb-sub" style="margin-bottom:6px;">공용 인벤 ↔ 파티원 사이에 골드를 이동한다. <strong>공용: ${fmtG(sharedGold)}</strong></div>
+    ${charRows || '<div class="gb-sub">파티에 편성된 캐릭터가 없습니다. 파티 탭에서 먼저 편성하세요.</div>'}
   </div>`;
 }
 
@@ -6526,8 +6797,8 @@ function renderInventoryView() {
       const mdefVal = Number(it.mdef || 0);
       const combatLines = [];
       if (it.part === 'weapon') combatLines.push(`ATK: +${atkVal}`);
-      if (it.part === 'subweapon') { combatLines.push(`P.DEF: +${pdefVal}`); combatLines.push(`ATK: ${-Math.ceil(pdefVal/2)}`); }
-      if (it.part === 'armor') { combatLines.push(`P.DEF: +${pdefVal}`); combatLines.push(`M.DEF: +${mdefVal}`); }
+      if (it.part === 'subweapon') { combatLines.push(`물리방어: +${pdefVal}`); combatLines.push(`ATK: ${-Math.ceil(pdefVal/2)}`); }
+      if (it.part === 'armor') { combatLines.push(`물리방어: +${pdefVal}`); combatLines.push(`마법방어: +${mdefVal}`); }
       if (it.part === 'accessory') combatLines.push(it.traits && it.traits.length ? `특성: ${it.traits.map(t=>EQUIP_TRAIT_LABELS[t]||t).join(', ')}` : '특성 없음');
       if (combatLines.length) lines.push(combatLines.join(' / '));
       if (it.mainStat) lines.push(`주 스탯: ${it.mainStat.toUpperCase()}`);
@@ -6591,7 +6862,7 @@ function renderInventoryView() {
         <div class="gb-section-title">🎒 공용 인벤토리</div>
         <label>소지금<input class="gb-input" id="gb-inv-gold" type="number" value="${Number(inv.gold||0)}"></label>
         <div class="gb-sub">파티 가방: ${escapeHtml(partyBagSummary)}</div>
-        <div class="gb-sub">기본 ${INVENTORY_BASE_SLOTS}칸 / ${formatWeightG(INVENTORY_BASE_MAX_WEIGHT_G)}. 파티원 가방에 따라 칸과 최대 무게가 늘어난다.</div>
+        <div class="gb-sub">기본 ${INVENTORY_BASE_SLOTS}칸 / ${formatWeightG(INVENTORY_BASE_MAX_WEIGHT_G)}. 파티원 가방 보너스의 <strong>20%</strong>만 공용인벤에 적용 (나머지는 개인 짐).</div>
         <div class="gb-sub">모든 아이템이 슬롯을 차지한다. 같은 종류(stackable)는 1칸에 합산된다.</div>
         <div class="gb-sub">사용 슬롯 <strong>${usedSlots}/${cap.slots}</strong> / 사용 무게 ${formatWeightG(usedWeight)} / 최대 ${formatWeightG(cap.maxWeightG)}</div>
         <div class="gb-sub">야영 보급: 텐트 ${supply.tent} / 식량 ${supply.ration} / 물 ${supply.water}</div>
@@ -6621,6 +6892,296 @@ function renderInventoryView() {
       <div>${stackRows}</div>
     </div>` : ''}
     ${renderGoldTransferPanel()}
+  `;
+}
+
+// ── 파티 관리 뷰 ─────────────────────────────────────────────────────────────
+function renderPartyView() {
+  const setup = model.db.battleSetup || { partySlots:[], enemySlots:[] };
+  const allChars = (model.db.characters || []);
+  const allPersonas = (model.db.personas || []);
+  const allUnits = allChars.concat(allPersonas);
+
+  // 허브 팀 연동 — 팀이 결성되어 있으면 팀원만 파티에 표시
+  const team = Array.isArray(model.db.team) ? model.db.team : [];
+  const teamCharIds = team.map(m => m.charId).filter(id => id && id !== '__shared__');
+
+  // 팀이 없으면 빈 화면
+  if (teamCharIds.length === 0) {
+    return `
+      <div class="gb-panel">
+        <div class="gb-section-title">👥 파티 관리</div>
+        <div class="gb-sub" style="margin:16px 0;">팀이 결성되지 않았습니다. 허브 → 팀 패널에서 먼저 팀을 구성하세요.</div>
+        <div class="gb-btn-row"><button class="gb-btn" data-go="hub">허브로 이동</button></div>
+      </div>
+    `;
+  }
+
+  // 팀원을 파티 슬롯에 자동 연동 (battleSetup.partySlots를 팀원 기반으로 갱신)
+  if (!model.db.battleSetup) model.db.battleSetup = { partySlots:[], enemySlots:[] };
+  if (!model.db.battleSetup.partySlots) model.db.battleSetup.partySlots = [];
+  for (let i = 0; i < MAX_PARTY; i++) {
+    model.db.battleSetup.partySlots[i] = teamCharIds[i] || '';
+  }
+
+  // 현재 파티에 들어있는 캐릭터 (팀 기반)
+  const partySlots = [];
+  for (let i = 0; i < teamCharIds.length && i < MAX_PARTY; i++) {
+    const slotId = teamCharIds[i];
+    const unit = allUnits.find(u => u.id === slotId);
+    partySlots.push({ index: i, id: slotId, unit });
+  }
+
+  // 파티 멤버 카드 렌더
+  const partyCards = partySlots.map((slot, i) => {
+    if (!slot.unit) {
+      return `<div class="gb-panel" style="min-height:120px;display:flex;align-items:center;justify-content:center;opacity:0.5;">
+        <div class="gb-sub">슬롯 ${i + 1} — 팀원 (DB에 미등록: ${escapeHtml(slot.id)})</div>
+      </div>`;
+    }
+    const u = slot.unit;
+    const stats = u.stats || { str:0, con:0, int:0, agi:0, sense:0 };
+    const freePoints = Number(u.freeStatPoints || 0);
+    const lv = Number(u.level || 1);
+    const curExp = Number(u.exp || 0);
+    const needed = expNeededForLevel(lv);
+    const expPct = Math.min(100, Math.round((curExp / needed) * 100));
+    const statCap = STAT_CAP_BY_RANK[u.rank || 'E'] || STAT_CAP_BY_RANK.E;
+
+    const statNames = { str:'근력', con:'체력', int:'지능', agi:'민첩', sense:'감각' };
+    const statRows = Object.entries(statNames).map(([key, label]) => {
+      const val = Number(stats[key] || 0);
+      const atCap = val >= statCap;
+      return `<div style="display:flex;align-items:center;gap:6px;padding:2px 0;">
+        <span style="width:40px;font-size:12px;">${label}</span>
+        <span style="width:30px;text-align:right;font-weight:600;${atCap?'color:#ef4444;':''}">${val}</span>
+        <span class="gb-sub" style="font-size:10px;">/${statCap}</span>
+        ${freePoints > 0 && !atCap ? `<button class="gb-btn tiny" data-party-statup="${escapeHtml(u.id)}:${key}" style="padding:1px 6px;font-size:11px;">+1</button>` : ''}
+      </div>`;
+    }).join('');
+
+    // 장비 요약
+    const pInv = getPersonalInv(allChars.find(c=>c.id===u.id) ? 'character' : 'persona', u.id);
+    const eqSummary = pInv ? EQUIP_PARTS.map(p => {
+      const eq = pInv.equipped[p];
+      return eq ? `${EQUIP_PART_LABELS[p]}: ${escapeHtml(eq.name||eq.id)}${eq.enhance>0?` +${eq.enhance}`:''}` : null;
+    }).filter(Boolean).join(' / ') || '장착 장비 없음' : '장비정보 없음';
+    const personalGold = Number(u.gold || 0);
+    const fmtG = n => n >= 1e8 ? `${(n/1e8).toFixed(2)}억` : n >= 10000 ? `${Math.round(n/10000)}만` : n.toLocaleString('en-US');
+
+    return `<div class="gb-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <strong>${escapeHtml(u.name)}</strong> <span class="gb-badge">${escapeHtml(u.rank || 'E')}</span>
+          <div class="gb-sub">${escapeHtml(u.job || '직업없음')} / ${escapeHtml(rowLabel(u.row))} / Lv${lv}</div>
+        </div>
+      </div>
+      <div style="margin:6px 0;">
+        <div class="gb-sub">EXP: ${curExp}/${needed} (${expPct}%)</div>
+        <div style="background:rgba(100,100,100,0.3);height:6px;border-radius:3px;margin-top:3px;">
+          <div style="width:${expPct}%;height:100%;background:#3b82f6;border-radius:3px;"></div>
+        </div>
+      </div>
+      <div class="gb-sub" style="margin:4px 0;">HP:${Number(u.hp||0)} MP:${Number(u.mp||0)} SP:${Number(u.sp||0)} ATK:${Number(u.atk||0)}</div>
+      <div class="gb-sub" style="margin:2px 0;">💰 소지금: ${fmtG(personalGold)}원</div>
+      ${freePoints > 0 ? `<div style="color:#34d399;font-weight:600;font-size:13px;margin:4px 0;">🌟 배분 가능 스탯포인트: ${freePoints}</div>` : ''}
+      <div class="gb-sub" style="font-size:11px;margin:2px 0;">스탯 상한: ${statCap} (${u.rank || 'E'}등급)</div>
+      <div style="margin-top:4px;">${statRows}</div>
+      <div class="gb-sub" style="margin-top:4px;font-size:11px;">⚔️ ${eqSummary}</div>
+      <div class="gb-sub" style="margin-top:4px;">스킬: ${(u.skills || []).map(s => {
+        const sk = getAllSkillMap()[s];
+        if (!sk) return escapeHtml(s);
+        const costStr = sk.costs ? [sk.costs.mp ? `MP:${sk.costs.mp}` : '', sk.costs.sp ? `SP:${sk.costs.sp}` : ''].filter(Boolean).join('/') : '';
+        const coefStr = sk.coef ? `계수:${sk.coef}` : '';
+        const catLabel = { singleAttack:'단일공격', aoeAttack:'광역공격', singleCC:'단일CC', aoeCC:'광역CC', buff:'버프', singleHeal:'힐', aoeHeal:'광역힐', passive:'패시브', utility:'유틸' }[sk.category] || sk.category;
+        const tooltip = [catLabel, coefStr, costStr, sk.desc || ''].filter(Boolean).join(' | ');
+        return `<span class="gb-skill-tag" title="${escapeHtml(tooltip)}" style="cursor:help;border-bottom:1px dashed rgba(148,163,184,0.4);">${escapeHtml(sk.name)}</span>`;
+      }).join(', ') || '없음'}</div>
+      <div class="gb-btn-row" style="margin-top:6px;">
+        <button class="gb-btn tiny" data-party-inv="${escapeHtml(u.id)}">🎒 인벤토리</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // 파티 인벤토리 관리 (선택된 파티원)
+  const partyInvTarget = model.state.partyInvTarget || '';
+  const partyInvUnit = partyInvTarget ? allUnits.find(u => u.id === partyInvTarget) : null;
+  const partyInvSection = partyInvUnit ? (() => {
+    const type = allChars.find(c => c.id === partyInvUnit.id) ? 'character' : 'persona';
+    return `<div class="gb-panel" style="margin-top:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="gb-section-title">🎒 ${escapeHtml(partyInvUnit.name)} 인벤토리 관리</div>
+        <button class="gb-btn tiny" data-party-inv-close>✕ 닫기</button>
+      </div>
+      ${renderPersonalInventoryHtml(type, partyInvUnit.id)}
+    </div>`;
+  })() : '';
+
+  // 파티 골드 이동 패널 (파티원만 표시)
+  const partyGoldSection = (() => {
+    const inv = getInventory();
+    const sharedGold = Number(inv.gold || 0);
+    const fmtGG = n => n >= 1e8 ? `${(n/1e8).toFixed(2)}억원` : n >= 10000 ? `${Math.round(n/10000)}만원` : `${n.toLocaleString('en-US')}원`;
+    const partyMembers = partySlots.filter(s => s.unit).map(s => s.unit);
+    if (!partyMembers.length) return '';
+    const rows = partyMembers.map(m => {
+      const type = allChars.find(c => c.id === m.id) ? 'char' : 'persona';
+      const g = Number((m.inventory && m.inventory.gold) || m.gold || 0);
+      return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(148,163,184,0.08);">
+        <span style="flex:1;font-size:12px;"><strong>${escapeHtml(m.name||m.id)}</strong> ${fmtGG(g)}</span>
+        <input type="number" min="1" placeholder="금액" style="width:90px;" class="gb-input" id="gb-gold-xfer-amt-${escapeHtml(m.id)}" value="">
+        <button class="gb-btn tiny" data-gold-to-shared="${escapeHtml(m.id)}" data-gold-xfer-type="${type}">→공용</button>
+        <button class="gb-btn tiny" data-gold-from-shared="${escapeHtml(m.id)}" data-gold-xfer-type="${type}">공용→</button>
+      </div>`;
+    }).join('');
+    return `<div class="gb-panel" style="margin-top:12px;">
+      <div class="gb-section-title">💸 파티 골드 이동</div>
+      <div class="gb-sub" style="margin-bottom:6px;">파티원 ↔ 공용인벤 골드 이동. <strong>공용: ${fmtGG(sharedGold)}</strong></div>
+      ${rows}
+    </div>`;
+  })();
+
+  return `
+    <div class="gb-panel">
+      <div class="gb-section-title">👥 파티 관리</div>
+      <div class="gb-sub" style="margin-bottom:8px;">허브에서 편성한 팀원이 파티로 자동 연동됩니다. 스탯포인트 배분, 인벤토리 관리, 골드 이동이 가능합니다.</div>
+    </div>
+    <div class="gb-grid two">${partyCards}</div>
+    ${partyInvSection}
+    ${partyGoldSection}
+    <div class="gb-panel" style="margin-top:12px;">
+      <div class="gb-btn-row">
+        <button class="gb-btn primary" id="gb-party-save-all">파티 저장</button>
+        <button class="gb-btn" data-go="hub">허브 (팀 편성)</button>
+        <button class="gb-btn" data-go="battle">전투 화면으로</button>
+      </div>
+    </div>
+  `;
+}
+
+// ── 캐릭터 관리 뷰 (페르소나 중심) ──────────────────────────────────────────
+function renderCharacterView() {
+  const charTab = model.state.charViewTab || 'personas';
+  const allPersonas = model.db.personas || [];
+  const allChars = model.db.characters || [];
+  const items = charTab === 'characters' ? allChars : allPersonas;
+  const selectedId = model.state.charViewSelected || '';
+  const selected = items.find(c => c.id === selectedId) || null;
+
+  const listHtml = items.length === 0
+    ? '<div class="gb-sub">등록된 항목이 없습니다. DB에서 추가해주세요.</div>'
+    : items.map(c => {
+        const isActive = c.id === selectedId;
+        const lv = Number(c.level || 1);
+        const freeP = Number(c.freeStatPoints || 0);
+        return `<button class="gb-list-item ${isActive ? 'is-active' : ''}" data-charview-select="${escapeHtml(c.id)}">
+          ${escapeHtml(c.name)} <span class="gb-sub">[${escapeHtml(c.job || '?')}] Lv${lv}</span>
+          ${freeP > 0 ? ` <span style="color:#34d399;">🌟${freeP}</span>` : ''}
+        </button>`;
+      }).join('');
+
+  let detailHtml = '<div class="gb-sub">좌측에서 캐릭터를 선택하세요.</div>';
+  if (selected) {
+    const u = selected;
+    const stats = u.stats || { str:0, con:0, int:0, agi:0, sense:0 };
+    const freePoints = Number(u.freeStatPoints || 0);
+    const lv = Number(u.level || 1);
+    const curExp = Number(u.exp || 0);
+    const needed = expNeededForLevel(lv);
+    const expPct = Math.min(100, Math.round((curExp / needed) * 100));
+
+    const statNames = { str:'근력(STR)', con:'체력(CON)', int:'지능(INT)', agi:'민첩(AGI)', sense:'감각(SENSE)' };
+    const statEffects = {
+      str: '물리공격력 +0.2, HP +3',
+      con: 'HP +10',
+      agi: '물리공격력 +0.2, SP +10',
+      int: '마법공격력 +0.3, MP +10',
+      sense: 'SP +3, MP +3'
+    };
+    const statCap = STAT_CAP_BY_RANK[u.rank || 'E'] || STAT_CAP_BY_RANK.E;
+    const statRows = Object.entries(statNames).map(([key, label]) => {
+      const val = Number(stats[key] || 0);
+      const atCap = val >= statCap;
+      return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(148,163,184,0.1);">
+        <span style="width:100px;font-size:13px;font-weight:600;">${label}</span>
+        <span style="width:35px;text-align:right;font-size:15px;font-weight:700;${atCap?'color:#ef4444;':''}">${val}</span>
+        <span class="gb-sub" style="font-size:10px;">/${statCap}</span>
+        <span class="gb-sub" style="flex:1;font-size:11px;">(${statEffects[key]})</span>
+        ${freePoints > 0 && !atCap ? `<button class="gb-btn tiny" data-charview-statup="${escapeHtml(u.id)}:${key}" style="padding:2px 8px;">+1</button>` : ''}
+      </div>`;
+    }).join('');
+
+    const skillMap = getAllSkillMap();
+    const skillList = (u.skills || []).map(sId => {
+      const sk = skillMap[sId];
+      if (!sk) return `<div class="gb-sub" style="padding:2px 0;">• ${escapeHtml(sId)}</div>`;
+      const costStr = sk.costs ? [sk.costs.mp ? `MP:${sk.costs.mp}` : '', sk.costs.sp ? `SP:${sk.costs.sp}` : ''].filter(Boolean).join(' / ') : '비용 없음';
+      const coefStr = sk.coef != null ? `계수: ${sk.coef}` : '';
+      const catLabel = { singleAttack:'단일공격', aoeAttack:'광역공격', singleCC:'단일CC', aoeCC:'광역CC', buff:'버프', singleHeal:'힐', aoeHeal:'광역힐', passive:'패시브', utility:'유틸' }[sk.category] || sk.category;
+      const elemStr = sk.element && sk.element !== 'none' ? `속성:${sk.element}` : '';
+      const dmgTypeStr = sk.damageType ? `타입:${sk.damageType}` : '';
+      const statTypeStr = (sk.statTypes||[]).length ? `스탯:${sk.statTypes.join('/')}` : '';
+      const durationStr = sk.duration ? `${sk.duration}턴` : '';
+      const ccStr = sk.cc ? `CC:${sk.cc.type}(${sk.cc.turns}턴)` : '';
+      const buffStr = sk.buff && sk.buff.stats ? `버프:${Object.entries(sk.buff.stats).map(([k,v])=>`${k}+${v}`).join(',')}` : '';
+      const passiveStr = sk.passiveBonuses ? `패시브:${Object.entries(sk.passiveBonuses).map(([k,v])=>`${k}+${v}`).join(',')}` : '';
+      const byRankStr = sk.byRank ? '(등급별 성장)' : '';
+      const details = [catLabel, coefStr, costStr, dmgTypeStr, elemStr, statTypeStr, durationStr, ccStr, buffStr, passiveStr, byRankStr].filter(Boolean).join(' | ');
+      return `<div class="gb-sub" style="padding:2px 0;cursor:help;" title="${escapeHtml(details)}">• <strong>${escapeHtml(sk.name)}</strong> <span class="gb-badge">${escapeHtml(catLabel)}</span> ${coefStr ? `<span class="gb-badge">${coefStr}</span>` : ''} ${costStr ? `<span class="gb-sub" style="font-size:10px;">[${escapeHtml(costStr)}]</span>` : ''} ${sk.desc ? '— ' + escapeHtml(sk.desc) : ''}</div>`;
+    }).join('') || '<div class="gb-sub">스킬 없음</div>';
+
+    detailHtml = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div>
+          <div style="font-size:18px;font-weight:700;">${escapeHtml(u.name)}</div>
+          <div class="gb-sub">${escapeHtml(u.job || '직업없음')} / ${escapeHtml(u.rank || 'E')}등급 / ${escapeHtml(rowLabel(u.row))} / Lv${lv}</div>
+        </div>
+        <span class="gb-badge" style="font-size:14px;">${escapeHtml(u.rank || 'E')}</span>
+      </div>
+      <div style="margin:8px 0;">
+        <div class="gb-sub">EXP: ${curExp} / ${needed} (${expPct}%)</div>
+        <div style="background:rgba(100,100,100,0.3);height:8px;border-radius:4px;margin-top:4px;">
+          <div style="width:${expPct}%;height:100%;background:#3b82f6;border-radius:4px;transition:width 0.3s;"></div>
+        </div>
+      </div>
+      <div class="gb-grid two" style="margin:8px 0;">
+        <div class="gb-sub">❤️ HP: <strong>${Number(u.hp||0)}</strong></div>
+        <div class="gb-sub">💧 MP: <strong>${Number(u.mp||0)}</strong></div>
+        <div class="gb-sub">⚡ SP: <strong>${Number(u.sp||0)}</strong></div>
+        <div class="gb-sub">⚔️ ATK: <strong>${Number(u.atk||0)}</strong></div>
+        <div class="gb-sub">🛡️ 물리방어: <strong>${Number(u.pdef||0)}</strong></div>
+        <div class="gb-sub">🔮 마법방어: <strong>${Number(u.mdef||0)}</strong></div>
+      </div>
+      ${freePoints > 0 ? `<div style="color:#34d399;font-weight:700;font-size:14px;margin:8px 0;padding:6px;background:rgba(52,211,153,0.1);border-radius:6px;">🌟 배분 가능 스탯포인트: ${freePoints}</div>` : ''}
+      <div style="margin:8px 0;">
+        <div class="gb-section-title" style="font-size:13px;">스탯 <span class="gb-sub" style="font-size:11px;">(상한: ${statCap} / ${u.rank || 'E'}등급)</span></div>
+        ${statRows}
+      </div>
+      <div style="margin:8px 0;">
+        <div class="gb-section-title" style="font-size:13px;">스킬</div>
+        ${skillList}
+      </div>
+      ${u.note ? `<div class="gb-sub" style="margin-top:8px;">📝 ${escapeHtml(u.note)}</div>` : ''}
+      ${u.id ? renderEquippedStatSection(u, charTab === 'characters' ? 'character' : 'persona') : ''}
+    `;
+  }
+
+  return `
+    <div class="gb-btn-row" style="margin-bottom:8px;">
+      <button class="gb-btn ${charTab==='personas'?'primary':''}" data-charview-tab="personas">페르소나</button>
+      <button class="gb-btn ${charTab==='characters'?'primary':''}" data-charview-tab="characters">캐릭터</button>
+    </div>
+    <div class="gb-grid db">
+      <div class="gb-panel">
+        <div class="gb-section-title">${charTab === 'characters' ? '캐릭터' : '페르소나'} 목록</div>
+        ${listHtml}
+      </div>
+      <div class="gb-panel">
+        <div class="gb-section-title">상세 정보</div>
+        ${detailHtml}
+      </div>
+    </div>
+    ${selected && selected.id ? renderPersonalInventoryHtml(charTab === 'characters' ? 'character' : 'persona', selected.id) : ''}
   `;
 }
 
@@ -6738,7 +7299,7 @@ function renderCommandPanel(runtime) {
     ensureSelections();
     const item = deepClone(getCharById(model.state.selected.characters) || {
       id:'', name:'', job:'', position:'', row:'mid', rank:'E',
-      stats:{ str:5, con:5, int:5, agi:5, sense:5 }, hp:180, mp:60, sp:80, atk:5, pdef:3, mdef:3,
+      stats:{ str:5, con:5, int:5, agi:5, sense:5 }, hp:165, mp:165, sp:165, atk:9, pdef:3, mdef:3,
       damageType:'physical', attackStat:'str', skills:[], note:'',
       level:1, exp:0, totalExp:0
     });
@@ -6759,8 +7320,8 @@ function renderCommandPanel(runtime) {
             <label>MP<input class="gb-input" id="gb-char-mp" type="number" value="${escapeHtml(item.mp)}" /></label>
             <label>SP<input class="gb-input" id="gb-char-sp" type="number" value="${escapeHtml(item.sp)}" /></label>
             <label>ATK<input class="gb-input" id="gb-char-atk" type="number" value="${escapeHtml(item.atk)}" /></label>
-            <label>P.DEF<input class="gb-input" id="gb-char-pdef" type="number" value="${escapeHtml(item.pdef)}" /></label>
-            <label>M.DEF<input class="gb-input" id="gb-char-mdef" type="number" value="${escapeHtml(item.mdef)}" /></label>
+            <label>물리방어<input class="gb-input" id="gb-char-pdef" type="number" value="${escapeHtml(item.pdef)}" /></label>
+            <label>마법방어<input class="gb-input" id="gb-char-mdef" type="number" value="${escapeHtml(item.mdef)}" /></label>
             <label>STR<input class="gb-input" id="gb-char-str" type="number" value="${escapeHtml(item.stats.str)}" /></label>
             <label>CON<input class="gb-input" id="gb-char-con" type="number" value="${escapeHtml(item.stats.con)}" /></label>
             <label>INT<input class="gb-input" id="gb-char-int" type="number" value="${escapeHtml(item.stats.int)}" /></label>
@@ -6849,8 +7410,8 @@ function renderCommandPanel(runtime) {
       ${equipNames.length ? `<div class="gb-sub" style="margin-bottom:6px;">${equipNames.join(' / ')}</div>` : '<div class="gb-sub" style="margin-bottom:6px;color:#64748b;">장착 장비 없음</div>'}
       ${hasAny ? `<div class="gb-grid four" style="gap:4px;font-size:12px;">
         <div>ATK ${fmtDiff(baseAtk, bonus.atk)}</div>
-        <div>P.DEF ${fmtDiff(basePdef, bonus.pdef)}</div>
-        <div>M.DEF ${fmtDiff(baseMdef, bonus.mdef)}</div>
+        <div>물리방어 ${fmtDiff(basePdef, bonus.pdef)}</div>
+        <div>마법방어 ${fmtDiff(baseMdef, bonus.mdef)}</div>
         <div>STR ${fmtDiff(Number(stats.str||0), bonus.str)}</div>
         <div>CON ${fmtDiff(Number(stats.con||0), bonus.con)}</div>
         <div>INT ${fmtDiff(Number(stats.int||0), bonus.int)}</div>
@@ -7015,8 +7576,8 @@ function renderCommandPanel(runtime) {
             <label>MP(참조값)<input class="gb-input" id="gb-mon-mp" type="number" value="${escapeHtml(item.mp)}" /></label>
             <label>SP(참조값)<input class="gb-input" id="gb-mon-sp" type="number" value="${escapeHtml(item.sp)}" /></label>
             <label>ATK(참조값)<input class="gb-input" id="gb-mon-atk" type="number" value="${escapeHtml(item.atk)}" /></label>
-            <label>P.DEF<input class="gb-input" id="gb-mon-pdef" type="number" value="${escapeHtml(item.pdef)}" /></label>
-            <label>M.DEF<input class="gb-input" id="gb-mon-mdef" type="number" value="${escapeHtml(item.mdef)}" /></label>
+            <label>물리방어<input class="gb-input" id="gb-mon-pdef" type="number" value="${escapeHtml(item.pdef)}" /></label>
+            <label>마법방어<input class="gb-input" id="gb-mon-mdef" type="number" value="${escapeHtml(item.mdef)}" /></label>
             <label>STR<input class="gb-input" id="gb-mon-str" type="number" value="${escapeHtml(item.stats.str)}" /></label>
             <label>CON<input class="gb-input" id="gb-mon-con" type="number" value="${escapeHtml(item.stats.con)}" /></label>
             <label>INT<input class="gb-input" id="gb-mon-int" type="number" value="${escapeHtml(item.stats.int)}" /></label>
@@ -7070,8 +7631,8 @@ function renderCommandPanel(runtime) {
             <label>MP<input class="gb-input" id="gb-persona-mp" type="number" value="${escapeHtml(item.mp)}" /></label>
             <label>SP<input class="gb-input" id="gb-persona-sp" type="number" value="${escapeHtml(item.sp)}" /></label>
             <label>ATK<input class="gb-input" id="gb-persona-atk" type="number" value="${escapeHtml(item.atk)}" /></label>
-            <label>P.DEF<input class="gb-input" id="gb-persona-pdef" type="number" value="${escapeHtml(item.pdef)}" /></label>
-            <label>M.DEF<input class="gb-input" id="gb-persona-mdef" type="number" value="${escapeHtml(item.mdef)}" /></label>
+            <label>물리방어<input class="gb-input" id="gb-persona-pdef" type="number" value="${escapeHtml(item.pdef)}" /></label>
+            <label>마법방어<input class="gb-input" id="gb-persona-mdef" type="number" value="${escapeHtml(item.mdef)}" /></label>
             <label>STR<input class="gb-input" id="gb-persona-str" type="number" value="${escapeHtml(item.stats.str)}" /></label>
             <label>CON<input class="gb-input" id="gb-persona-con" type="number" value="${escapeHtml(item.stats.con)}" /></label>
             <label>INT<input class="gb-input" id="gb-persona-int" type="number" value="${escapeHtml(item.stats.int)}" /></label>
@@ -7098,7 +7659,48 @@ function renderCommandPanel(runtime) {
       id:'', name:'', grade:'E', category:'singleAttack', target:'singleEnemy', coef:1.0, mp:0, sp:0,
       damageType:'physical', element:'none', statTypes:'str', duration:0, ccType:'', ccTurns:1, buffStat:'', buffValue:0, statusType:'', statusTurns:2, desc:''
     });
-    const builtins = Object.values(BUILTIN_SKILLS).map(sk => `<div class="gb-skill-row"><div><strong>${escapeHtml(sk.name)}</strong> <span class="gb-badge">${escapeHtml(sk.id)}</span> <span class="gb-badge">${escapeHtml(sk.category)}</span></div><div class="gb-skill-desc">${escapeHtml(sk.desc || '')}</div></div>`).join('');
+    const catLabels = { singleAttack:'단일공격', aoeAttack:'광역공격', singleCC:'단일CC', aoeCC:'광역CC', singleHeal:'힐', aoeHeal:'광역힐', buff:'버프', passive:'패시브', utility:'유틸' };
+    const builtins = Object.values(BUILTIN_SKILLS).map(sk => {
+      const cat = catLabels[sk.category] || sk.category;
+      const grade = sk.grade || '?';
+      const rarity = sk.rarity ? ` <span class="gb-badge" style="background:#a855f7;color:#fff;">${escapeHtml(sk.rarity)}</span>` : '';
+      // 비용
+      const costs = sk.costs || {};
+      const costParts = [];
+      if (costs.mp) costParts.push('MP:' + costs.mp);
+      if (costs.sp) costParts.push('SP:' + costs.sp);
+      const costStr = costParts.length ? costParts.join(' / ') : '';
+      // 계수
+      const coefStr = sk.coef != null ? '계수:' + sk.coef : (sk.baseSingleCoef != null ? '기본계수:' + sk.baseSingleCoef + ' (광역CC→½)' : '');
+      // 성장형 byRank
+      const byRankStr = sk.byRank ? Object.entries(sk.byRank).map(([g, v]) => {
+        const parts = [];
+        if (v.coef != null) parts.push('계수:' + v.coef);
+        if (v.costs) { if (v.costs.mp) parts.push('MP:' + v.costs.mp); if (v.costs.sp) parts.push('SP:' + v.costs.sp); }
+        if (v.buff && v.buff.stats) parts.push('버프:' + Object.entries(v.buff.stats).map(([s,n])=>s.toUpperCase()+'+'+n).join(','));
+        if (v.passiveBonuses) parts.push('패시브:' + Object.entries(v.passiveBonuses).map(([s,n])=>s.toUpperCase()+'+'+n).join(','));
+        return parts.length ? g + '(' + parts.join(', ') + ')' : '';
+      }).filter(Boolean).join(' | ') : '';
+      // 기타 정보
+      const extras = [];
+      if (sk.damageType) extras.push(sk.damageType === 'physical' ? '물리' : '마법');
+      if (sk.element && sk.element !== 'none') extras.push('속성:' + sk.element);
+      if (sk.cc) extras.push('CC:' + sk.cc.type + ' ' + sk.cc.turns + '턴');
+      if (sk.buff && sk.buff.stats) extras.push('버프:' + Object.entries(sk.buff.stats).map(([s,n])=>s.toUpperCase()+'+'+n).join(','));
+      if (sk.buff && sk.buff.threatBonus) extras.push('위협+' + sk.buff.threatBonus);
+      if (sk.duration) extras.push(sk.duration + '턴');
+      if (sk.resourceRestore) extras.push('회복:' + Object.entries(sk.resourceRestore).map(([k,v])=>k.toUpperCase()+'+'+v).join(','));
+      if (sk.passiveBonuses) extras.push('패시브:' + Object.entries(sk.passiveBonuses).map(([s,n])=>s.toUpperCase()+'+'+n).join(','));
+      if (sk.statTypes) extras.push('스탯:' + (Array.isArray(sk.statTypes) ? sk.statTypes : [sk.statTypes]).join('/'));
+      const extraStr = extras.join(' · ');
+      return `<div class="gb-skill-row" style="padding:6px 0;border-bottom:1px solid rgba(148,163,184,0.1);">
+        <div><strong>${escapeHtml(sk.name)}</strong> <span class="gb-badge">${escapeHtml(grade)}</span>${rarity} <span class="gb-badge">${escapeHtml(cat)}</span> <span class="gb-badge">${escapeHtml(sk.id)}</span></div>
+        <div style="font-size:12px;margin-top:2px;">${coefStr ? `<span style="color:#3b82f6;font-weight:600;">${escapeHtml(coefStr)}</span>` : ''}${costStr ? ` <span style="color:#f59e0b;">[${escapeHtml(costStr)}]</span>` : ''}</div>
+        ${byRankStr ? `<div class="gb-sub" style="font-size:11px;margin-top:2px;">📈 성장: ${escapeHtml(byRankStr)}</div>` : ''}
+        ${extraStr ? `<div class="gb-sub" style="font-size:11px;margin-top:1px;">${escapeHtml(extraStr)}</div>` : ''}
+        <div class="gb-skill-desc" style="margin-top:2px;">${escapeHtml(sk.desc || '')}</div>
+      </div>`;
+    }).join('');
     const list = (model.db.customSkills || []).map(c => `<button class="gb-list-item ${c.id===model.state.selected.skills?'is-active':''}" data-select-type="skills" data-id="${escapeHtml(c.id)}">${escapeHtml(c.name)} <span class="gb-sub">[${escapeHtml(c.id)}]</span></button>`).join('');
     return `
       <div class="gb-panel">
@@ -7305,17 +7907,17 @@ function renderCommandPanel(runtime) {
           </div>` : ''}
 
           ${part === 'subweapon' ? `
-          <div class="gb-sub" style="margin-top:6px;">🛡️ 보조무기(방패): P.DEF 입력 시 ATK는 자동으로 -(P.DEF/2) 적용</div>
+          <div class="gb-sub" style="margin-top:6px;">🛡️ 보조무기(방패): 물리방어 입력 시 ATK는 자동으로 -(물리방어/2) 적용</div>
           <div class="gb-grid two">
-            <label>P.DEF<input class="gb-input" id="gb-eq-pdef" type="number" value="${Number(item.pdef||0)}" /></label>
+            <label>물리방어<input class="gb-input" id="gb-eq-pdef" type="number" value="${Number(item.pdef||0)}" /></label>
           </div>` : ''}
 
           ${part === 'armor' ? `
-          <div class="gb-sub" style="margin-top:6px;">🛡 방어구: P.DEF/M.DEF ${armorStat.defRange?armorStat.defRange[0]+'~'+armorStat.defRange[1]:''} | 총 스탯합 ${armorStat.totalStatSum||0} | 강화당 주스탯 +${armorStat.enhanceStat||0}</div>
+          <div class="gb-sub" style="margin-top:6px;">🛡 방어구: 물리방어/마법방어 ${armorStat.defRange?armorStat.defRange[0]+'~'+armorStat.defRange[1]:''} | 총 스탯합 ${armorStat.totalStatSum||0} | 강화당 주스탯 +${armorStat.enhanceStat||0}</div>
           <div class="gb-sub" style="color:#94a3b8;">⚗️ 저항은 희귀재료 인퓨즈로 부여 (DB에서 직접 수정 가능). 기본 저항 없음.</div>
           <div class="gb-grid two">
-            <label>P.DEF<input class="gb-input" id="gb-eq-pdef" type="number" value="${Number(item.pdef||0)}" /></label>
-            <label>M.DEF<input class="gb-input" id="gb-eq-mdef" type="number" value="${Number(item.mdef||0)}" /></label>
+            <label>물리방어<input class="gb-input" id="gb-eq-pdef" type="number" value="${Number(item.pdef||0)}" /></label>
+            <label>마법방어<input class="gb-input" id="gb-eq-mdef" type="number" value="${Number(item.mdef||0)}" /></label>
             <label>저항 타입 (인퓨즈 결과)<select class="gb-input" id="gb-eq-resist-type">
               <option value="">없음</option>
               ${['physical','magic','fire','ice','lightning','dark','light'].map(t => `<option value="${t}" ${item.resistType===t?'selected':''}>${t}</option>`).join('')}
@@ -7404,6 +8006,8 @@ function renderApp() {
   if      (view === 'hub')         body = renderHub();
   else if (view === 'gate')        body = renderGateView();
   else if (view === 'battle')      body = renderBattleRuntime();
+  else if (view === 'party')       body = renderPartyView();
+  else if (view === 'character')   body = renderCharacterView();
   else if (view === 'inventory')   body = renderInventoryView();
   else if (view === 'association') body = renderAssociationView();
   else if (view === 'shop')        body = renderShopView();
@@ -7415,13 +8019,15 @@ function renderApp() {
       <div class="gb-header">
         <div>
           <div class="gb-title">⚔️ Gate Battle Prototype v2.2</div>
-          <div class="gb-sub">허브 · 협회 · 상점 · 집 · 길드 · 게이트 · 전투 · 인벤토리 · DB</div>
+          <div class="gb-sub">허브 · 게이트 · 전투 · 파티 · 캐릭터 · 공용인벤 · DB</div>
         </div>
         <div style="display:flex; gap:8px; align-items:flex-start; flex-wrap:wrap;">
           <button class="gb-btn ${view==='hub'?'primary':''}" data-go="hub">허브</button>
           <button class="gb-btn ${view==='gate'?'primary':''}" data-go="gate">게이트</button>
           <button class="gb-btn ${view==='battle'?'primary':''}" data-go="battle">전투</button>
-          <button class="gb-btn ${view==='inventory'?'primary':''}" data-go="inventory">인벤</button>
+          <button class="gb-btn ${view==='party'?'primary':''}" data-go="party">파티</button>
+          <button class="gb-btn ${view==='inventory'?'primary':''}" data-go="inventory">공용인벤</button>
+          <button class="gb-btn ${view==='character'?'primary':''}" data-go="character">캐릭터</button>
           <button class="gb-btn ${view==='db'?'primary':''}" data-go="db">DB</button>
           <button class="gb-btn" id="gb-close-ui">닫기</button>
         </div>
@@ -9018,6 +9624,95 @@ async function saveMaterialTraitFromForm() {
       model.state.dbTab = ev.currentTarget.getAttribute('data-dbtab');
       await saveState();
       renderApp();
+    });
+    // ── 파티 뷰 핸들러 ────────────────────────────────────────────────────────
+    on('[data-party-assign]', 'click', async (ev) => {
+      const idx = parseInt(ev.currentTarget.getAttribute('data-party-assign'), 10);
+      const sel = document.getElementById(`gb-party-assign-${idx}`);
+      if (!sel || !sel.value) { toast('캐릭터를 선택하세요.', true); return; }
+      if (!model.db.battleSetup) model.db.battleSetup = { partySlots:[], enemySlots:[] };
+      if (!model.db.battleSetup.partySlots) model.db.battleSetup.partySlots = [];
+      model.db.battleSetup.partySlots[idx] = sel.value;
+      await saveDb(); renderApp();
+    });
+    on('[data-party-remove]', 'click', async (ev) => {
+      const idx = parseInt(ev.currentTarget.getAttribute('data-party-remove'), 10);
+      if (!model.db.battleSetup || !model.db.battleSetup.partySlots) return;
+      model.db.battleSetup.partySlots[idx] = '';
+      await saveDb(); renderApp();
+    });
+    on('#gb-party-save-all', 'click', async () => {
+      await saveDb();
+      toast('파티 편성 저장 완료');
+    });
+    on('[data-party-statup]', 'click', async (ev) => {
+      const [charId, statKey] = (ev.currentTarget.getAttribute('data-party-statup') || '').split(':');
+      if (!charId || !statKey) return;
+      const allUnits = (model.db.characters || []).concat(model.db.personas || []);
+      const unit = allUnits.find(u => u.id === charId);
+      if (!unit) { toast('캐릭터를 찾을 수 없습니다.', true); return; }
+      if (!unit.freeStatPoints || unit.freeStatPoints <= 0) { toast('배분 가능한 스탯포인트가 없습니다.', true); return; }
+      if (!unit.stats) unit.stats = { str:0, con:0, int:0, agi:0, sense:0 };
+      const cap = STAT_CAP_BY_RANK[unit.rank || 'E'] || STAT_CAP_BY_RANK.E;
+      if ((unit.stats[statKey] || 0) >= cap) { toast(`${statKey} 스탯이 상한(${cap})에 도달했습니다.`, true); return; }
+      unit.stats[statKey] = (unit.stats[statKey] || 0) + 1;
+      unit.freeStatPoints -= 1;
+      // 스탯 효과 자동 반영
+      const s = unit.stats;
+      unit.hp = 100 + s.con * 10 + s.str * 3;
+      unit.mp = 100 + s.int * 10 + (s.sense || 0) * 3;
+      unit.sp = 100 + s.agi * 10 + (s.sense || 0) * 3;
+      unit.atk = Math.round((Number(unit.weaponAtk) || 0) + s.str * 0.2 + s.agi * 0.2 + s.int * 0.3);
+      // 레벨업 보너스 HP/MP/SP (+2 per level)
+      const lvBonus = Math.max(0, (Number(unit.level) || 1) - 1) * 2;
+      unit.hp += lvBonus;
+      unit.mp += lvBonus;
+      unit.sp += lvBonus;
+      await saveDb(); renderApp();
+      toast(`${unit.name}: ${statKey} +1 (잔여 ${unit.freeStatPoints}포인트)`);
+    });
+    on('[data-party-inv]', 'click', async (ev) => {
+      model.state.partyInvTarget = ev.currentTarget.getAttribute('data-party-inv') || '';
+      await saveState(); renderApp();
+    });
+    on('[data-party-inv-close]', 'click', async () => {
+      model.state.partyInvTarget = '';
+      await saveState(); renderApp();
+    });
+    // ── 캐릭터 뷰 핸들러 ──────────────────────────────────────────────────────
+    on('[data-charview-tab]', 'click', async (ev) => {
+      model.state.charViewTab = ev.currentTarget.getAttribute('data-charview-tab');
+      model.state.charViewSelected = '';
+      await saveState(); renderApp();
+    });
+    on('[data-charview-select]', 'click', async (ev) => {
+      model.state.charViewSelected = ev.currentTarget.getAttribute('data-charview-select');
+      await saveState(); renderApp();
+    });
+    on('[data-charview-statup]', 'click', async (ev) => {
+      const [charId, statKey] = (ev.currentTarget.getAttribute('data-charview-statup') || '').split(':');
+      if (!charId || !statKey) return;
+      const allUnits = (model.db.characters || []).concat(model.db.personas || []);
+      const unit = allUnits.find(u => u.id === charId);
+      if (!unit) { toast('캐릭터를 찾을 수 없습니다.', true); return; }
+      if (!unit.freeStatPoints || unit.freeStatPoints <= 0) { toast('배분 가능한 스탯포인트가 없습니다.', true); return; }
+      if (!unit.stats) unit.stats = { str:0, con:0, int:0, agi:0, sense:0 };
+      const cap = STAT_CAP_BY_RANK[unit.rank || 'E'] || STAT_CAP_BY_RANK.E;
+      if ((unit.stats[statKey] || 0) >= cap) { toast(`${statKey} 스탯이 상한(${cap})에 도달했습니다.`, true); return; }
+      unit.stats[statKey] = (unit.stats[statKey] || 0) + 1;
+      unit.freeStatPoints -= 1;
+      // 스탯 효과 자동 반영
+      const s = unit.stats;
+      unit.hp = 100 + s.con * 10 + s.str * 3;
+      unit.mp = 100 + s.int * 10 + (s.sense || 0) * 3;
+      unit.sp = 100 + s.agi * 10 + (s.sense || 0) * 3;
+      unit.atk = Math.round((Number(unit.weaponAtk) || 0) + s.str * 0.2 + s.agi * 0.2 + s.int * 0.3);
+      const lvBonus = Math.max(0, (Number(unit.level) || 1) - 1) * 2;
+      unit.hp += lvBonus;
+      unit.mp += lvBonus;
+      unit.sp += lvBonus;
+      await saveDb(); renderApp();
+      toast(`${unit.name}: ${statKey} +1 (잔여 ${unit.freeStatPoints}포인트)`);
     });
     on('[data-select-type]', 'click', async (ev) => {
       const type = ev.currentTarget.getAttribute('data-select-type');

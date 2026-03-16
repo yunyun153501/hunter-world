@@ -1,0 +1,638 @@
+{
+  "_meta": {
+    "description": "Hunter World 스킬 정의 JSON. 이 파일을 수정하면 게임 내 customSkills로 임포트할 수 있다.",
+    "fields": {
+      "id": "스킬 고유 ID",
+      "name": "한글 이름",
+      "grade": "기본 등급 (E/D/C/B/A/S)",
+      "rarity": "희귀도 (common/rare)",
+      "category": "카테고리 (singleAttack, aoeAttack, singleCC, aoeCC, buff, singleHeal, aoeHeal, passive, utility)",
+      "target": "타겟 (singleEnemy, allEnemies, singleAlly, allAllies, self)",
+      "costs": "비용 { mp, sp }",
+      "coef": "데미지/회복 계수",
+      "statTypes": "주 스탯 타입 배열 [str/con/int/agi/sense]",
+      "damageType": "물리/마법 (physical/magic)",
+      "element": "속성 (none, water, fire, ice, earth, wind, electric, dark, light)",
+      "duration": "버프 지속 턴",
+      "cc": "CC 효과 { type: stun/bind/sleep, turns: N }",
+      "buff": "버프 효과 { stats: { stat: bonus } }",
+      "passiveBonuses": "패시브 고정 보너스 { stat: bonus }",
+      "byRank": "등급별 성장 수치 { E:{...}, D:{...}, ... }",
+      "desc": "설명"
+    }
+  },
+  "skills": {
+    "energyBolt": {
+      "id": "energyBolt",
+      "name": "에너지볼트",
+      "grade": "E",
+      "category": "singleAttack",
+      "target": "singleEnemy",
+      "costs": {
+        "mp": 30,
+        "sp": 0
+      },
+      "coef": 1.5,
+      "statTypes": [
+        "int"
+      ],
+      "damageType": "magic",
+      "element": "none",
+      "desc": "기본 단일 마법 공격."
+    },
+    "energyShower": {
+      "id": "energyShower",
+      "name": "에너지샤워",
+      "grade": "E",
+      "category": "aoeAttack",
+      "target": "allEnemies",
+      "costs": {
+        "mp": 40,
+        "sp": 0
+      },
+      "coef": 0.875,
+      "statTypes": [
+        "int"
+      ],
+      "damageType": "magic",
+      "element": "none",
+      "desc": "기본 광역 마법 공격."
+    },
+    "shieldBash": {
+      "id": "shieldBash",
+      "name": "실드강타",
+      "grade": "E",
+      "category": "singleCC",
+      "target": "singleEnemy",
+      "costs": {
+        "mp": 20,
+        "sp": 20
+      },
+      "coef": 0.875,
+      "statTypes": [
+        "con"
+      ],
+      "damageType": "physical",
+      "element": "none",
+      "cc": {
+        "type": "stun",
+        "turns": 1
+      },
+      "desc": "단일 CC. 1턴 기절."
+    },
+    "shockwave": {
+      "id": "shockwave",
+      "name": "충격파",
+      "grade": "E",
+      "category": "aoeCC",
+      "target": "allEnemies",
+      "coef": 0.4375,
+      "costs": {
+        "mp": 40,
+        "sp": 40
+      },
+      "statTypes": [
+        "con"
+      ],
+      "damageType": "physical",
+      "element": "none",
+      "cc": {
+        "type": "stun",
+        "turns": 1
+      },
+      "desc": "광역 CC. 계수 0.4375, MP 40 / SP 40. 1턴 기절."
+    },
+    "haste": {
+      "id": "haste",
+      "name": "헤이스트",
+      "grade": "D",
+      "category": "buff",
+      "target": "allAllies",
+      "costs": {
+        "mp": 25,
+        "sp": 0
+      },
+      "duration": 3,
+      "statTypes": [
+        "int",
+        "sense"
+      ],
+      "buff": {
+        "stats": {
+          "agi": 4
+        }
+      },
+      "desc": "3턴 동안 파티원 AGI +4."
+    },
+    "heal": {
+      "id": "heal",
+      "name": "힐",
+      "grade": "D",
+      "category": "singleHeal",
+      "target": "singleAlly",
+      "costs": {
+        "mp": 40,
+        "sp": 0
+      },
+      "coef": 2,
+      "statTypes": [
+        "int"
+      ],
+      "desc": "기본 단일 회복."
+    },
+    "pray": {
+      "id": "pray",
+      "name": "기도",
+      "grade": "D",
+      "category": "singleHeal",
+      "target": "singleAlly",
+      "costs": {
+        "mp": 45,
+        "sp": 0
+      },
+      "coef": 2.2,
+      "statTypes": [
+        "int"
+      ],
+      "desc": "힐보다 조금 강한 단일 회복."
+    },
+    "blessingOfLight": {
+      "id": "blessingOfLight",
+      "name": "빛의 축복",
+      "grade": "D",
+      "category": "buff",
+      "target": "allAllies",
+      "costs": {
+        "mp": 25,
+        "sp": 0
+      },
+      "duration": 3,
+      "statTypes": [
+        "int",
+        "sense"
+      ],
+      "buff": {
+        "stats": {
+          "int": 4
+        }
+      },
+      "desc": "3턴 동안 전 아군 INT +4."
+    },
+    "powerShot": {
+      "id": "powerShot",
+      "name": "파워샷",
+      "grade": "E",
+      "category": "singleAttack",
+      "target": "singleEnemy",
+      "costs": {
+        "mp": 20,
+        "sp": 20
+      },
+      "coef": 1.5,
+      "statTypes": [
+        "agi"
+      ],
+      "damageType": "physical",
+      "element": "none",
+      "desc": "집중 화살. 단일 고계수."
+    },
+    "quickShot": {
+      "id": "quickShot",
+      "name": "퀵샷",
+      "grade": "E",
+      "category": "singleAttack",
+      "target": "singleEnemy",
+      "costs": {
+        "mp": 0,
+        "sp": 15
+      },
+      "coef": 1.2,
+      "statTypes": [
+        "agi"
+      ],
+      "damageType": "physical",
+      "element": "none",
+      "desc": "저비용 단일 공격."
+    },
+    "fullArrowRecovery": {
+      "id": "fullArrowRecovery",
+      "name": "Full Arrow Recovery",
+      "grade": "E",
+      "rarity": "rare",
+      "category": "utility",
+      "target": "self",
+      "costs": {
+        "mp": 30,
+        "sp": 0
+      },
+      "statTypes": [
+        "agi"
+      ],
+      "resourceRestore": {
+        "sp": 25
+      },
+      "desc": "SP 25 회복."
+    },
+    "tripleShot": {
+      "id": "tripleShot",
+      "name": "트리플샷",
+      "grade": "E",
+      "rarity": "rare",
+      "category": "singleAttack",
+      "target": "singleEnemy",
+      "statTypes": [
+        "agi"
+      ],
+      "damageType": "physical",
+      "element": "none",
+      "byRank": {
+        "E": {
+          "coef": 1.5,
+          "costs": {
+            "mp": 15,
+            "sp": 15
+          }
+        },
+        "D": {
+          "coef": 2.4,
+          "costs": {
+            "mp": 15,
+            "sp": 15
+          }
+        },
+        "C": {
+          "coef": 3.6,
+          "costs": {
+            "mp": 18,
+            "sp": 18
+          }
+        },
+        "B": {
+          "coef": 6,
+          "costs": {
+            "mp": 25,
+            "sp": 25
+          }
+        },
+        "A": {
+          "coef": 9.6,
+          "costs": {
+            "mp": 30,
+            "sp": 30
+          }
+        },
+        "S": {
+          "coef": 14.4,
+          "costs": {
+            "mp": 40,
+            "sp": 40
+          }
+        }
+      },
+      "desc": "성장형 3연타. 총계수만 적용."
+    },
+    "quickThrow": {
+      "id": "quickThrow",
+      "name": "퀵스로",
+      "grade": "E",
+      "category": "singleAttack",
+      "target": "singleEnemy",
+      "costs": {
+        "mp": 0,
+        "sp": 40
+      },
+      "coef": 1.5,
+      "statTypes": [
+        "agi",
+        "sense"
+      ],
+      "damageType": "physical",
+      "element": "none",
+      "desc": "투척 단일 공격."
+    },
+    "knifeRecall": {
+      "id": "knifeRecall",
+      "name": "무기회수",
+      "grade": "E",
+      "category": "utility",
+      "target": "singleEnemy",
+      "costs": {
+        "mp": 20,
+        "sp": 0
+      },
+      "coef": 1.5,
+      "procChance": 0.3,
+      "statTypes": [
+        "agi",
+        "sense"
+      ],
+      "damageType": "physical",
+      "element": "none",
+      "resourceRestore": {
+        "sp": 10
+      },
+      "desc": "무기회수 + 30% 확률로 x1.5 계수 공격."
+    },
+    "preciseAim": {
+      "id": "preciseAim",
+      "name": "민첩한 조준",
+      "grade": "E",
+      "rarity": "rare",
+      "category": "buff",
+      "target": "allAllies",
+      "duration": 3,
+      "statTypes": [
+        "agi",
+        "sense"
+      ],
+      "byRank": {
+        "E": {
+          "costs": {
+            "mp": 25,
+            "sp": 0
+          },
+          "buff": {
+            "stats": {
+              "agi": 2,
+              "sense": 2
+            }
+          }
+        },
+        "D": {
+          "costs": {
+            "mp": 30,
+            "sp": 0
+          },
+          "buff": {
+            "stats": {
+              "agi": 4,
+              "sense": 4
+            }
+          }
+        },
+        "C": {
+          "costs": {
+            "mp": 40,
+            "sp": 0
+          },
+          "buff": {
+            "stats": {
+              "agi": 6,
+              "sense": 6
+            }
+          }
+        },
+        "B": {
+          "costs": {
+            "mp": 50,
+            "sp": 0
+          },
+          "buff": {
+            "stats": {
+              "agi": 8,
+              "sense": 8
+            }
+          }
+        },
+        "A": {
+          "costs": {
+            "mp": 65,
+            "sp": 0
+          },
+          "buff": {
+            "stats": {
+              "agi": 10,
+              "sense": 10
+            }
+          }
+        },
+        "S": {
+          "costs": {
+            "mp": 85,
+            "sp": 0
+          },
+          "buff": {
+            "stats": {
+              "agi": 12,
+              "sense": 12
+            }
+          }
+        }
+      },
+      "desc": "성장형 광역버프. 3턴 파티원 AGI·SENSE 증가."
+    },
+    "smallGarden": {
+      "id": "smallGarden",
+      "name": "작은 정원",
+      "grade": "E",
+      "rarity": "rare",
+      "category": "aoeHeal",
+      "target": "allAllies",
+      "statTypes": [
+        "int"
+      ],
+      "byRank": {
+        "E": {
+          "coef": 0.875,
+          "costs": {
+            "mp": 30,
+            "sp": 0
+          }
+        },
+        "D": {
+          "coef": 1.4,
+          "costs": {
+            "mp": 35,
+            "sp": 0
+          }
+        },
+        "C": {
+          "coef": 2.1,
+          "costs": {
+            "mp": 40,
+            "sp": 0
+          }
+        },
+        "B": {
+          "coef": 3.5,
+          "costs": {
+            "mp": 50,
+            "sp": 0
+          }
+        },
+        "A": {
+          "coef": 5.6,
+          "costs": {
+            "mp": 65,
+            "sp": 0
+          }
+        },
+        "S": {
+          "coef": 8.4,
+          "costs": {
+            "mp": 90,
+            "sp": 0
+          }
+        }
+      },
+      "desc": "성장형 광역 회복. 총 회복량 분배."
+    },
+    "steelAnvil": {
+      "id": "steelAnvil",
+      "name": "Steel Anvil",
+      "grade": "E",
+      "rarity": "rare",
+      "category": "passive",
+      "statTypes": [
+        "con"
+      ],
+      "byRank": {
+        "E": {
+          "passiveBonuses": {
+            "pdef": 1,
+            "mdef": 1
+          }
+        },
+        "D": {
+          "passiveBonuses": {
+            "pdef": 3,
+            "mdef": 3
+          }
+        },
+        "C": {
+          "passiveBonuses": {
+            "pdef": 5,
+            "mdef": 5
+          }
+        },
+        "B": {
+          "passiveBonuses": {
+            "pdef": 7,
+            "mdef": 7
+          }
+        },
+        "A": {
+          "passiveBonuses": {
+            "pdef": 9,
+            "mdef": 9
+          }
+        },
+        "S": {
+          "passiveBonuses": {
+            "pdef": 11,
+            "mdef": 11
+          }
+        }
+      },
+      "desc": "물리피해감소/마법피해감소 증가."
+    },
+    "shieldProficiency": {
+      "id": "shieldProficiency",
+      "name": "Shield Proficiency",
+      "grade": "E",
+      "category": "passive",
+      "statTypes": [
+        "con"
+      ],
+      "passiveMods": {
+        "shieldSpMul": 0.9
+      },
+      "desc": "방패 계열 SP 10% 감소."
+    },
+    "daggerHandling": {
+      "id": "daggerHandling",
+      "name": "Dagger Handling",
+      "grade": "E",
+      "category": "passive",
+      "statTypes": [
+        "agi",
+        "sense"
+      ],
+      "passiveMods": {
+        "daggerSpMul": 0.9
+      },
+      "desc": "단검/투척 계열 SP 10% 감소."
+    },
+    "fistStrike": {
+      "id": "fistStrike",
+      "name": "정권",
+      "grade": "E",
+      "category": "singleAttack",
+      "target": "singleEnemy",
+      "costs": {
+        "mp": 20,
+        "sp": 20
+      },
+      "coef": 1.5,
+      "statTypes": [
+        "str",
+        "con"
+      ],
+      "damageType": "physical",
+      "element": "none",
+      "desc": "근접 단일 공격."
+    },
+    "hiddenMight": {
+      "id": "hiddenMight",
+      "name": "이면의 완력",
+      "grade": "E",
+      "rarity": "rare",
+      "category": "passive",
+      "statTypes": [
+        "str"
+      ],
+      "byRank": {
+        "E": {
+          "passiveBonuses": {
+            "str": 1
+          }
+        },
+        "D": {
+          "passiveBonuses": {
+            "str": 2
+          }
+        },
+        "C": {
+          "passiveBonuses": {
+            "str": 3
+          }
+        },
+        "B": {
+          "passiveBonuses": {
+            "str": 4
+          }
+        },
+        "A": {
+          "passiveBonuses": {
+            "str": 5
+          }
+        },
+        "S": {
+          "passiveBonuses": {
+            "str": 6
+          }
+        }
+      },
+      "desc": "STR 증가."
+    },
+    "taunt": {
+      "id": "taunt",
+      "name": "도발",
+      "grade": "E",
+      "category": "buff",
+      "target": "self",
+      "costs": {
+        "mp": 0,
+        "sp": 20
+      },
+      "duration": 3,
+      "statTypes": [
+        "con"
+      ],
+      "buff": {
+        "threatBonus": 5
+      },
+      "desc": "3턴 동안 위협 수치 크게 증가."
+    }
+  }
+}
