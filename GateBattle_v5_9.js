@@ -1545,7 +1545,7 @@ const RARE_FAMILY_PRESETS = {
       customSkills: [
         { id:'skill_guide', name:'⭐ 스킬가이드', grade:'E', category:'singleAttack', target:'singleEnemy',
           costs:{ mp:0, sp:0 }, coef:1.0, damageType:'physical', element:'none', statTypes:['str'], duration:0,
-          desc:'【스킬 만드는 법】\n1. "새 스킬" 클릭 → ID/이름 입력\n2. 카테고리: singleAttack(단일공격), aoeAttack(광역), singleCC(단일CC), aoeCC(광역CC), singleHeal(힐), aoeHeal(광역힐), buff(버프), utility(유틸)\n3. 대상 선택 시 계수 자동 입력=하한값 (수정 가능)\n4. 등급별 단일 계수 하한: E:1.2 / D:1.92 / C:2.88 / B:4.8 / A:7.68 / S:11.52\n5. 광역=단일×0.58, 반광역(열)=단일×0.75\n6. 쿨타임(턴): 0=없음, 숫자 입력 시 사용 후 해당 턴 동안 재사용 불가\n7. JSON 가져오기로 여러 스킬 한번에 추가 가능\n\n이 스킬은 삭제해도 됩니다.' }
+          desc:'【스킬 만드는 법】\n1. "새 스킬" 클릭 → ID/이름 입력\n2. 카테고리: singleAttack(단일공격), aoeAttack(광역), singleCC(단일CC), aoeCC(광역CC), singleHeal(힐), aoeHeal(광역힐), buff(버프), utility(유틸)\n3. 대상 선택 시 계수 자동 입력=하한값 (수정 가능)\n4. 등급별 단일 계수 하한: E:1.2 / D:1.92 / C:2.88 / B:4.8 / A:7.68 / S:11.52\n5. 광역/열공격=단일×0.58\n6. 쿨타임(턴): 0=없음, 숫자 입력 시 사용 후 해당 턴 동안 재사용 불가\n7. JSON 가져오기로 여러 스킬 한번에 추가 가능\n\n이 스킬은 삭제해도 됩니다.' }
       ],
       rareMaterialPack: deepClone(DEFAULT_RARE_MATERIAL_PACK),
       rareMaterialCatalog: [],
@@ -4529,6 +4529,45 @@ function getBuffedStat(unit, statKey) {
     return true;
   }
 
+  // 열 전진 함수: 앞 열이 전멸하면 생존 유닛을 앞으로 끌어온다
+  function shiftRowsForward(units, runtime, summary) {
+    const alive = units.filter(u => !u.dead);
+    if (!alive.length) return;
+    const ROW_ORDER = ['front', 'mid', 'back'];
+    const hasAlive = r => alive.some(u => u.row === r);
+    // 전열 전멸 → 중열을 전열로, 후열을 중열로
+    if (!hasAlive('front') && (hasAlive('mid') || hasAlive('back'))) {
+      alive.forEach(u => {
+        if (u.row === 'mid') { u.row = 'front'; pushBattleLog(runtime, `${u.name} 전열로 전진`); }
+      });
+      alive.forEach(u => {
+        if (u.row === 'back' && !hasAlive('mid')) { u.row = 'mid'; pushBattleLog(runtime, `${u.name} 중열로 전진`); }
+      });
+      // 중열도 비었으면 후열→전열
+      if (!hasAlive('front')) {
+        alive.forEach(u => {
+          if (u.row === 'mid') { u.row = 'front'; pushBattleLog(runtime, `${u.name} 전열로 전진`); }
+        });
+      }
+    }
+    // 중열 전멸 (전열은 있으나 중열 없음) → 후열을 중열로
+    if (hasAlive('front') && !hasAlive('mid') && hasAlive('back')) {
+      alive.forEach(u => {
+        if (u.row === 'back') { u.row = 'mid'; pushBattleLog(runtime, `${u.name} 중열로 전진`); }
+      });
+    }
+  }
+
+  // 열 기반 폴백: 대상 열이 비면 가장 앞 열의 생존자를 반환
+  function getRowFallback(alive) {
+    const ROW_ORDER = ['front', 'mid', 'back'];
+    for (const r of ROW_ORDER) {
+      const inRow = alive.filter(u => u.row === r);
+      if (inRow.length) return inRow;
+    }
+    return alive; // 최종 폴백
+  }
+
   function getTargetListForAction(runtime, actor, action, skill) {
     const allies = actor.side === 'party' ? runtime.party : runtime.enemies;
     const foes = actor.side === 'party' ? runtime.enemies : runtime.party;
@@ -4538,13 +4577,13 @@ function getBuffedStat(unit, statKey) {
     if (skill.target === 'self') return [actor];
     if (skill.target === 'singleAlly') return [findUnitByUid(runtime, action.target) || chooseHealTarget(allies) || actor].filter(Boolean);
     if (skill.target === 'singleEnemy') return [chooseWeightedTarget(actor, foes, skill, action.target)].filter(Boolean);
-    // 열 기반 반광역 타겟 (row-based semi-AoE)
-    if (skill.target === 'rowFront') { const t = getAlive(foes).filter(u => u.row === 'front'); return t.length ? t : getAlive(foes); }
-    if (skill.target === 'rowMid') { const t = getAlive(foes).filter(u => u.row === 'mid'); return t.length ? t : getAlive(foes); }
-    if (skill.target === 'rowBack') { const t = getAlive(foes).filter(u => u.row === 'back'); return t.length ? t : getAlive(foes); }
-    // 2열 공격 타겟 (dual-row)
-    if (skill.target === 'rowFrontMid') { const t = getAlive(foes).filter(u => u.row === 'front' || u.row === 'mid'); return t.length ? t : getAlive(foes); }
-    if (skill.target === 'rowMidBack') { const t = getAlive(foes).filter(u => u.row === 'mid' || u.row === 'back'); return t.length ? t : getAlive(foes); }
+    // 열 기반 광역 타겟 (row-based AoE) — 대상 열이 비면 가장 앞 열 폴백
+    if (skill.target === 'rowFront') { const t = getAlive(foes).filter(u => u.row === 'front'); return t.length ? t : getRowFallback(getAlive(foes)); }
+    if (skill.target === 'rowMid') { const t = getAlive(foes).filter(u => u.row === 'mid'); return t.length ? t : getRowFallback(getAlive(foes)); }
+    if (skill.target === 'rowBack') { const t = getAlive(foes).filter(u => u.row === 'back'); return t.length ? t : getRowFallback(getAlive(foes)); }
+    // 2열 공격 타겟 (dual-row) — 비면 가장 앞 열 폴백
+    if (skill.target === 'rowFrontMid') { const t = getAlive(foes).filter(u => u.row === 'front' || u.row === 'mid'); return t.length ? t : getRowFallback(getAlive(foes)); }
+    if (skill.target === 'rowMidBack') { const t = getAlive(foes).filter(u => u.row === 'mid' || u.row === 'back'); return t.length ? t : getRowFallback(getAlive(foes)); }
     return [];
   }
 
@@ -4953,6 +4992,9 @@ function getBuffedStat(unit, statKey) {
       });
       if (unit.dead) { addRoundHighlight(summary, `${unit.name} 쓰러짐`); pushBattleLog(runtime, `${unit.name} 쓰러짐`); if (unit.isMonster) recordKillExp(runtime, unit); }
     });
+    // 열 전진: 앞 열이 전멸하면 생존자를 앞으로 끌어오기
+    shiftRowsForward(runtime.enemies, runtime, summary);
+    shiftRowsForward(runtime.party, runtime, summary);
     // 지형 전환 턴 감소
     if (runtime.terrain && runtime.terrain.turnsLeft > 0) {
       runtime.terrain.turnsLeft -= 1;
@@ -10816,7 +10858,7 @@ async function saveMaterialTraitFromForm() {
       const baseCoef = singleCoefs[grade] || 1.2;
       let coef = baseCoef;
       if (target === 'allEnemies' || target === 'allAllies') coef = Math.round(baseCoef * 0.58 * 1000) / 1000;
-      else if (target.startsWith('row')) coef = Math.round(baseCoef * 0.75 * 1000) / 1000;
+      else if (target.startsWith('row')) coef = Math.round(baseCoef * 0.58 * 1000) / 1000;
       const el = model.root && model.root.querySelector('#gb-skill-coef');
       if (el) el.value = coef;
     });
@@ -10827,7 +10869,7 @@ async function saveMaterialTraitFromForm() {
       const baseCoef = singleCoefs[grade] || 1.2;
       let coef = baseCoef;
       if (target === 'allEnemies' || target === 'allAllies') coef = Math.round(baseCoef * 0.58 * 1000) / 1000;
-      else if (target.startsWith('row')) coef = Math.round(baseCoef * 0.75 * 1000) / 1000;
+      else if (target.startsWith('row')) coef = Math.round(baseCoef * 0.58 * 1000) / 1000;
       const el = model.root && model.root.querySelector('#gb-skill-coef');
       if (el) el.value = coef;
     });
