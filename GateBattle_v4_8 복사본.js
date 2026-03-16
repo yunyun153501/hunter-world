@@ -140,7 +140,7 @@ const RARE_TRAIT_LABELS = {
   wind_damage:'바람 속성 피해 증가', lightning_damage:'전기 속성 피해 증가',
   light_damage:'빛 속성 피해 증가', dark_damage:'어둠 속성 피해 증가',
   crit_chance:'치명타 확률 증가', crit_damage:'치명타 피해 증가',
-  physical_defense:'물리 방어 증가', magic_defense:'마법 방어 증가',
+  physical_defense:'물리피해감소 증가', magic_defense:'마법피해감소 증가',
   fire_resist:'불 속성 저항', water_resist:'물 속성 저항',
   ice_resist:'얼음 속성 저항', earth_resist:'대지 속성 저항',
   wind_resist:'바람 속성 저항', lightning_resist:'전기 속성 저항',
@@ -154,8 +154,8 @@ const RARE_TRAIT_LABELS = {
   threat_up:'위협 수치 증가', threat_down:'위협 수치 감소',
   // ── 구버전 camelCase 패밀리 (하위 호환) ─────────────────────────────
   physicalDamage:'물리 피해 증가', magicDamage:'마법 피해 증가',
-  elementalDamage:'속성 피해 증가', physicalDefense:'물리 방어 증가',
-  magicDefense:'마법 방어 증가', elementalDefense:'속성 저항',
+  elementalDamage:'속성 피해 증가', physicalDefense:'물리피해감소 증가',
+  magicDefense:'마법피해감소 증가', elementalDefense:'속성 저항',
   increasedHealing:'치유 증가',
 };
 const MANA_STONE_LABELS = { E:'최하급 마정석', D:'하급 마정석', C:'중급 마정석', B:'중상급 마정석', A:'상급 마정석', S:'최상급 마정석' };
@@ -233,7 +233,7 @@ const EQUIP_MAX_ENHANCE = { weapon:5, subweapon:0, armor:5, accessory:5 };
 const WEAPON_ENHANCE_ATK = { E:1, D:1, C:2, B:3, A:4, S:5 };
 // Base weapon ATK by rank
 const WEAPON_BASE_ATK = { E:5, D:15, C:25, B:45, A:70, S:100 };
-// Armor base stats (main stat per enhance, armor P.DEF/M.DEF range, resistance)
+// Armor base stats (main stat per enhance, armor 물리피해감소/마법피해감소 range, resistance)
 const ARMOR_STAT_BY_RANK = {
   E: { totalStatSum:0,  defRange:[0,5],   resistance:1, enhanceStat:1 },
   D: { totalStatSum:2,  defRange:[0,15],  resistance:2, enhanceStat:2 },
@@ -251,7 +251,7 @@ const ACCESSORY_STAT_BY_RANK = {
   A: { totalStatSum:8,   traits:1, enhanceStat:5 },
   S: { totalStatSum:12,  traits:1, enhanceStat:6 },
 };
-// Shield: P.DEF = half armor value; ATK = -(P.DEF/2)
+// Shield: 물리피해감소 = half armor value; ATK = -(물리피해감소/2)
 const SUBWEAPON_DEF_RATIO = 0.5;
 // Max infusion by part
 const EQUIP_MAX_INFUSE = { weapon:2, subweapon:1, armor:2, accessory:1 };
@@ -308,7 +308,7 @@ const EQUIP_TRAIT_LABELS = {
   wind_damage:'바람 속성 피해 증가', lightning_damage:'전기 속성 피해 증가',
   light_damage:'빛 속성 피해 증가', dark_damage:'어둠 속성 피해 증가',
   crit_chance:'치명타 확률 증가', crit_damage:'치명타 피해 증가',
-  physical_defense:'물리 방어 증가', magic_defense:'마법 방어 증가',
+  physical_defense:'물리피해감소 증가', magic_defense:'마법피해감소 증가',
   fire_resist:'불 속성 저항', water_resist:'물 속성 저항',
   ice_resist:'얼음 속성 저항', earth_resist:'대지 속성 저항',
   wind_resist:'바람 속성 저항', lightning_resist:'전기 속성 저항',
@@ -322,7 +322,7 @@ const EQUIP_TRAIT_LABELS = {
   threat_up:'위협 수치 증가', threat_down:'위협 수치 감소',
   // 구버전 camelCase (하위 호환)
   physicalDamage:'물리 피해', magicDamage:'마법 피해', elementalDamage:'속성 피해',
-  physicalDefense:'물리 방어', magicDefense:'마법 방어', elementalDefense:'속성 저항',
+  physicalDefense:'물리피해감소', magicDefense:'마법피해감소', elementalDefense:'속성 저항',
   increasedHealing:'치유 증가'
 };
 // Trait effect % by rank — fallback for legacy camelCase traits not in the pack
@@ -590,13 +590,13 @@ const DEFAULT_RARE_MATERIAL_PACK = {
     },
     {
       "id": "physical_defense",
-      "name": "물리 방어 증가",
+      "name": "물리피해감소 증가",
       "category": "defense",
       "scale": "percentSmall"
     },
     {
       "id": "magic_defense",
-      "name": "마법 방어 증가",
+      "name": "마법피해감소 증가",
       "category": "defense",
       "scale": "percentSmall"
     },
@@ -1162,7 +1162,7 @@ const RARE_FAMILY_PRESETS = {
       byRank:{ E:{ coef:0.875, costs:{ mp:30, sp:0 } }, D:{ coef:1.4, costs:{ mp:35, sp:0 } }, C:{ coef:2.1, costs:{ mp:40, sp:0 } }, B:{ coef:3.5, costs:{ mp:50, sp:0 } }, A:{ coef:5.6, costs:{ mp:65, sp:0 } }, S:{ coef:8.4, costs:{ mp:90, sp:0 } } },
       desc:'성장형 광역 회복. 총 회복량 분배.'
     },
-    steelAnvil: { id:'steelAnvil', name:'Steel Anvil', grade:'E', rarity:'rare', category:'passive', statTypes:['con'], byRank:{ E:{ passiveBonuses:{ pdef:1, mdef:1 } }, D:{ passiveBonuses:{ pdef:3, mdef:3 } }, C:{ passiveBonuses:{ pdef:5, mdef:5 } }, B:{ passiveBonuses:{ pdef:7, mdef:7 } }, A:{ passiveBonuses:{ pdef:9, mdef:9 } }, S:{ passiveBonuses:{ pdef:11, mdef:11 } } }, desc:'P.DEF/M.DEF 증가.' },
+    steelAnvil: { id:'steelAnvil', name:'Steel Anvil', grade:'E', rarity:'rare', category:'passive', statTypes:['con'], byRank:{ E:{ passiveBonuses:{ pdef:1, mdef:1 } }, D:{ passiveBonuses:{ pdef:3, mdef:3 } }, C:{ passiveBonuses:{ pdef:5, mdef:5 } }, B:{ passiveBonuses:{ pdef:7, mdef:7 } }, A:{ passiveBonuses:{ pdef:9, mdef:9 } }, S:{ passiveBonuses:{ pdef:11, mdef:11 } } }, desc:'물리피해감소/마법피해감소 증가.' },
     shieldProficiency: { id:'shieldProficiency', name:'Shield Proficiency', grade:'E', category:'passive', statTypes:['con'], passiveMods:{ shieldSpMul:0.9 }, desc:'방패 계열 SP 10% 감소.' },
     daggerHandling: { id:'daggerHandling', name:'Dagger Handling', grade:'E', category:'passive', statTypes:['agi','sense'], passiveMods:{ daggerSpMul:0.9 }, desc:'단검/투척 계열 SP 10% 감소.' },
     fistStrike: { id:'fistStrike', name:'정권', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:20, sp:20 }, coef:1.5, statTypes:['str','con'], damageType:'physical', element:'none', desc:'근접 단일 공격.' },

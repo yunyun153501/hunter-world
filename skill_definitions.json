@@ -524,7 +524,7 @@
           }
         }
       },
-      "desc": "P.DEF/M.DEF 증가."
+      "desc": "물리피해감소/마법피해감소 증가."
     },
     "shieldProficiency": {
       "id": "shieldProficiency",
