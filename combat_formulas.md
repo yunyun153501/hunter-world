@@ -49,7 +49,84 @@ Damage = rawBase × coefAfterDef × critMult × resistMult × elementMul × type
 ```
 rawBase = monsterBaseDamage × (스킬 사용 시 monsterSkillMul, 기본공격 시 1)
 ```
-> 이후 과정은 헌터와 동일.
+> 이후 과정은 헌터와 동일: `rawBase × coefAfterDef × critMult × resistMult × elementMul × typeMul × incomingMul × outgoingMul`
+
+### 몬스터 JSON → 전투 스탯 변환 과정
+
+몬스터 JSON 파일(`monster_pack_full_core_import.json`)에는 **atk/damage 필드가 없음**.
+전투 시 `monsterProfileForEntry(entry)` 함수가 `MONSTER_COMBAT_TABLE`을 기반으로 런타임 계산:
+
+1. **JSON에 있는 필드**: `id`, `name`, `kind`(Normal/Elite/Boss), `rank`, `hp`, `damageType`, `attackStat`, `skills`, `position`, `row`, `role`, `threatBase`, `note`
+2. **런타임 생성 필드**: `monsterBaseDamage`(=프로필 damage), `monsterSkillMul`(=프로필 skillMul), `atk`(=프로필 damage), `pdef=0`, `mdef=0`, `stats={str:0,con:0,int:0,agi:0,sense:0}`
+
+#### MONSTER_COMBAT_TABLE (등급 × 종류별 범위)
+
+| 등급 | 종류 | HP 범위 | Damage 범위 | skillMul |
+|------|------|---------|-------------|----------|
+| **E** | Normal | 50~90 | 7~10 | 1.0 |
+| **E** | Elite | 200~360 | 15~20 | 1.1 |
+| **E** | Boss | 500~900 | 35~40 | 1.25 |
+| **D** | Normal | 175~275 | 15~20 | 1.0 |
+| **D** | Elite | 700~1100 | 35~40 | 1.2 |
+| **D** | Boss | 1750~2750 | 55~60 | 1.5 |
+| **C** | Normal | 400~700 | 20~25 | 1.0 |
+| **C** | Elite | 1800~3150 | 45~50 | 1.2 |
+| **C** | Boss | 5000~8750 | 70~80 | 1.5 |
+| **B** | Normal | 1250~1750 | 30~35 | 1.0 |
+| **B** | Elite | 5500~8000 | 60~65 | 1.25 |
+| **B** | Boss | 15000~22500 | 90~100 | 1.6 |
+| **A** | Normal | 3000~4500 | 35~40 | 1.0 |
+| **A** | Elite | 15000~22500 | 80~90 | 1.4 |
+| **A** | Boss | 45000~67500 | 110~120 | 1.75 |
+| **S** | Normal | 7500~10000 | 50~60 | 1.0 |
+| **S** | Elite | 37500~50000 | 100~110 | 1.5 |
+| **S** | Boss | 112500~150000 | 130~150 | 1.8 |
+
+#### 프로필 계산 과정 (monsterProfileForEntry)
+
+```
+1. rank + kind → MONSTER_COMBAT_TABLE에서 범위 선택
+2. hash seed = "id|rank|kind|position|row" → 0~1 사이 결정론적 값(t) 생성
+3. 열(row)에 따른 보정:
+   - front: HP +12%, DMG +8%
+   - mid:   HP +3%,  DMG +2%
+   - back:  HP -10%, DMG -4%
+4. 포지션 보정:
+   - 원거리: HP -3%, DMG -1%
+   - 마법:   HP -4%, DMG -2%
+   - 근거리: DMG +4%
+5. 최종값 = range(min, max, 보정된 t)
+```
+
+#### 몬스터 MP/SP 리소스 테이블
+
+| 등급(인덱스) | 물리형 MP | 물리형 SP | 마법형 MP | 마법형 SP |
+|-------------|-----------|-----------|-----------|-----------|
+| E (0) | 0 | 20 | 20 | 10 |
+| D (1) | 0 | 30 | 35 | 15 |
+| C (2) | 0 | 40 | 50 | 20 |
+| B (3) | 0 | 55 | 70 | 25 |
+| A (4) | 0 | 70 | 90 | 30 |
+| S (5) | 0 | 90 | 120 | 40 |
+
+> 마법 스킬이 있는 물리형 몬스터는 기본 MP의 25% 확보
+> 마법형 몬스터 중 물리 스킬 없으면 SP 70%만 확보
+
+#### 몬스터 공격 예시
+
+E등급 Normal 근거리물리(front열) 몬스터:
+- `monsterBaseDamage` ≈ 9 (범위 7~10, front 보정 +8%)
+- 기본공격: `rawBase = 9`
+- 스킬공격: `rawBase = 9 × 1.0 = 9` (Normal의 skillMul=1.0)
+- DEF 적용: `9 × skillCoef × (100/(100+DEF))`
+
+E등급 Boss 근거리물리(front열) 몬스터:
+- `monsterBaseDamage` ≈ 39 (범위 35~40, front 보정 +8%)
+- 기본공격: `rawBase = 39`
+- 스킬공격: `rawBase = 39 × 1.25 = 48.75` (Boss의 skillMul=1.25)
+
+> **핵심**: 몬스터는 개별 스탯(STR/CON 등)이 없으므로 `(2×MainStat + 3×ATK)` 공식을 사용하지 않음.
+> 대신 `monsterBaseDamage`를 rawBase로 직접 사용.
 
 ---
 
