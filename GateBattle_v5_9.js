@@ -20,7 +20,7 @@ try {
   // 등급별 주스탯 상한선
   const STAT_CAP_BY_RANK = { E:25, D:40, C:60, B:80, A:100, S:150 };
   const DAMAGE_ELEMENTS = ['none', 'water', 'fire', 'ice', 'earth', 'wind', 'electric', 'dark', 'light'];
-  const STATUS_KEYS = ['stun', 'bind', 'sleep', 'poison', 'bleed', 'burn', 'curse', 'silence'];
+  const STATUS_KEYS = ['stun', 'bind', 'sleep', 'poison', 'bleed', 'burn', 'curse', 'silence', 'slow'];
   const STATUS_DOT_KEYS = ['poison', 'bleed', 'burn'];
   const ELEMENT_CHAIN = ['dark', 'light', 'ice', 'fire', 'water', 'earth', 'wind', 'electric'];
 
@@ -922,7 +922,8 @@ const RARE_FAMILY_PRESETS = {
       '수면':'sleep', 'sleep':'sleep',
       '화상':'burn', 'burn':'burn',
       '저주':'curse', 'curse':'curse',
-      '침묵':'silence', 'silence':'silence'
+      '침묵':'silence', 'silence':'silence',
+      '둔화':'slow', 'slow':'slow'
     };
     return map[s] || '';
   }
@@ -1121,7 +1122,8 @@ const RARE_FAMILY_PRESETS = {
       bind:{ turns:2, chance:0.18, power:0 },
       sleep:{ turns:2, chance:0.16, power:0 },
       stun:{ turns:1, chance:0.16, power:0 },
-      silence:{ turns:3, chance:0.20, power:0 }
+      silence:{ turns:3, chance:0.20, power:0 },
+      slow:{ turns:3, chance:0.25, power:0 }
     };
     return Object.assign({ turns:2, chance:0.2, power:0 }, map[st] || {});
   }
@@ -1324,7 +1326,7 @@ const RARE_FAMILY_PRESETS = {
     insight: { id:'insight', name:'통찰', grade:'S', category:'passive', statTypes:['sense'], passiveMods:{ evasionBonus:0.10 }, desc:'적 의도/궤적 선읽기 — 회피율 +10% 상시.' },
 
     // ─── 앨리스 크로프트 (A랭크 · 서포터 · 크로노스의 후계자) ───
-    slowTime: { id:'slowTime', name:'시간 감속', grade:'A', category:'buff', target:'allEnemies', costs:{ mp:65, sp:0 }, duration:3, statTypes:['int'], damageType:'magic', element:'none', buff:{ stats:{ agi:-8 } }, desc:'적 전체 AGI -8 디버프 3턴. (아군 AGI +4는 hasteTime으로 별도 사용)' },
+    slowTime: { id:'slowTime', name:'시간 감속', grade:'A', category:'aoeCC', target:'allEnemies', costs:{ mp:65, sp:0 }, duration:3, statTypes:['int'], damageType:'magic', element:'none', cc:{ type:'slow', turns:3 }, buff:{ stats:{ agi:-8 } }, desc:'적 전체 둔화 3턴 (명중률 -30%, 회피율 -50%) + AGI -8 디버프.' },
     hasteTime: { id:'hasteTime', name:'시간 가속', grade:'A', category:'buff', target:'allAllies', costs:{ mp:55, sp:0 }, duration:2, statTypes:['int'], buff:{ stats:{ agi:8 } }, desc:'전 아군 AGI +8, 2턴.' },
     temporalSense: { id:'temporalSense', name:'시간 감지', grade:'A', category:'passive', statTypes:['sense','int'], desc:'유사 시간 능력 탐지 및 분석적 교란.' },
     itemExtension: { id:'itemExtension', name:'소모품 연장', grade:'A', rarity:'unique', category:'passive', statTypes:['int'], passiveMods:{ itemDurationMul:1.20 }, desc:'소모품 효과 지속시간 +20%.' },
@@ -4297,6 +4299,8 @@ function getBuffedStat(unit, statKey) {
       accuracy = 1.0;
       // 속박된 몬스터: 명중률 -50%
       if (Number(attacker.statuses.bind || 0) > 0) accuracy *= 0.5;
+      // 둔화된 몬스터: 명중률 -30%
+      if (Number(attacker.statuses.slow || 0) > 0) accuracy *= 0.7;
     } else {
       // 헌터 명중률 = 70 + 감각 * 0.5
       let sense = getBuffedStat(attacker, 'sense');
@@ -4304,6 +4308,8 @@ function getBuffedStat(unit, statKey) {
       if (Number(attacker.statuses.bind || 0) > 0) sense = Math.floor(sense * 0.5);
       accuracy = (70 + sense * 0.5) / 100;
       if (Number(attacker.statuses.bind || 0) > 0) accuracy *= 0.5;
+      // 둔화된 헌터: 명중률 -30%
+      if (Number(attacker.statuses.slow || 0) > 0) accuracy *= 0.7;
     }
     // 대상 회피율 계산 (등급별)
     let evasion = 0;
@@ -4319,6 +4325,10 @@ function getBuffedStat(unit, statKey) {
       }
       // 몬스터가 공격자일시 동급헌터의 회피율을 50%만 적용
       if (attacker.isMonster) {
+        evasion *= 0.5;
+      }
+      // 둔화된 대상: 회피율 -50%
+      if (Number(target.statuses.slow || 0) > 0) {
         evasion *= 0.5;
       }
     }
@@ -4694,6 +4704,13 @@ function getBuffedStat(unit, statKey) {
       if (kind === 'boss') t = Math.min(t, 1);
       else if (kind === 'elite') t = Math.min(t, 2);
       target.statuses.silence = Math.max(Number(target.statuses.silence || 0), t);
+    } else if (type === 'slow') {
+      // 둔화: 명중률 -30%, 회피율 -50%
+      let t = turns;
+      const kind = String(target.kind || '').toLowerCase();
+      if (kind === 'boss') t = Math.min(t, 2);
+      else if (kind === 'elite') t = Math.min(t, 3);
+      target.statuses.slow = Math.max(Number(target.statuses.slow || 0), t);
     }
     addRoundHighlight(summary, `${sourceName}의 ${skill?.name || '공격'} → ${target.name} ${type}`);
     pushBattleLog(runtime, `${sourceName} 사용: ${skill?.name || '공격'} → ${target.name} ${type}`);
@@ -5092,7 +5109,7 @@ function getBuffedStat(unit, statKey) {
       }
 
       // 상태이상 턴 감소
-      ['stun','bind','sleep','poison','bleed','burn','curse','silence'].forEach(key => {
+      ['stun','bind','sleep','poison','bleed','burn','curse','silence','slow'].forEach(key => {
         unit.statuses[key] = Math.max(0, Number(unit.statuses[key] || 0) - 1);
       });
       // 독/화상: 턴이 0이 되면 스택 초기화
@@ -5174,7 +5191,7 @@ function getBuffedStat(unit, statKey) {
     partyAlive.forEach(u => {
       const buffs = (u.buffs || []).map(b => `${b.name}(${b.turns})`).join(', ');
       const states = [];
-      ['stun','bind','sleep','poison','bleed','burn','curse','silence'].forEach(k => { if (u.statuses[k] > 0) states.push(`${k}:${u.statuses[k]}`); });
+      ['stun','bind','sleep','poison','bleed','burn','curse','silence','slow'].forEach(k => { if (u.statuses[k] > 0) states.push(`${k}:${u.statuses[k]}`); });
       if (buffs) states.push(`buff:${buffs}`);
       lines.push(`- ${u.name} [${rowLabel(u.row)}]: HP ${u.hp}/${u.maxHp}, MP ${u.mp}/${u.maxMp}, SP ${u.sp}/${u.maxSp}${states.length ? ' ['+states.join(' | ')+']' : ''}`);
     });
