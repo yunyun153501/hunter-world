@@ -86,10 +86,10 @@
       "grade": "E",
       "category": "aoeCC",
       "target": "allEnemies",
-      "baseSingleCoef": 0.875,
+      "coef": 0.4375,
       "costs": {
-        "mp": 20,
-        "sp": 20
+        "mp": 40,
+        "sp": 40
       },
       "statTypes": [
         "con"
@@ -100,7 +100,7 @@
         "type": "stun",
         "turns": 1
       },
-      "desc": "광역 CC. 단일 CC 대비 계수 1/2, 비용 2배."
+      "desc": "광역 CC. 계수 0.4375, MP 40 / SP 40. 1턴 기절."
     },
     "haste": {
       "id": "haste",

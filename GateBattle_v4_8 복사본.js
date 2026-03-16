@@ -1136,7 +1136,7 @@ const RARE_FAMILY_PRESETS = {
     energyBolt: { id:'energyBolt', name:'에너지볼트', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:30, sp:0 }, coef:1.5, statTypes:['int'], damageType:'magic', element:'none', desc:'기본 단일 마법 공격.' },
     energyShower: { id:'energyShower', name:'에너지샤워', grade:'E', category:'aoeAttack', target:'allEnemies', costs:{ mp:40, sp:0 }, coef:0.875, statTypes:['int'], damageType:'magic', element:'none', desc:'기본 광역 마법 공격.' },
     shieldBash: { id:'shieldBash', name:'실드강타', grade:'E', category:'singleCC', target:'singleEnemy', costs:{ mp:20, sp:20 }, coef:0.875, statTypes:['con'], damageType:'physical', element:'none', cc:{ type:'stun', turns:1 }, desc:'단일 CC. 1턴 기절.' },
-    shockwave: { id:'shockwave', name:'충격파', grade:'E', category:'aoeCC', target:'allEnemies', baseSingleCoef:0.875, costs:{ mp:20, sp:20 }, statTypes:['con'], damageType:'physical', element:'none', cc:{ type:'stun', turns:1 }, desc:'광역 CC. 단일 CC 대비 계수 1/2, 비용 2배.' },
+    shockwave: { id:'shockwave', name:'충격파', grade:'E', category:'aoeCC', target:'allEnemies', coef:0.4375, costs:{ mp:40, sp:40 }, statTypes:['con'], damageType:'physical', element:'none', cc:{ type:'stun', turns:1 }, desc:'광역 CC. 계수 0.4375, MP 40 / SP 40. 1턴 기절.' },
     haste: { id:'haste', name:'헤이스트', grade:'D', category:'buff', target:'allAllies', costs:{ mp:25, sp:0 }, duration:3, statTypes:['int','sense'], buff:{ stats:{ agi:4 } }, desc:'3턴 동안 파티원 AGI +4.' },
     heal: { id:'heal', name:'힐', grade:'D', category:'singleHeal', target:'singleAlly', costs:{ mp:40, sp:0 }, coef:2.0, statTypes:['int'], desc:'기본 단일 회복.' },
     pray: { id:'pray', name:'기도', grade:'D', category:'singleHeal', target:'singleAlly', costs:{ mp:45, sp:0 }, coef:2.2, statTypes:['int'], desc:'힐보다 조금 강한 단일 회복.' },
@@ -1412,9 +1412,8 @@ function buildDefaultState() {
         }
       });
     }
-    if (skill.category === 'aoeCC') {
-      const baseCoef = skill.baseSingleCoef != null ? skill.baseSingleCoef : (skill.coef != null ? skill.coef : 0.875);
-      skill.coef = round3(baseCoef * 0.5);
+    if (skill.category === 'aoeCC' && skill.baseSingleCoef != null) {
+      skill.coef = round3(skill.baseSingleCoef * 0.5);
       skill.costs = skill.costs || { mp:0, sp:0 };
       skill.costs.mp = Math.ceil((skill.costs.mp || 0) * 2);
       skill.costs.sp = Math.ceil((skill.costs.sp || 0) * 2);
