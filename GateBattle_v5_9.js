@@ -20,7 +20,7 @@ try {
   // 등급별 주스탯 상한선
   const STAT_CAP_BY_RANK = { E:25, D:40, C:60, B:80, A:100, S:150 };
   const DAMAGE_ELEMENTS = ['none', 'water', 'fire', 'ice', 'earth', 'wind', 'electric', 'dark', 'light'];
-  const STATUS_KEYS = ['stun', 'bind', 'sleep', 'poison', 'bleed', 'burn', 'curse'];
+  const STATUS_KEYS = ['stun', 'bind', 'sleep', 'poison', 'bleed', 'burn', 'curse', 'silence', 'slow'];
   const STATUS_DOT_KEYS = ['poison', 'bleed', 'burn'];
   const ELEMENT_CHAIN = ['dark', 'light', 'ice', 'fire', 'water', 'earth', 'wind', 'electric'];
 
@@ -921,7 +921,9 @@ const RARE_FAMILY_PRESETS = {
       '속박':'bind', 'bind':'bind',
       '수면':'sleep', 'sleep':'sleep',
       '화상':'burn', 'burn':'burn',
-      '저주':'curse', 'curse':'curse'
+      '저주':'curse', 'curse':'curse',
+      '침묵':'silence', 'silence':'silence',
+      '둔화':'slow', 'slow':'slow'
     };
     return map[s] || '';
   }
@@ -1119,7 +1121,9 @@ const RARE_FAMILY_PRESETS = {
       curse:{ turns:3, chance:0.24, power:0 },
       bind:{ turns:2, chance:0.18, power:0 },
       sleep:{ turns:2, chance:0.16, power:0 },
-      stun:{ turns:1, chance:0.16, power:0 }
+      stun:{ turns:1, chance:0.16, power:0 },
+      silence:{ turns:3, chance:0.20, power:0 },
+      slow:{ turns:3, chance:0.20, power:0 }
     };
     return Object.assign({ turns:2, chance:0.2, power:0 }, map[st] || {});
   }
@@ -4171,6 +4175,10 @@ function getBuffedStat(unit, statKey) {
     (unit.buffs || []).forEach(buff => {
       if (buff && buff.stats && buff.stats[statKey]) value += Number(buff.stats[statKey]);
     });
+    // 둔화: AGI 30% 감소
+    if (statKey === 'agi' && Number((unit.statuses && unit.statuses.slow) || 0) > 0) {
+      value = Math.floor(value * 0.7);
+    }
     return value;
   }
   const CURSE_PERCENT_BY_RANK = { E:0.10, D:0.12, C:0.15, B:0.20, A:0.25, S:0.30 };
@@ -4193,6 +4201,13 @@ function getBuffedStat(unit, statKey) {
     if (cursePct > 0) mul *= (1 + cursePct);
     // Burn: +10% incoming damage (does not stack)
     if (Number(unit.statuses.burn || 0) > 0) mul *= 1.10;
+    // 패시브: 진형 지휘 (전투 시작 2턴 피해감소)
+    if (unit.passiveMods && Number(unit.passiveMods.formationDmgReduce || 0) > 0) {
+      const runtime = (typeof model !== 'undefined' && model.state && model.state.runtime) ? model.state.runtime : null;
+      if (runtime && runtime.round <= 2 && unit.row === 'front') {
+        mul *= (1 - unit.passiveMods.formationDmgReduce);
+      }
+    }
     return mul;
   }
   function getOutgoingMul(unit, target, skill) {
@@ -4201,6 +4216,8 @@ function getBuffedStat(unit, statKey) {
     const cursePct = getCursePenalty(unit);
     if (cursePct > 0) mul *= (1 - cursePct);
     if (unit.species === 'beast' && target && Number(target.statuses.bleed || 0) > 0) mul *= Number(unit.bonusVsBleeding || 1.2);
+    // 소환수 보너스: 제피르 소환 시 질풍격 ×1.2
+    if (skill && skill.id === 'galeStrike' && hasSummonBuff(unit, 'zephyr')) mul *= 1.2;
     return mul;
   }
   function getEffectiveDefense(unit, kind) {
@@ -4217,13 +4234,30 @@ function getBuffedStat(unit, statKey) {
     const base = Object.assign({ mp:0, sp:0 }, (skill && skill.costs) || {});
     let mp = base.mp || 0;
     let sp = base.sp || 0;
-    if ((skill.id === 'shieldBash' || skill.id === 'shockwave') && unit.skills.includes('shieldProficiency')) sp = Math.ceil(sp * (unit.passiveMods.shieldSpMul || 1));
-    if ((skill.id === 'quickThrow' || skill.id === 'knifeRecall') && unit.skills.includes('daggerHandling')) sp = Math.ceil(sp * (unit.passiveMods.daggerSpMul || 1));
+    // 방패숙련: 방패 계열 SP 감소
+    if ((skill.id === 'shieldBash' || skill.id === 'shockwave' || skill.id === 'shieldSmash') && unit.passiveMods && unit.passiveMods.shieldSpMul) {
+      sp = Math.ceil(sp * (unit.passiveMods.shieldSpMul || 1));
+    }
+    // 단검숙련: 단검/투척 계열 SP 감소
+    if ((skill.id === 'quickThrow' || skill.id === 'knifeRecall') && unit.passiveMods && unit.passiveMods.daggerSpMul) {
+      sp = Math.ceil(sp * (unit.passiveMods.daggerSpMul || 1));
+    }
+    // 사기관리: 전투 시작 2턴 전 아군 MP/SP -12%
+    if (unit.passiveMods && Number(unit.passiveMods.moraleCostReduce || 0) > 0) {
+      const runtime = (typeof model !== 'undefined' && model.state && model.state.runtime) ? model.state.runtime : null;
+      if (runtime && runtime.round <= 2) {
+        const reduce = unit.passiveMods.moraleCostReduce;
+        mp = Math.ceil(mp * (1 - reduce));
+        sp = Math.ceil(sp * (1 - reduce));
+      }
+    }
     return { mp, sp };
   }
   function canUseSkill(unit, skill) {
     if (!skill || skill.category === 'passive') return false;
     if (Number(unit.cooldowns && unit.cooldowns[skill.id] || 0) > 0) return false;
+    // 침묵: 스킬 사용 불가 (기본 공격만 가능)
+    if (Number(unit.statuses && unit.statuses.silence || 0) > 0) return false;
     const cost = getSkillCost(unit, skill);
     return unit.mp >= cost.mp && unit.sp >= cost.sp;
   }
@@ -4267,6 +4301,10 @@ function getBuffedStat(unit, statKey) {
     let evasion = 0;
     if (!target.isMonster) {
       evasion = getBaseEvasion(target);
+      // 패시브 회피 보너스 (통찰, 본능 읽기 등)
+      if (target.passiveMods && Number(target.passiveMods.evasionBonus || 0) > 0) {
+        evasion += Number(target.passiveMods.evasionBonus);
+      }
       // 공격자 등급 > 대상 등급 → 대상 회피율 0%
       if (rankIndex(attacker.rank) > rankIndex(target.rank)) {
         evasion = 0;
@@ -4280,6 +4318,12 @@ function getBuffedStat(unit, statKey) {
     return accuracy - evasion;
   }
   function performHit(attacker, target, skill) {
+    // 긴급회피: 다음 1회 공격 100% 회피
+    const evasionBuff = (target.buffs || []).find(b => b && b.evasionNext && b.turns > 0);
+    if (evasionBuff) {
+      evasionBuff.turns = 0; // 1회 소모
+      return { hit:false, crit:false };
+    }
     const hitRate = hitChance(attacker, target, skill);
     const hit = hitRate >= 1.0 || Math.random() <= hitRate;
     const crit = hit && Math.random() <= critChance(attacker);
@@ -4305,10 +4349,30 @@ function getBuffedStat(unit, statKey) {
       rawBase = (2 * mainStat) + (3 * Number(attacker.atk || 0));
     }
     // 방어 전 피해량 (rawDamage)
-    const rawDamage = rawBase * coef * critMult * resistMult * elementMul * typeMul * incomingMul * outgoingMul;
+    let terrainMul = 1;
+    // 지형 전환 효과: 식물(earth) +15%, 화염(fire) -10%
+    if (typeof model !== 'undefined' && model.state && model.state.runtime && model.state.runtime.terrain && model.state.runtime.terrain.turnsLeft > 0) {
+      if (element === 'earth') terrainMul *= 1.15;
+      if (element === 'fire') terrainMul *= 0.90;
+      if (attacker.species === 'plant') terrainMul *= 1.15;
+    }
+    const rawDamage = rawBase * coef * critMult * resistMult * elementMul * typeMul * incomingMul * outgoingMul * terrainMul;
     // 물리/마법 피해감소 공식: 피해감소율 = DEF / (DEF + 1.5 × rawDamage)
-    const defReduction = (def > 0 && rawDamage > 0) ? def / (def + 1.5 * rawDamage) : 0;
-    const afterStatDef = rawDamage * (1 - defReduction);
+    let effectiveDef = def;
+    // 패시브: 방어 무시 (관통탄 등)
+    if (skill && attacker.passiveMods && Number(attacker.passiveMods.defenseIgnore || 0) > 0) {
+      effectiveDef = Math.max(0, effectiveDef * (1 - attacker.passiveMods.defenseIgnore));
+    }
+    // 스킬별 방어 무시 (passiveMods가 스킬에 직접 있는 경우)
+    if (skill && skill.passiveMods && Number(skill.passiveMods.defenseIgnore || 0) > 0) {
+      effectiveDef = Math.max(0, effectiveDef * (1 - skill.passiveMods.defenseIgnore));
+    }
+    const defReduction = (effectiveDef > 0 && rawDamage > 0) ? effectiveDef / (effectiveDef + 1.5 * rawDamage) : 0;
+    let afterStatDef = rawDamage * (1 - defReduction);
+    // 패시브: 물리 피해 감소 (충격 감소 등)
+    if (damageType === 'physical' && target.passiveMods && Number(target.passiveMods.physicalDmgReduce || 0) > 0) {
+      afterStatDef *= (1 - target.passiveMods.physicalDmgReduce);
+    }
     return Math.max(1, Math.round(afterStatDef));
   }
   function computeHeal(caster, skill) {
@@ -4363,6 +4427,12 @@ function getBuffedStat(unit, statKey) {
   function chooseWeightedTarget(attacker, foes, skill, explicitUid) {
     const alive = getAlive(foes);
     if (!alive.length) return null;
+    // 강제 도발: 도발 버프가 있으면 도발 시전자를 우선 공격
+    const tauntBuff = (attacker.buffs || []).find(b => b && b.forcedTaunt && b.turns > 0);
+    if (tauntBuff) {
+      const taunter = alive.find(u => u.uid === tauntBuff.source);
+      if (taunter && !taunter.dead) return taunter;
+    }
     const allowedRows = getAccessibleRows(attacker, skill, foes);
     if (explicitUid) {
       const explicit = alive.find(u => u.uid === explicitUid);
@@ -4384,6 +4454,9 @@ function getBuffedStat(unit, statKey) {
   }
   function hasBuff(unit, skillId) {
     return (unit.buffs || []).some(b => b && b.sourceSkill === skillId && b.turns > 0);
+  }
+  function hasSummonBuff(unit, summonName) {
+    return (unit.buffs || []).some(b => b && b.summon === summonName && b.turns > 0);
   }
 
   function addRoundHighlight(summary, text) {
@@ -4410,13 +4483,22 @@ function getBuffedStat(unit, statKey) {
     const changed = [];
     targets.forEach(target => {
       target.buffs = target.buffs || [];
-      target.buffs.push({
+      const buffEntry = {
         sourceSkill:skill.id, name:skill.name, turns,
         stats:Object.assign({}, skill.buff.stats || {}),
         threatBonus:Number(skill.buff.threatBonus || 0),
         damageTakenMul:Number(skill.buff.damageTakenMul || 1),
         source:sourceUnit.uid
-      });
+      };
+      // 특수 버프 속성 복사
+      if (skill.buff.ccImmunity) buffEntry.ccImmunity = true;
+      if (skill.buff.forcedTaunt) buffEntry.forcedTaunt = true;
+      if (skill.buff.evasionNext) buffEntry.evasionNext = Number(skill.buff.evasionNext);
+      if (skill.buff.summon) buffEntry.summon = skill.buff.summon;
+      if (skill.buff.immobile) buffEntry.immobile = true;
+      if (skill.buff.parryStance) { buffEntry.parryStance = true; buffEntry.parryCoef = Number(skill.buff.parryCoef || 1); }
+      if (skill.buff.onContactStun) buffEntry.onContactStun = Object.assign({}, skill.buff.onContactStun);
+      target.buffs.push(buffEntry);
       if (skill.buff.threatBonus) target.threatBonus += Number(skill.buff.threatBonus || 0);
       changed.push(target.name);
     });
@@ -4431,8 +4513,22 @@ function getBuffedStat(unit, statKey) {
     if (!skill.cc) return;
     targets.forEach(target => {
       if (target.dead) return;
+      // CC 면역 버프 확인
+      if ((target.buffs || []).some(b => b && b.ccImmunity && b.turns > 0)) {
+        addRoundHighlight(summary, `${target.name}은(는) CC 면역 상태`);
+        pushBattleLog(runtime, `${target.name}은(는) CC 면역 상태`);
+        return;
+      }
       const type = normStatus(skill.cc.type);
       if (!type) return;
+      // CC 확률 판정
+      let ccChance = skill.cc.chance != null ? Number(skill.cc.chance) : 1.0;
+      // 소환수 보너스: 바크 소환 시 뿌리속박 CC +10%
+      if (skill.id === 'rootBind') {
+        const caster = runtime ? (runtime.party.concat(runtime.enemies)).find(u => u.name === sourceName) : null;
+        if (caster && hasSummonBuff(caster, 'bark')) ccChance = Math.min(1.0, ccChance + 0.10);
+      }
+      if (ccChance < 1.0 && Math.random() > ccChance) return;
       if (unitHasImmunity(target, type)) {
         addRoundHighlight(summary, `${target.name}은(는) ${type} 면역`);
         pushBattleLog(runtime, `${target.name}은(는) ${type} 면역`);
@@ -4467,6 +4563,14 @@ function getBuffedStat(unit, statKey) {
         target.statuses.sleepResistTimer = 5; // 5-turn immunity after sleep
         addRoundHighlight(summary, `${sourceName}의 ${skill.name} → ${target.name} 수면`);
         pushBattleLog(runtime, `${sourceName} 사용: ${skill.name} → ${target.name} 수면`);
+      } else if (type === 'silence') {
+        let turns = Number(skill.cc.turns || 3);
+        const kind = String(target.kind || '').toLowerCase();
+        if (kind === 'boss') turns = Math.min(turns, 1);
+        else if (kind === 'elite') turns = Math.min(turns, 2);
+        target.statuses.silence = Math.max(Number(target.statuses.silence || 0), turns);
+        addRoundHighlight(summary, `${sourceName}의 ${skill.name} → ${target.name} 침묵`);
+        pushBattleLog(runtime, `${sourceName} 사용: ${skill.name} → ${target.name} 침묵`);
       } else {
         target.statuses[type] = Math.max(Number(target.statuses[type] || 0), Number(skill.cc.turns || 1));
         addRoundHighlight(summary, `${sourceName}의 ${skill.name} → ${target.name} ${type}`);
@@ -4479,6 +4583,12 @@ function getBuffedStat(unit, statKey) {
     if (!srcStatus || !srcStatus.type || target.dead) return false;
     const type = normStatus(srcStatus.type);
     if (!type) return false;
+    // CC 면역 버프 확인
+    if ((target.buffs || []).some(b => b && b.ccImmunity && b.turns > 0)) {
+      addRoundHighlight(summary, `${target.name}은(는) CC 면역 상태`);
+      pushBattleLog(runtime, `${target.name}은(는) CC 면역 상태`);
+      return false;
+    }
     if (unitHasImmunity(target, type)) {
       addRoundHighlight(summary, `${target.name}은(는) ${type} 면역`);
       pushBattleLog(runtime, `${target.name}은(는) ${type} 면역`);
@@ -4551,6 +4661,16 @@ function getBuffedStat(unit, statKey) {
           target.statuses.burnPower = (2 * mainStat + 3 * Number(sourceUnit.atk || 0)) * coef * 0.12;
         }
       }
+    } else if (type === 'silence') {
+      // 침묵: 스킬 사용 불가
+      let t = turns;
+      const kind = String(target.kind || '').toLowerCase();
+      if (kind === 'boss') t = Math.min(t, 1);
+      else if (kind === 'elite') t = Math.min(t, 2);
+      target.statuses.silence = Math.max(Number(target.statuses.silence || 0), t);
+    } else if (type === 'slow') {
+      // 둔화: AGI 30% 감소
+      target.statuses.slow = Math.max(Number(target.statuses.slow || 0), turns);
     }
     addRoundHighlight(summary, `${sourceName}의 ${skill?.name || '공격'} → ${target.name} ${type}`);
     pushBattleLog(runtime, `${sourceName} 사용: ${skill?.name || '공격'} → ${target.name} ${type}`);
@@ -4598,7 +4718,24 @@ function getBuffedStat(unit, statKey) {
     const tauntSkill = skillPool.find(sk => sk.id === 'taunt');
     if (tauntSkill && (pos.includes('탱커') || unit.job.includes('크루세이더')) && !hasBuff(unit, 'taunt') && Math.random() < 0.65) return { type:'skill', skillId:'taunt', target:unit.uid };
 
-    const buffSkill = skillPool.find(sk => sk.category === 'buff' && sk.id !== 'taunt' && !hasBuff(unit, sk.id));
+    // CC 면역 버프 (방어선 유지)
+    const ccImmunitySkill = skillPool.find(sk => sk.buff && sk.buff.ccImmunity && !hasBuff(unit, sk.id));
+    if (ccImmunitySkill && pos.includes('탱커') && unit.hp / unit.maxHp <= 0.7) {
+      return { type:'skill', skillId:ccImmunitySkill.id, target:unit.uid };
+    }
+    // 강제 도발 (신성한 도발)
+    const tauntEnemy = skillPool.find(sk => sk.buff && sk.buff.forcedTaunt);
+    if (tauntEnemy && (enemyBoss || enemyElite)) {
+      const target = enemyBoss || enemyElite;
+      if (!target.dead) return { type:'skill', skillId:tauntEnemy.id, target:target.uid };
+    }
+    // 소환 스킬 (제피르, 바크) - 아직 소환 안 된 경우 우선
+    const summonSkill = skillPool.find(sk => sk.buff && sk.buff.summon && !hasSummonBuff(unit, sk.buff.summon));
+    if (summonSkill && Math.random() < 0.7) {
+      return { type:'skill', skillId:summonSkill.id, target:summonSkill.target === 'allAllies' ? 'allAllies' : unit.uid };
+    }
+
+    const buffSkill = skillPool.find(sk => sk.category === 'buff' && sk.id !== 'taunt' && !hasBuff(unit, sk.id) && !(sk.buff && sk.buff.forcedTaunt) && !(sk.buff && sk.buff.summon));
     if (buffSkill && (pos.includes('서포터') || pos.includes('원거리') || pos.includes('힐러') || Math.random() < 0.2)) {
       return { type:'skill', skillId:buffSkill.id, target:buffSkill.target === 'allAllies' ? 'allAllies' : unit.uid };
     }
@@ -4611,8 +4748,11 @@ function getBuffedStat(unit, statKey) {
     if (aoeCC && aliveFoes.length >= 4 && Math.random() < 0.5) return { type:'skill', skillId:aoeCC.id, target:'allEnemies' };
     const aoeAtk = skillPool.filter(sk => sk.category === 'aoeAttack').sort((a,b)=>(b.coef||0)-(a.coef||0))[0];
     if (aoeAtk && aliveFoes.length >= 3 && !pos.includes('힐러')) return { type:'skill', skillId:aoeAtk.id, target:'allEnemies' };
-    const utility = skillPool.find(sk => sk.category === 'utility' && sk.resourceRestore);
-    if (utility && unit.sp <= unit.maxSp * 0.3) return { type:'skill', skillId:utility.id, target:utility.target === 'self' ? unit.uid : (choosePriorityTarget(unit, foes, utility) || {}).uid };
+    // 유틸리티: 자원 회복 또는 자기 버프 유틸리티
+    const utilityRestore = skillPool.find(sk => sk.category === 'utility' && sk.resourceRestore);
+    if (utilityRestore && unit.sp <= unit.maxSp * 0.3) return { type:'skill', skillId:utilityRestore.id, target:utilityRestore.target === 'self' ? unit.uid : (choosePriorityTarget(unit, foes, utilityRestore) || {}).uid };
+    const utilityBuff = skillPool.find(sk => sk.category === 'utility' && sk.buff && !hasBuff(unit, sk.id));
+    if (utilityBuff && unit.hp / unit.maxHp <= 0.5 && Math.random() < 0.6) return { type:'skill', skillId:utilityBuff.id, target:unit.uid };
     const singleAtk = skillPool.filter(sk => sk.category === 'singleAttack').sort((a,b)=>(b.coef||0)-(a.coef||0))[0];
     if (singleAtk) return { type:'skill', skillId:singleAtk.id, target:(choosePriorityTarget(unit, foes, singleAtk) || {}).uid };
     return { type:'basic', target:(choosePriorityTarget(unit, foes, null) || {}).uid };
@@ -4739,6 +4879,20 @@ function getBuffedStat(unit, statKey) {
         actor.mp = Math.min(actor.maxMp, actor.mp + Number(skill.resourceRestore.mp || 0));
         actor.sp = Math.min(actor.maxSp, actor.sp + Number(skill.resourceRestore.sp || 0));
       }
+      // 유틸리티 스킬의 버프 속성 적용 (긴급회피, 받아치기 등)
+      if (skill.buff && skill.duration) {
+        applyBuff([actor], skill, actor);
+      } else if (skill.buff && !skill.duration) {
+        // duration 없는 버프: 1턴 임시 적용
+        const tempSkill = Object.assign({}, skill, { duration:1 });
+        applyBuff([actor], tempSkill, actor);
+      }
+      // 지형 전환: 전장 환경 변경 (식물 +15%, 화염 -10%)
+      if (skill.id === 'terrainShift') {
+        runtime.terrain = { type:'forest', turnsLeft:3 };
+        addRoundHighlight(summary, `${actor.name} 지형 전환: 숲/초원 (식물 +15%, 화염 -10%)`);
+        pushBattleLog(runtime, `${actor.name} 지형 전환 발동 — 3턴간 식물 +15%, 화염 -10%`);
+      }
       addRoundHighlight(summary, `${actor.name}의 ${skill.name}`);
       pushBattleLog(runtime, `${actor.name} 사용: ${skill.name}`);
       actor.lastAction = `${skill.name} (MP-${cost.mp} / SP-${cost.sp})`;
@@ -4751,7 +4905,20 @@ function getBuffedStat(unit, statKey) {
     const ccTargets = [];
     targets.forEach(target => {
       const hit = performHit(actor, target, skill);
-      if (!hit.hit) return;
+      if (!hit.hit) {
+        // 받아치기: 회피 성공 시 반격
+        const parryBuff = (target.buffs || []).find(b => b && b.parryStance && b.turns > 0);
+        if (parryBuff && !actor.dead) {
+          parryBuff.turns = 0; // 1회 소모
+          const parrySkill = { id:'parryCounter', name:'받아치기 반격', coef:Number(parryBuff.parryCoef || 1), statTypes:[target.attackStat || 'agi'], damageType:target.damageType || 'physical', element:'none' };
+          const parryDmg = computeDamage(target, actor, parrySkill, false);
+          applyDamage(actor, parryDmg);
+          totalDamage -= parryDmg; // 반격 피해는 별도 기록
+          addRoundHighlight(summary, `${target.name} 받아치기 반격 → ${actor.name} ${parryDmg}`);
+          pushBattleLog(runtime, `${target.name} 받아치기 반격 → ${actor.name} ${parryDmg}`);
+        }
+        return;
+      }
       hitCount += 1;
       const dmg = computeDamage(actor, target, skill, hit.crit);
       totalDamage += dmg;
@@ -4765,8 +4932,27 @@ function getBuffedStat(unit, statKey) {
       if (Number(target.statuses.bleed || 0) > 0) {
         target.statuses.bleedPower = Math.round(dmg * 0.3);
       }
+      // 접촉 기절: 근접 공격 시 대상의 벽력장 버프로 공격자 기절
+      if (!actor.dead && (skill.damageType === 'physical' || !skill.damageType)) {
+        const contactBuff = (target.buffs || []).find(b => b && b.onContactStun && b.turns > 0);
+        if (contactBuff) {
+          const stunChance = Number(contactBuff.onContactStun.chance || 0.25);
+          const stunTurns = Number(contactBuff.onContactStun.turns || 1);
+          if (Math.random() < stunChance && Number(actor.statuses.stun || 0) <= 0) {
+            actor.statuses.stun = stunTurns;
+            addRoundHighlight(summary, `${target.name} 벽력장 → ${actor.name} 접촉 기절`);
+            pushBattleLog(runtime, `${target.name}의 벽력장으로 ${actor.name} 기절 ${stunTurns}턴`);
+          }
+        }
+      }
       if (target.dead) { killedNames.push(target.name); if (actor.side === 'party') recordKillExp(runtime, target); }
       if (hit.crit) addRoundHighlight(summary, `${actor.name} 치명타`);
+      // 흡혈 (피식자의 단검 등): 피해량의 일정% HP 회복
+      const lifestealPct = Number((skill.passiveMods && skill.passiveMods.lifesteal) || (actor.passiveMods && actor.passiveMods.vampiricDrain) || 0);
+      if (lifestealPct > 0 && dmg > 0 && !actor.dead) {
+        const stolen = Math.max(1, Math.round(dmg * lifestealPct));
+        applyHeal(actor, stolen);
+      }
       pushDamageEventLog(runtime, actor, target, skill.name, dmg, hit.crit, target.dead);
       pushHpShiftLog(runtime, target, hpBefore);
     });
@@ -4835,9 +5021,14 @@ function getBuffedStat(unit, statKey) {
           if (actual > 0) { addRoundHighlight(summary, `${unit.name} 재생 ${actual}`); pushBattleLog(runtime, `${unit.name} 재생 ${actual}`); }
         }
       }
+      // 패시브: SP 자연회복 (스태미나 회복)
+      if (!unit.dead && !unit.isMonster && unit.passiveMods && Number(unit.passiveMods.spRegenPct || 0) > 0) {
+        const spRegen = Math.max(1, Math.round(unit.maxSp * unit.passiveMods.spRegenPct));
+        unit.sp = Math.min(unit.maxSp, unit.sp + spRegen);
+      }
 
       // 상태이상 턴 감소
-      ['stun','bind','sleep','poison','bleed','burn','curse'].forEach(key => {
+      ['stun','bind','sleep','poison','bleed','burn','curse','silence','slow'].forEach(key => {
         unit.statuses[key] = Math.max(0, Number(unit.statuses[key] || 0) - 1);
       });
       // 독/화상: 턴이 0이 되면 스택 초기화
@@ -4859,6 +5050,14 @@ function getBuffedStat(unit, statKey) {
       });
       if (unit.dead) { addRoundHighlight(summary, `${unit.name} 쓰러짐`); pushBattleLog(runtime, `${unit.name} 쓰러짐`); if (unit.isMonster) recordKillExp(runtime, unit); }
     });
+    // 지형 전환 턴 감소
+    if (runtime.terrain && runtime.terrain.turnsLeft > 0) {
+      runtime.terrain.turnsLeft -= 1;
+      if (runtime.terrain.turnsLeft <= 0) {
+        pushBattleLog(runtime, '지형 전환 효과 종료');
+        runtime.terrain = null;
+      }
+    }
   }
 
   function buildRoundQueue(runtime) {
@@ -4908,7 +5107,7 @@ function getBuffedStat(unit, statKey) {
     partyAlive.forEach(u => {
       const buffs = (u.buffs || []).map(b => `${b.name}(${b.turns})`).join(', ');
       const states = [];
-      ['stun','bind','sleep','poison','bleed','burn','curse'].forEach(k => { if (u.statuses[k] > 0) states.push(`${k}:${u.statuses[k]}`); });
+      ['stun','bind','sleep','poison','bleed','burn','curse','silence','slow'].forEach(k => { if (u.statuses[k] > 0) states.push(`${k}:${u.statuses[k]}`); });
       if (buffs) states.push(`buff:${buffs}`);
       lines.push(`- ${u.name} [${rowLabel(u.row)}]: HP ${u.hp}/${u.maxHp}, MP ${u.mp}/${u.maxMp}, SP ${u.sp}/${u.maxSp}${states.length ? ' ['+states.join(' | ')+']' : ''}`);
     });
