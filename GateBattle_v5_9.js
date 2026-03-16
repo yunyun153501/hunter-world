@@ -1171,9 +1171,9 @@ const RARE_FAMILY_PRESETS = {
       byRank:{ E:{ coef:0.875, costs:{ mp:30, sp:0 } }, D:{ coef:1.4, costs:{ mp:35, sp:0 } }, C:{ coef:2.1, costs:{ mp:40, sp:0 } }, B:{ coef:3.5, costs:{ mp:50, sp:0 } }, A:{ coef:5.6, costs:{ mp:65, sp:0 } }, S:{ coef:8.4, costs:{ mp:90, sp:0 } } },
       desc:'성장형 광역 회복. 각 대상에게 계수 기반 회복.'
     },
-    steelAnvil: { id:'steelAnvil', name:'Steel Anvil', grade:'E', rarity:'rare', category:'passive', statTypes:['con'], byRank:{ E:{ passiveBonuses:{ pdef:1, mdef:1 } }, D:{ passiveBonuses:{ pdef:3, mdef:3 } }, C:{ passiveBonuses:{ pdef:5, mdef:5 } }, B:{ passiveBonuses:{ pdef:7, mdef:7 } }, A:{ passiveBonuses:{ pdef:9, mdef:9 } }, S:{ passiveBonuses:{ pdef:11, mdef:11 } } }, desc:'물리방어/마법방어 증가.' },
-    shieldProficiency: { id:'shieldProficiency', name:'Shield Proficiency', grade:'E', category:'passive', statTypes:['con'], passiveMods:{ shieldSpMul:0.9 }, desc:'방패 계열 SP 10% 감소.' },
-    daggerHandling: { id:'daggerHandling', name:'Dagger Handling', grade:'E', category:'passive', statTypes:['agi','sense'], passiveMods:{ daggerSpMul:0.9 }, desc:'단검/투척 계열 SP 10% 감소.' },
+    steelAnvil: { id:'steelAnvil', name:'강철 모루', grade:'E', rarity:'rare', category:'passive', statTypes:['con'], byRank:{ E:{ passiveBonuses:{ pdef:1, mdef:1 } }, D:{ passiveBonuses:{ pdef:3, mdef:3 } }, C:{ passiveBonuses:{ pdef:5, mdef:5 } }, B:{ passiveBonuses:{ pdef:7, mdef:7 } }, A:{ passiveBonuses:{ pdef:9, mdef:9 } }, S:{ passiveBonuses:{ pdef:11, mdef:11 } } }, desc:'물리방어/마법방어 증가.' },
+    shieldProficiency: { id:'shieldProficiency', name:'방패숙련', grade:'E', category:'passive', statTypes:['con'], passiveMods:{ shieldSpMul:0.9 }, desc:'방패 계열 SP 10% 감소.' },
+    daggerHandling: { id:'daggerHandling', name:'단검숙련', grade:'E', category:'passive', statTypes:['agi','sense'], passiveMods:{ daggerSpMul:0.9 }, desc:'단검/투척 계열 SP 10% 감소.' },
     fistStrike: { id:'fistStrike', name:'정권', grade:'E', category:'singleAttack', target:'singleEnemy', costs:{ mp:20, sp:20 }, coef:1.5, statTypes:['str','con'], damageType:'physical', element:'none', desc:'근접 단일 공격.' },
     hiddenMight: { id:'hiddenMight', name:'이면의 완력', grade:'E', rarity:'rare', category:'passive', statTypes:['str'], byRank:{ E:{ passiveBonuses:{ str:1 } }, D:{ passiveBonuses:{ str:2 } }, C:{ passiveBonuses:{ str:3 } }, B:{ passiveBonuses:{ str:4 } }, A:{ passiveBonuses:{ str:5 } }, S:{ passiveBonuses:{ str:6 } } }, desc:'STR 증가.' },
     taunt: { id:'taunt', name:'도발', grade:'E', category:'buff', target:'self', costs:{ mp:0, sp:20 }, duration:3, statTypes:['con'], buff:{ threatBonus:5 }, desc:'3턴 동안 위협 수치 크게 증가.' },
@@ -1267,7 +1267,124 @@ const RARE_FAMILY_PRESETS = {
 
     // ─── §16 한아람 ───
     cargoSupport: { id:'cargoSupport', name:'하역지원', grade:'E', category:'passive', statTypes:['str','con'], passiveMods:{ cargoCapacity:0.20 }, desc:'파티 아이템 운반량 +20%. 채굴 속도 +10%.' },
-    emergencyDodge: { id:'emergencyDodge', name:'긴급회피', grade:'E', category:'utility', target:'self', costs:{ mp:0, sp:25 }, statTypes:['agi'], cooldown:5, buff:{ evasionNext:1.0 }, desc:'다음 1회 공격 100% 회피. 쿨 5턴.' }
+    emergencyDodge: { id:'emergencyDodge', name:'긴급회피', grade:'E', category:'utility', target:'self', costs:{ mp:0, sp:25 }, statTypes:['agi'], cooldown:5, buff:{ evasionNext:1.0 }, desc:'다음 1회 공격 100% 회피. 쿨 5턴.' },
+
+    // ═══════════════════════════════════════════════════════════
+    //  부록 A: 고랭크 NPC 스킬
+    // ═══════════════════════════════════════════════════════════
+
+    // ─── 강민혁 (A랭크 · 검사 · 흑사) ───
+    auraMastery: { id:'auraMastery', name:'오라 마스터리', grade:'A', rarity:'unique', category:'passive', statTypes:['str','agi'], desc:'오라 제어 정밀도 극대화 — 안정적 중거리 투사.' },
+    shadowDraw: { id:'shadowDraw', name:'그림자 발도', grade:'A', rarity:'rare', category:'singleAttack', target:'singleEnemy', costs:{ mp:40, sp:40 }, coef:8.5, statTypes:['agi','str'], damageType:'physical', element:'none', desc:'선제 발도 — 우선 행동.' },
+    auraSlash: { id:'auraSlash', name:'오라 참격', grade:'A', category:'singleAttack', target:'singleEnemy', costs:{ mp:35, sp:25 }, coef:7.8, statTypes:['str'], damageType:'physical', element:'none', desc:'중거리 검기 투사.' },
+    auraArc: { id:'auraArc', name:'오라 호', grade:'A', category:'aoeAttack', target:'allEnemies', costs:{ mp:45, sp:0 }, coef:4.5, statTypes:['str'], damageType:'physical', element:'none', desc:'중거리 반원 검기.' },
+
+    // ─── 강우석 (A랭크 · 탱커 · 백련) ───
+    impactReduction: { id:'impactReduction', name:'충격 감소', grade:'A', rarity:'rare', category:'passive', statTypes:['con'], passiveMods:{ physicalDmgReduce:0.15 }, desc:'받는 물리 피해 -15% 상시.' },
+    defensiveStance: { id:'defensiveStance', name:'방어 태세', grade:'A', category:'buff', target:'self', costs:{ mp:30, sp:30 }, duration:3, statTypes:['con'], buff:{ stats:{ con:8 }, immobile:true }, desc:'CON +8, 3턴. 이동불가.' },
+    tauntA: { id:'tauntA', name:'도발', grade:'A', category:'buff', target:'self', costs:{ mp:0, sp:30 }, duration:3, statTypes:['con'], buff:{ threatBonus:10 }, desc:'3턴 위협 +10.' },
+    chargeA: { id:'chargeA', name:'돌진', grade:'A', category:'singleAttack', target:'singleEnemy', costs:{ mp:30, sp:40 }, coef:7.2, statTypes:['con'], damageType:'physical', element:'none', desc:'단일 공격. 후열 적 ×1.2.' },
+    shieldMastery: { id:'shieldMastery', name:'방패숙련', grade:'A', category:'passive', statTypes:['con'], passiveMods:{ shieldSpMul:0.85 }, desc:'방패 SP -15%.' },
+    conBoost: { id:'conBoost', name:'체력증강', grade:'A', category:'passive', statTypes:['con'], passiveBonuses:{ con:6 }, desc:'CON +6 상시.' },
+    staminaRecovery: { id:'staminaRecovery', name:'스태미나 회복', grade:'A', category:'passive', statTypes:['con'], passiveMods:{ spRegenPct:0.05 }, desc:'턴 시작 SP +5% 자연 회복.' },
+    senBoost: { id:'senBoost', name:'감각증강', grade:'A', category:'passive', statTypes:['sense'], passiveBonuses:{ sense:4 }, desc:'SEN +4 상시.' },
+
+    // ─── 사사키 유아 (A랭크 · 딜러/탱커 · 저승무사) ───
+    spiritArmor: { id:'spiritArmor', name:'혼령 갑주', grade:'A', category:'buff', target:'self', costs:{ mp:50, sp:0 }, duration:5, statTypes:['int','con'], buff:{ stats:{ pdef:12, mdef:8 } }, desc:'P.DEF +12, M.DEF +8, 5턴.' },
+    weaponManifestation: { id:'weaponManifestation', name:'무장 구현', grade:'A', category:'buff', target:'self', costs:{ mp:45, sp:0 }, duration:5, statTypes:['int','str'], buff:{ stats:{ atk:15 } }, desc:'ATK +15, 물리/영적 듀얼 속성, 5턴.' },
+    crescentSlash: { id:'crescentSlash', name:'삼일월', grade:'A', category:'singleAttack', target:'singleEnemy', costs:{ mp:30, sp:35 }, coef:8.2, statTypes:['str','agi'], damageType:'physical', element:'none', desc:'고계수 단일 참격.' },
+    spiritSever: { id:'spiritSever', name:'귀혼참', grade:'A', rarity:'rare', category:'singleCC', target:'singleEnemy', costs:{ mp:40, sp:40 }, coef:5.0, statTypes:['int','str'], damageType:'magic', element:'none', cc:{ type:'sleep', turns:2, chance:0.18 }, desc:'수면 18% 2턴.' },
+
+    // ─── 임설희 (A랭크 · 딜러 · 백련) ───
+    iceMaker: { id:'iceMaker', name:'아이스 메이커', grade:'A', rarity:'unique', category:'utility', target:'self', costs:{ mp:40, sp:0 }, statTypes:['int'], desc:'자유 형태 빙결 조형 — 무기/방벽/지형 생성.' },
+    icicleLance: { id:'icicleLance', name:'얼음창 투사', grade:'A', category:'singleAttack', target:'singleEnemy', costs:{ mp:45, sp:0 }, coef:8.8, statTypes:['int'], damageType:'magic', element:'ice', desc:'빙결 속성 단일 고계수.' },
+    frostFlower: { id:'frostFlower', name:'서리꽃', grade:'A', category:'aoeCC', target:'allEnemies', costs:{ mp:55, sp:30 }, coef:2.5, statTypes:['int'], damageType:'magic', element:'ice', cc:{ type:'bind', turns:2, chance:0.20 }, desc:'광역 CC. 속박 20% 2턴.' },
+    stairAndSlide: { id:'stairAndSlide', name:'계단&미끄럼틀', grade:'A', category:'utility', target:'self', costs:{ mp:35, sp:0 }, duration:3, statTypes:['int'], desc:'전술 이동로 생성, 3턴 유지.' },
+
+    // ─── 백휘성 (S랭크 · 딜러 · 협회) ───
+    auraOfJudge: { id:'auraOfJudge', name:'심판자의 기운', grade:'S', rarity:'rare', category:'passive', statTypes:['int'], passiveMods:{ enemySkillCostMul:1.10 }, desc:'적 스킬 비용 +10%.' },
+    heliosNova: { id:'heliosNova', name:'헬리오스 노바', grade:'S', category:'aoeAttack', target:'allEnemies', costs:{ mp:90, sp:50 }, coef:12.0, statTypes:['int'], damageType:'magic', element:'light', desc:'빛/열 광역 섬멸.' },
+    shacklesOfRadiance: { id:'shacklesOfRadiance', name:'빛의 속박', grade:'S', rarity:'rare', category:'singleCC', target:'singleEnemy', costs:{ mp:70, sp:0 }, coef:8.0, statTypes:['int'], damageType:'magic', element:'light', cc:{ type:'silence', turns:3 }, desc:'마법 완전 봉인 3턴.' },
+
+    // ─── 한지원 (S랭크 · 서포터 · 적호) ───
+    trueGaze: { id:'trueGaze', name:'진실의 시선', grade:'S', rarity:'unique', category:'passive', statTypes:['sense'], desc:'연속 시각 집중으로 대상 스탯/약점 해석.' },
+    barrierManipulation: { id:'barrierManipulation', name:'결계 조작', grade:'S', rarity:'rare', category:'buff', target:'allAllies', costs:{ mp:80, sp:0 }, duration:3, statTypes:['int','sense'], buff:{ stats:{ pdef:10, mdef:10 } }, desc:'다층 방벽 생성. 전 아군 P.DEF/M.DEF +10, 3턴.' },
+    healingMagic: { id:'healingMagic', name:'치유 마법', grade:'S', category:'singleHeal', target:'singleAlly', costs:{ mp:45, sp:0 }, coef:2.4, statTypes:['int'], desc:'경상 즉시 회복.' },
+
+    // ─── 박준호 (S랭크 · 탱커 · 적호) ───
+    byeokryeokjang: { id:'byeokryeokjang', name:'벽력장', grade:'S', category:'buff', target:'self', costs:{ mp:80, sp:60 }, duration:5, statTypes:['con','str'], buff:{ stats:{ pdef:20, mdef:15 }, onContactStun:{ chance:0.25, turns:1 } }, desc:'번개 갑주. P.DEF +20, M.DEF +15, 접촉 stun 25% 1턴, 5턴.' },
+    uraegyeok: { id:'uraegyeok', name:'우레격', grade:'S', category:'aoeCC', target:'allEnemies', costs:{ mp:100, sp:80 }, coef:9.0, statTypes:['con','str'], damageType:'physical', element:'lightning', cc:{ type:'stun', turns:1, chance:0.20 }, cooldown:8, desc:'광역 stun 20% 1턴. 쿨 8턴.' },
+
+    // ─── 하월영 (S랭크 · 탱커(?) · 무소속) ───
+    shunpo: { id:'shunpo', name:'순보', grade:'S', rarity:'rare', category:'utility', target:'self', costs:{ mp:0, sp:40 }, statTypes:['agi'], desc:'초고속 이동.' },
+    wolseomTriple: { id:'wolseomTriple', name:'월섬 "삼월"', grade:'S', rarity:'rare', category:'singleAttack', target:'singleEnemy', costs:{ mp:50, sp:60 }, coef:13.5, statTypes:['agi','str'], damageType:'physical', element:'none', desc:'3연참 고계수.' },
+    parry: { id:'parry', name:'받아치기', grade:'S', category:'utility', target:'self', costs:{ mp:0, sp:25 }, statTypes:['agi','sense'], buff:{ parryStance:true, parryCoef:4.0 }, desc:'피격 직전 반격 자세 — 회피 성공 시 반격 계수 4.0.' },
+    insight: { id:'insight', name:'통찰', grade:'S', category:'passive', statTypes:['sense'], passiveMods:{ evasionBonus:0.10 }, desc:'적 의도/궤적 선읽기 — 회피율 +10% 상시.' },
+
+    // ─── 앨리스 크로프트 (A랭크 · 서포터 · 크로노스의 후계자) ───
+    slowTime: { id:'slowTime', name:'시간 감속', grade:'A', category:'aoeCC', target:'allEnemies', costs:{ mp:65, sp:0 }, duration:3, statTypes:['int'], damageType:'magic', element:'none', cc:{ type:'slow', turns:3 }, buff:{ stats:{ agi:-8 } }, desc:'적 AGI -8 / 아군 AGI +4, 3턴.' },
+    hasteTime: { id:'hasteTime', name:'시간 가속', grade:'A', category:'buff', target:'allAllies', costs:{ mp:55, sp:0 }, duration:2, statTypes:['int'], buff:{ stats:{ agi:8 } }, desc:'전 아군 AGI +8, 2턴.' },
+    temporalSense: { id:'temporalSense', name:'시간 감지', grade:'A', category:'passive', statTypes:['sense','int'], desc:'유사 시간 능력 탐지 및 분석적 교란.' },
+    itemExtension: { id:'itemExtension', name:'소모품 연장', grade:'A', rarity:'unique', category:'passive', statTypes:['int'], passiveMods:{ itemDurationMul:1.20 }, desc:'소모품 효과 지속시간 +20%.' },
+
+    // ─── 이지혜 (A랭크 · 딜러/소환사 · Nyx) ───
+    reverseSummon: { id:'reverseSummon', name:'반전 소환', grade:'A', category:'utility', target:'self', costs:{ mp:30, sp:0 }, statTypes:['int'], desc:'야간/그림자 근처 포탈 개방 — 존재가 올지는 랜덤, 장기 지속.' },
+    nightsVeil: { id:'nightsVeil', name:'밤의 장막', grade:'A', category:'passive', statTypes:['int','sense'], desc:'비전투 시 은폐 + 어그로 감소.' },
+    sharedLethargy: { id:'sharedLethargy', name:'공유된 나른함', grade:'A', category:'passive', statTypes:['int'], desc:'어둡거나 조용한 환경에서 적 경계심 감소.' },
+
+    // ─── 임진태 (S랭크 · 딜러 · 은랑) ───
+    partialTransform: { id:'partialTransform', name:'늑대 변신 (부분)', grade:'S', category:'buff', target:'self', costs:{ mp:60, sp:0 }, duration:5, statTypes:['str','agi','con'], buff:{ stats:{ str:12, agi:10, con:8 } }, desc:'부분 변신. STR +12, AGI +10, CON +8, 5턴.' },
+    fullTransform: { id:'fullTransform', name:'늑대 변신 (완전)', grade:'S', category:'buff', target:'self', costs:{ mp:100, sp:80 }, duration:3, statTypes:['str','agi','con'], buff:{ stats:{ str:20, agi:18, con:15, int:5, sense:10 } }, desc:'완전 변신. 전 스탯 대폭 증가, 3턴.' },
+    gluttonousInstinct: { id:'gluttonousInstinct', name:'탐식 본능', grade:'S', rarity:'unique', category:'passive', statTypes:['str','con'], desc:'적 출혈/사망 시 전 스탯 비례 증가 — 과부하 시 폭주 위험.' },
+
+    // ─── 제이크 밀러 (S랭크 · 딜러 · 무투가 · 무소속) ───
+    devastatingBlow: { id:'devastatingBlow', name:'분쇄격', grade:'S', category:'singleAttack', target:'singleEnemy', costs:{ mp:0, sp:80 }, coef:13.0, statTypes:['str'], damageType:'physical', element:'none', desc:'순수 주먹. 고계수 단일 물리.' },
+    quakeStrike: { id:'quakeStrike', name:'지진타', grade:'S', category:'aoeAttack', target:'allEnemies', costs:{ mp:30, sp:70 }, coef:7.5, statTypes:['str','con'], damageType:'physical', element:'none', desc:'지면 충격파 광역.' },
+    martialAwakening: { id:'martialAwakening', name:'무투가의 각성', grade:'S', category:'buff', target:'self', costs:{ mp:50, sp:50 }, duration:3, statTypes:['str','agi'], buff:{ stats:{ str:15, agi:10 } }, desc:'STR +15, AGI +10, 3턴.' },
+    instinctRead: { id:'instinctRead', name:'본능 읽기', grade:'S', category:'passive', statTypes:['sense','agi'], passiveMods:{ evasionBonus:0.12 }, desc:'적 미세 움직임 선읽기 — 회피율 +12%.' },
+
+    // ═══════════════════════════════════════════════════════════
+    //  부록 B: 적대 NPC 스킬
+    // ═══════════════════════════════════════════════════════════
+
+    // ─── 강태식 (C랭크 · 딜러/암살자) ───
+    stealth: { id:'stealth', name:'은밀', grade:'C', category:'passive', statTypes:['agi','sense'], desc:'전투 외 존재감 억제 — 감지 난이도 상승.' },
+    ambush: { id:'ambush', name:'기습', grade:'C', category:'singleAttack', target:'singleEnemy', costs:{ mp:0, sp:35 }, coef:3.6, statTypes:['agi'], damageType:'physical', element:'none', desc:'은신 상태 시 자동 치명타.' },
+    poisonBlade: { id:'poisonBlade', name:'독도포', grade:'C', category:'singleCC', target:'singleEnemy', costs:{ mp:15, sp:25 }, coef:2.5, statTypes:['agi'], damageType:'physical', element:'none', cc:{ type:'poison', turns:3, chance:0.35 }, desc:'독 35% 3턴.' },
+    escape: { id:'escape', name:'도주', grade:'C', category:'utility', target:'self', costs:{ mp:0, sp:40 }, statTypes:['agi'], desc:'전투 이탈 — 다음 턴 전투장 벗어남.' },
+
+    // ─── 권도윤 (B랭크 · 블랙마켓) ───
+    suggestion: { id:'suggestion', name:'암시', grade:'B', rarity:'rare', category:'singleCC', target:'singleEnemy', costs:{ mp:45, sp:0 }, statTypes:['int'], damageType:'magic', element:'none', cc:{ type:'confuse', turns:1 }, desc:'대상 판단력 교란 — 1턴 혼란 (non-boss).' },
+    phantomStep: { id:'phantomStep', name:'환영보', grade:'B', rarity:'rare', category:'utility', target:'self', costs:{ mp:0, sp:35 }, statTypes:['agi'], desc:'단거리 무음 이동 — 은신+회피.' },
+    knifeStrike: { id:'knifeStrike', name:'단검 일격', grade:'B', category:'singleAttack', target:'singleEnemy', costs:{ mp:0, sp:40 }, coef:5.0, statTypes:['agi'], damageType:'physical', element:'none', desc:'단검 단일 물리 공격.' },
+
+    // ─── 유진혁 (A~S급 · 에레보스의 피조물) ───
+    darknessManipulation: { id:'darknessManipulation', name:'어둠 조작', grade:'A', category:'utility', target:'self', costs:{ mp:60, sp:0 }, statTypes:['int','str'], desc:'암흑 형태 자유 생성 (무기/장벽/올가미).' },
+    shadowMeld: { id:'shadowMeld', name:'그림자 융합', grade:'A', category:'utility', target:'self', costs:{ mp:0, sp:40 }, statTypes:['agi','int'], desc:'그림자 속 잠복 → 기습 + 회피.' },
+    abyssalBlade: { id:'abyssalBlade', name:'심연검', grade:'A', rarity:'rare', category:'singleAttack', target:'singleEnemy', costs:{ mp:45, sp:45 }, coef:9.0, statTypes:['str','int'], damageType:'magic', element:'dark', desc:'암흑 속성. 빛 속성 ×0.7.' },
+    erebosCloak: { id:'erebosCloak', name:'에레보스의 외투', grade:'A', category:'passive', statTypes:['int','con'], passiveMods:{ darkEnvStatBonus:5, darkEnvDmgReduce:0.10 }, desc:'어둠 환경 시 전 스탯 +5, 피해 감소 +10%.' },
+
+    // ─── 장은서 (추정 A급+ · 상태창 불신론자 리더) ───
+    curseImmunity: { id:'curseImmunity', name:'저주 면역', grade:'A', rarity:'unique', category:'passive', statTypes:['con','sense'], desc:'저주형 아이템 페널티 무시 또는 대폭 감소.' },
+    bloodletterDagger: { id:'bloodletterDagger', name:'피식자의 단검', grade:'A', category:'singleAttack', target:'singleEnemy', costs:{ mp:0, sp:45 }, coef:8.5, statTypes:['agi'], damageType:'physical', element:'none', passiveMods:{ lifesteal:0.05 }, desc:'적중 시 HP 흡수 5%.' },
+    shroudOfNonexistence: { id:'shroudOfNonexistence', name:'비존재의 장막', grade:'A', category:'passive', statTypes:['sense'], desc:'마나 신호 은폐 — 감지 극히 어려움. 패널티: 주변 불운 유발.' },
+
+    // ─── 신우현 (비각성 · 이계 숭배단) ───
+    corruptedResonance: { id:'corruptedResonance', name:'오염된 공명', grade:'A', rarity:'curse', category:'singleAttack', target:'singleEnemy', costs:{ mp:40, sp:0 }, coef:7.5, statTypes:['int'], damageType:'magic', element:'dark', desc:'오염 마정석 소모. 폭발/촉수/저주 효과. 출력 = 석 품질 비례.' },
+    monsterKinship: { id:'monsterKinship', name:'몬스터 친화', grade:'E', rarity:'curse', category:'passive', statTypes:['sense'], desc:'몬스터 비공격 · 기본 의사소통.' },
+    corruptSpread: { id:'corruptSpread', name:'오염 확산', grade:'A', rarity:'curse', category:'aoeCC', target:'allEnemies', costs:{ mp:50, sp:0 }, coef:2.0, statTypes:['int'], damageType:'magic', element:'dark', cc:{ type:'curse', turns:3, chance:0.28 }, desc:'범위 내 저주 28% 3턴 + 독 28% 3턴.' },
+
+    // ─── 나선영 (추정 A급+ · 이계 숭배단) ───
+    whisperOfFear: { id:'whisperOfFear', name:'공포의 속삭임', grade:'A', rarity:'rare', category:'singleCC', target:'singleEnemy', costs:{ mp:50, sp:0 }, statTypes:['int'], damageType:'magic', element:'none', cc:{ type:'sleep', turns:2, chance:0.20 }, desc:'수면 20% 2턴 or 속박 25% 2턴.' },
+    corrosiveMist: { id:'corrosiveMist', name:'부식의 안개', grade:'A', category:'aoeCC', target:'allEnemies', costs:{ mp:55, sp:35 }, coef:2.0, statTypes:['int'], damageType:'magic', element:'none', cc:{ type:'poison', turns:3, chance:0.30 }, desc:'독 30% 3턴 + 저주 26% 3턴.' },
+    manaSight: { id:'manaSight', name:'마나 시야', grade:'A', rarity:'curse', category:'passive', statTypes:['sense','int'], desc:'시각 대신 마나/감정 패턴 감지 — 은폐 무력화.' },
+    fearInfusion: { id:'fearInfusion', name:'공포 주입', grade:'A', rarity:'rare', category:'singleCC', target:'singleEnemy', costs:{ mp:60, sp:0 }, statTypes:['int'], damageType:'magic', element:'none', cc:{ type:'fear', turns:2 }, desc:'대상 공포 상태 2턴 (행동 30% 확률 실패).' },
+
+    // ─── 채하윤 (前 E랭크 · 상태창 불신론자 부사령관) ───
+    manaBullet: { id:'manaBullet', name:'마나 탄환', grade:'C', rarity:'rare', category:'singleAttack', target:'singleEnemy', costs:{ mp:20, sp:0 }, coef:3.0, statTypes:['int','agi'], damageType:'magic', element:'none', desc:'탄환 형태 변형 가능 (폭발/관통/추적).' },
+    piercingRound: { id:'piercingRound', name:'관통탄', grade:'C', rarity:'rare', category:'singleAttack', target:'singleEnemy', costs:{ mp:25, sp:0 }, coef:3.2, statTypes:['agi'], damageType:'physical', element:'none', passiveMods:{ defenseIgnore:0.30 }, desc:'방어 30% 무시.' },
+    explosiveRound: { id:'explosiveRound', name:'폭발탄', grade:'C', rarity:'rare', category:'aoeAttack', target:'allEnemies', costs:{ mp:30, sp:0 }, coef:1.8, statTypes:['int'], damageType:'magic', element:'none', desc:'소범위 폭발.' },
+    homingRound: { id:'homingRound', name:'추적탄', grade:'C', rarity:'rare', category:'singleAttack', target:'singleEnemy', costs:{ mp:35, sp:0 }, coef:2.5, statTypes:['sense'], damageType:'magic', element:'none', desc:'회피 불가 (은신 대상 추적).' }
   };
 
   function buildSampleCharacters() {
@@ -1375,7 +1492,148 @@ const RARE_FAMILY_PRESETS = {
         stats:{ str:14, con:13, int:3, agi:11, sense:10 },
         damageType:'physical', attackStat:'str',
         skills:['hiddenMight','cargoSupport','emergencyDodge'],
-        note:'비전투 포터/전열 보조' }
+        note:'비전투 포터/전열 보조' },
+
+      // ═══════════════════════════════════════════════════════════
+      //  부록 A: 고랭크 NPC
+      // ═══════════════════════════════════════════════════════════
+
+      // 강민혁 — A랭크 검사 (흑사) Lv.65
+      { id:'char_minhyuk', name:'강민혁', job:'검사', position:'전열딜러', row:'front', rank:'A', level:65,
+        stats:{ str:82, con:42, int:18, agi:75, sense:38 },
+        damageType:'physical', attackStat:'str',
+        skills:['auraMastery','shadowDraw','auraSlash','auraArc'],
+        note:'A랭크 검사 · 흑사 · 오라 중거리 투사' },
+
+      // 강우석 — A랭크 탱커 (백련) Lv.68
+      { id:'char_wooseok', name:'강우석', job:'탱커', position:'전열탱커', row:'front', rank:'A', level:68,
+        stats:{ str:52, con:90, int:15, agi:28, sense:50 },
+        damageType:'physical', attackStat:'con',
+        skills:['impactReduction','defensiveStance','tauntA','chargeA','shieldMastery','conBoost','staminaRecovery','senBoost'],
+        note:'A랭크 탱커 · 백련' },
+
+      // 사사키 유아 — A랭크 딜러/탱커 (저승무사) Lv.62
+      { id:'char_yua', name:'사사키 유아', job:'저승무사', position:'전열딜러', row:'front', rank:'A', level:62,
+        stats:{ str:78, con:55, int:45, agi:72, sense:35 },
+        damageType:'physical', attackStat:'str',
+        skills:['spiritArmor','weaponManifestation','crescentSlash','spiritSever'],
+        note:'A랭크 딜러/탱커 · 저승무사 · 영적 전투' },
+
+      // 임설희 — A랭크 딜러 (백련) Lv.60
+      { id:'char_seolhee', name:'임설희', job:'마법사', position:'원거리마법', row:'back', rank:'A', level:60,
+        stats:{ str:12, con:30, int:88, agi:35, sense:48 },
+        damageType:'magic', attackStat:'int',
+        skills:['iceMaker','icicleLance','frostFlower','stairAndSlide'],
+        note:'A랭크 빙결 마법사 · 백련 · 아이스 메이커' },
+
+      // 백휘성 — S랭크 딜러 (협회) Lv.85
+      { id:'char_hwiseong', name:'백휘성', job:'마법사', position:'원거리마법', row:'back', rank:'S', level:85,
+        stats:{ str:15, con:40, int:135, agi:45, sense:65 },
+        damageType:'magic', attackStat:'int',
+        skills:['auraOfJudge','heliosNova','shacklesOfRadiance'],
+        note:'S랭크 빛 마법사 · 협회 · 심판자' },
+
+      // 한지원 — S랭크 서포터 (적호) Lv.78
+      { id:'char_jiwon', name:'한지원', job:'서포터', position:'후열서포터', row:'back', rank:'S', level:78,
+        stats:{ str:18, con:45, int:120, agi:35, sense:95 },
+        damageType:'magic', attackStat:'int',
+        skills:['trueGaze','barrierManipulation','healingMagic'],
+        note:'S랭크 서포터 · 적호 · 결계/분석' },
+
+      // 박준호 — S랭크 탱커 (적호) Lv.82
+      { id:'char_junho', name:'박준호', job:'탱커', position:'전열탱커', row:'front', rank:'S', level:82,
+        stats:{ str:88, con:130, int:30, agi:45, sense:55 },
+        damageType:'physical', attackStat:'con',
+        skills:['byeokryeokjang','uraegyeok'],
+        note:'S랭크 탱커 · 적호 · 번개 갑주' },
+
+      // 하월영 — S랭크 탱커(?) (무소속) Lv.90
+      { id:'char_wolyoung', name:'하월영', job:'검사', position:'전열딜러', row:'front', rank:'S', level:90,
+        stats:{ str:95, con:60, int:25, agi:140, sense:72 },
+        damageType:'physical', attackStat:'agi',
+        skills:['shunpo','wolseomTriple','parry','insight'],
+        note:'S랭크 · 무소속 · 초고속 검사' },
+
+      // 앨리스 크로프트 — A랭크 서포터 (크로노스의 후계자) Lv.58
+      { id:'char_alice', name:'앨리스 크로프트', job:'서포터', position:'후열서포터', row:'back', rank:'A', level:58,
+        stats:{ str:15, con:28, int:75, agi:50, sense:68 },
+        damageType:'magic', attackStat:'int',
+        skills:['slowTime','hasteTime','temporalSense','itemExtension'],
+        note:'A랭크 시간 서포터 · 크로노스의 후계자' },
+
+      // 이지혜 — A랭크 딜러/소환사 (Nyx) Lv.55
+      { id:'char_jihye', name:'이지혜', job:'소환사', position:'원거리마법', row:'back', rank:'A', level:55,
+        stats:{ str:12, con:25, int:82, agi:42, sense:58 },
+        damageType:'magic', attackStat:'int',
+        skills:['reverseSummon','nightsVeil','sharedLethargy'],
+        note:'A랭크 소환사 · Nyx · 그림자 소환' },
+
+      // 임진태 — S랭크 딜러 (은랑) Lv.88
+      { id:'char_jintae', name:'임진태', job:'딜러', position:'전열딜러', row:'front', rank:'S', level:88,
+        stats:{ str:125, con:85, int:20, agi:110, sense:55 },
+        damageType:'physical', attackStat:'str',
+        skills:['partialTransform','fullTransform','gluttonousInstinct'],
+        note:'S랭크 딜러 · 은랑 · 늑대 변신' },
+
+      // 제이크 밀러 — S랭크 딜러/무투가 (무소속) Lv.92
+      { id:'char_jake', name:'제이크 밀러', job:'무투가', position:'근거리물리', row:'front', rank:'S', level:92,
+        stats:{ str:140, con:90, int:15, agi:95, sense:50 },
+        damageType:'physical', attackStat:'str',
+        skills:['devastatingBlow','quakeStrike','martialAwakening','instinctRead'],
+        note:'S랭크 무투가 · 무소속 · 순수 주먹' },
+
+      // ═══════════════════════════════════════════════════════════
+      //  부록 B: 적대 NPC
+      // ═══════════════════════════════════════════════════════════
+
+      // 강태식 — C랭크 딜러/암살자 Lv.30
+      { id:'char_taesik', name:'강태식', job:'무직업', position:'중열딜러', row:'mid', rank:'C', level:30,
+        stats:{ str:18, con:22, int:10, agi:52, sense:38 },
+        damageType:'physical', attackStat:'agi',
+        skills:['stealth','ambush','poisonBlade','escape'],
+        note:'C랭크 암살자' },
+
+      // 권도윤 — B랭크 블랙마켓 Lv.42
+      { id:'char_doyun', name:'권도윤', job:'무직업', position:'중열딜러', row:'mid', rank:'B', level:42,
+        stats:{ str:25, con:30, int:55, agi:65, sense:42 },
+        damageType:'physical', attackStat:'agi',
+        skills:['suggestion','phantomStep','knifeStrike'],
+        note:'B랭크 블랙마켓' },
+
+      // 유진혁 — A급 에레보스의 피조물 Lv.70
+      { id:'char_jinhyuk', name:'유진혁', job:'딜러', position:'전열딜러', row:'front', rank:'A', level:70,
+        stats:{ str:72, con:55, int:80, agi:65, sense:48 },
+        damageType:'magic', attackStat:'int',
+        skills:['darknessManipulation','shadowMeld','abyssalBlade','erebosCloak'],
+        note:'A급 · 에레보스의 피조물 · 암흑 조작' },
+
+      // 장은서 — A급 상태창 불신론자 리더 Lv.65
+      { id:'char_eunseo', name:'장은서', job:'무직업', position:'중열딜러', row:'mid', rank:'A', level:65,
+        stats:{ str:35, con:40, int:30, agi:85, sense:60 },
+        damageType:'physical', attackStat:'agi',
+        skills:['curseImmunity','bloodletterDagger','shroudOfNonexistence'],
+        note:'A급 · 상태창 불신론자 리더 · 저주 아이템 특화' },
+
+      // 신우현 — 비각성 이계 숭배단 Lv.10
+      { id:'char_woohyun', name:'신우현', job:'무직업', position:'후열서포터', row:'back', rank:'E', level:10,
+        stats:{ str:8, con:10, int:12, agi:7, sense:15 },
+        damageType:'magic', attackStat:'int',
+        skills:['corruptedResonance','monsterKinship','corruptSpread'],
+        note:'비각성 · 이계 숭배단 · 오염 마정석 의존' },
+
+      // 나선영 — A급 이계 숭배단 Lv.68
+      { id:'char_seonyoung', name:'나선영', job:'무직업', position:'원거리마법', row:'back', rank:'A', level:68,
+        stats:{ str:15, con:35, int:85, agi:30, sense:72 },
+        damageType:'magic', attackStat:'int',
+        skills:['whisperOfFear','corrosiveMist','manaSight','fearInfusion'],
+        note:'A급 · 이계 숭배단 · 공포/부식' },
+
+      // 채하윤 — 前 E랭크 상태창 불신론자 부사령관 Lv.35
+      { id:'char_hayun', name:'채하윤', job:'무직업', position:'원거리마법', row:'back', rank:'C', level:35,
+        stats:{ str:15, con:20, int:48, agi:45, sense:35 },
+        damageType:'magic', attackStat:'int',
+        skills:['manaBullet','piercingRound','explosiveRound','homingRound'],
+        note:'前 E랭크 · 상태창 불신론자 부사령관 · 마나 탄환' }
     ];
   }
   function buildSampleMonsters() {
