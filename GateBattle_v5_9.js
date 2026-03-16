@@ -2168,7 +2168,7 @@ function ensureSelections() {
   if (!sel.personas && model.db.personas[0]) sel.personas = model.db.personas[0].id;
   if (sel.personas && !getPersonaById(sel.personas) && model.db.personas[0]) sel.personas = model.db.personas[0].id;
   if (!sel.skills && model.db.customSkills[0]) sel.skills = model.db.customSkills[0].id;
-  if (sel.skills && !getCustomSkillById(sel.skills) && model.db.customSkills[0]) sel.skills = model.db.customSkills[0].id;
+  if (sel.skills && !getCustomSkillById(sel.skills) && !BUILTIN_SKILLS[sel.skills] && model.db.customSkills[0]) sel.skills = model.db.customSkills[0].id;
   const matPack = getRareMaterialPack();
   if (!sel.materials && matPack.traits[0]) sel.materials = matPack.traits[0].id;
   if (sel.materials && !getMaterialTraitById(sel.materials) && matPack.traits[0]) sel.materials = matPack.traits[0].id;
@@ -8150,7 +8150,6 @@ function renderCommandPanel(runtime) {
             <label>공격 스탯<select class="gb-input" id="gb-char-atkstat">${['str','con','int','agi','sense'].map(s=>optionHtml(s,s,item.attackStat===s)).join('')}</select></label>
             <label>기본 위협값<input class="gb-input" id="gb-char-threat" type="number" value="${escapeHtml(item.threatBase != null ? item.threatBase : inferThreatBase(item.position,item.row))}" /></label>
             <label>스킬 ID(쉼표구분)<input class="gb-input" id="gb-char-skills" value="${escapeHtml((item.skills||[]).join(', '))}" /></label>
-            <label>가방<select class="gb-input" id="gb-char-bag">${Object.values(PARTY_BAGS).map(b=>optionHtml(b.id,b.id==='none'?'가방 없음':`${b.name} (+${b.slotBonus}칸/+${b.maxWeightBonusG/1000}kg${b.weightMul<1?`/효율${Math.round((1-b.weightMul)*100)}%`:''})`,(item.bagId||'none')===b.id)).join('')}</select></label>
           </div>
           <label>메모<textarea class="gb-textarea short" id="gb-char-note">${escapeHtml(item.note || '')}</textarea></label>
           <div style="margin-top:10px;border-top:1px solid rgba(148,163,184,0.2);padding-top:8px;">
@@ -8474,15 +8473,48 @@ function renderCommandPanel(runtime) {
 
   function renderSkillEditor() {
     ensureSelections();
-    const item = deepClone(getCustomSkillById(model.state.selected.skills) || {
-      id:'', name:'', grade:'E', category:'singleAttack', target:'singleEnemy', coef:1.0, mp:0, sp:0,
-      damageType:'physical', element:'none', statTypes:'str', duration:0, ccType:'', ccTurns:1, buffStat:'', buffValue:0, statusType:'', statusTurns:2, desc:''
-    });
+    const selId = model.state.selected.skills || '';
+    // Try custom first, then builtin, then default empty
+    const allSkills = getAllSkillMap();
+    let item;
+    if (selId && allSkills[selId]) {
+      const sk = deepClone(allSkills[selId]);
+      // Flatten for editor fields
+      item = {
+        id: sk.id || '',
+        name: sk.name || '',
+        grade: sk.grade || 'E',
+        category: sk.category || 'singleAttack',
+        target: sk.target || 'singleEnemy',
+        coef: sk.coef != null ? sk.coef : 0,
+        mp: (sk.costs && sk.costs.mp) || 0,
+        sp: (sk.costs && sk.costs.sp) || 0,
+        damageType: sk.damageType || 'physical',
+        element: sk.element || 'none',
+        statTypes: Array.isArray(sk.statTypes) ? sk.statTypes.join(', ') : (sk.statTypes || ''),
+        duration: sk.duration || 0,
+        ccType: (sk.cc && sk.cc.type) || '',
+        ccTurns: (sk.cc && sk.cc.turns) || 1,
+        buffStat: (sk.buff && sk.buff.stats) ? Object.keys(sk.buff.stats)[0] || '' : '',
+        buffValue: (sk.buff && sk.buff.stats) ? Object.values(sk.buff.stats)[0] || 0 : 0,
+        statusType: (sk.status && sk.status.type) || '',
+        statusTurns: (sk.status && sk.status.turns) || 2,
+        desc: sk.desc || ''
+      };
+    } else {
+      item = {
+        id:'', name:'', grade:'E', category:'singleAttack', target:'singleEnemy', coef:1.0, mp:0, sp:0,
+        damageType:'physical', element:'none', statTypes:'str', duration:0, ccType:'', ccTurns:1, buffStat:'', buffValue:0, statusType:'', statusTurns:2, desc:''
+      };
+    }
     const catLabels = { singleAttack:'단일공격', aoeAttack:'광역공격', singleCC:'단일CC', aoeCC:'광역CC', singleHeal:'힐', aoeHeal:'광역힐', buff:'버프', passive:'패시브', utility:'유틸' };
+    const customOverrides = new Set((model.db.customSkills || []).map(s => s.id));
     const builtins = Object.values(BUILTIN_SKILLS).map(sk => {
       const cat = catLabels[sk.category] || sk.category;
       const grade = sk.grade || '?';
       const rarity = sk.rarity ? ` <span class="gb-badge" style="background:#a855f7;color:#fff;">${escapeHtml(sk.rarity)}</span>` : '';
+      const isOverridden = customOverrides.has(sk.id);
+      const overrideBadge = isOverridden ? ' <span class="gb-badge" style="background:#ef4444;color:#fff;">수정됨</span>' : '';
       // 비용
       const costs = sk.costs || {};
       const costParts = [];
@@ -8512,24 +8544,26 @@ function renderCommandPanel(runtime) {
       if (sk.passiveBonuses) extras.push('패시브:' + Object.entries(sk.passiveBonuses).map(([s,n])=>s.toUpperCase()+'+'+n).join(','));
       if (sk.statTypes) extras.push('스탯:' + (Array.isArray(sk.statTypes) ? sk.statTypes : [sk.statTypes]).join('/'));
       const extraStr = extras.join(' · ');
-      return `<div class="gb-skill-row" style="padding:6px 0;border-bottom:1px solid rgba(148,163,184,0.1);">
-        <div><strong>${escapeHtml(sk.name)}</strong> <span class="gb-badge">${escapeHtml(grade)}</span>${rarity} <span class="gb-badge">${escapeHtml(cat)}</span> <span class="gb-badge">${escapeHtml(sk.id)}</span></div>
+      return `<div class="gb-skill-row" data-load-builtin-skill="${escapeHtml(sk.id)}" style="padding:6px 0;border-bottom:1px solid rgba(148,163,184,0.1);cursor:pointer;" title="클릭하면 편집기로 불러옵니다">
+        <div><strong>${escapeHtml(sk.name)}</strong> <span class="gb-badge">${escapeHtml(grade)}</span>${rarity} <span class="gb-badge">${escapeHtml(cat)}</span> <span class="gb-badge">${escapeHtml(sk.id)}</span>${overrideBadge}</div>
         <div style="font-size:12px;margin-top:2px;">${coefStr ? `<span style="color:#3b82f6;font-weight:600;">${escapeHtml(coefStr)}</span>` : ''}${costStr ? ` <span style="color:#f59e0b;">[${escapeHtml(costStr)}]</span>` : ''}</div>
         ${byRankStr ? `<div class="gb-sub" style="font-size:11px;margin-top:2px;">📈 성장: ${escapeHtml(byRankStr)}</div>` : ''}
         ${extraStr ? `<div class="gb-sub" style="font-size:11px;margin-top:1px;">${escapeHtml(extraStr)}</div>` : ''}
         <div class="gb-skill-desc" style="margin-top:2px;">${escapeHtml(sk.desc || '')}</div>
       </div>`;
     }).join('');
-    const list = (model.db.customSkills || []).map(c => `<button class="gb-list-item ${c.id===model.state.selected.skills?'is-active':''}" data-select-type="skills" data-id="${escapeHtml(c.id)}">${escapeHtml(c.name)} <span class="gb-sub">[${escapeHtml(c.id)}]</span></button>`).join('');
+    const list = (model.db.customSkills || []).filter(c => !BUILTIN_SKILLS[c.id]).map(c => `<button class="gb-list-item ${c.id===model.state.selected.skills?'is-active':''}" data-select-type="skills" data-id="${escapeHtml(c.id)}">${escapeHtml(c.name)} <span class="gb-sub">[${escapeHtml(c.id)}]</span></button>`).join('');
+    const isEditingBuiltin = item.id && BUILTIN_SKILLS[item.id];
+    const editorTitle = isEditingBuiltin ? `내장 스킬 편집 — <span style="color:#3b82f6;">${escapeHtml(item.name || item.id)}</span>` : '커스텀 스킬 편집';
     return `
       <div class="gb-panel">
-        <div class="gb-section-title">내장 스킬</div>
+        <div class="gb-section-title">내장 스킬 <span class="gb-sub">(클릭하면 편집기에 불러옴)</span></div>
         <div class="gb-skill-list">${builtins}</div>
       </div>
       <div class="gb-grid db" style="margin-top:12px;">
         <div class="gb-panel"><div class="gb-section-title">커스텀 스킬 목록</div>${list || '<div class="gb-sub">등록된 커스텀 스킬 없음.</div>'}<div class="gb-btn-row"><button class="gb-btn" id="gb-skill-new">새 스킬</button></div></div>
         <div class="gb-panel">
-          <div class="gb-section-title">커스텀 스킬 편집</div>
+          <div class="gb-section-title">${editorTitle}</div>
           <div class="gb-grid two">
             <label>ID<input class="gb-input" id="gb-skill-id" value="${escapeHtml(item.id)}" /></label>
             <label>이름<input class="gb-input" id="gb-skill-name" value="${escapeHtml(item.name)}" /></label>
@@ -8551,8 +8585,8 @@ function renderCommandPanel(runtime) {
             <label>상태이상 턴<input class="gb-input" id="gb-skill-statusturns" type="number" value="${escapeHtml(item.statusTurns)}" /></label>
           </div>
           <label>설명<textarea class="gb-textarea short" id="gb-skill-desc">${escapeHtml(item.desc || '')}</textarea></label>
-          <div class="gb-btn-row"><button class="gb-btn primary" id="gb-skill-save">저장</button><button class="gb-btn" id="gb-skill-delete">삭제</button></div>
-          <div class="gb-sub">광역 CC는 플러그인 공통 규칙으로 자동 보정된다. 즉 입력 계수는 단일CC 기준으로 넣고, 실제 적용은 1/2 계수 + 비용 2배다.</div>
+          <div class="gb-btn-row"><button class="gb-btn primary" id="gb-skill-save">저장</button>${isEditingBuiltin ? '<button class="gb-btn" id="gb-skill-restore" style="background:#ef4444;color:#fff;">원본 복원</button>' : '<button class="gb-btn" id="gb-skill-delete">삭제</button>'}</div>
+          <div class="gb-sub">${isEditingBuiltin ? '내장 스킬을 수정하면 커스텀 오버라이드로 저장된다. "원본 복원"으로 되돌릴 수 있다.' : '광역 CC는 플러그인 공통 규칙으로 자동 보정된다. 즉 입력 계수는 단일CC 기준으로 넣고, 실제 적용은 1/2 계수 + 비용 2배다.'}</div>
         </div>
       </div>
     `;
@@ -8910,7 +8944,7 @@ function readPartySlotsFromUI() {
       level: Math.max(1, Math.min(EXP_MAX_LEVEL, Number(fieldValue('#gb-char-level') || 1))),
       exp: Math.max(0, Number(fieldValue('#gb-char-exp') || 0)),
       totalExp: Math.max(0, Number(fieldValue('#gb-char-totalexp') || 0)),
-      bagId: fieldValue('#gb-char-bag') || 'none',
+      bagId: existingChar.bagId || 'none',
       stats: {
         str:Number(fieldValue('#gb-char-str') || 0),
         con:Number(fieldValue('#gb-char-con') || 0),
@@ -10974,6 +11008,23 @@ async function saveMaterialTraitFromForm() {
     on('#gb-skill-new', 'click', async () => { model.state.selected.skills = ''; await saveState(); renderApp(); });
     on('#gb-skill-save', 'click', async () => { try { await saveSkillFromForm(); } catch (e) { toast(e.message || String(e), true); } });
     on('#gb-skill-delete', 'click', async () => { try { await deleteSelected('skills'); } catch (e) { toast(e.message || String(e), true); } });
+    // 내장 스킬 클릭 → 편집기로 불러오기
+    on('[data-load-builtin-skill]', 'click', async (ev) => {
+      const skillId = ev.currentTarget.getAttribute('data-load-builtin-skill');
+      if (skillId) {
+        model.state.selected.skills = skillId;
+        await saveState(); renderApp();
+        toast(`📝 내장 스킬 "${skillId}" 편집기에 로드됨`);
+      }
+    });
+    // 내장 스킬 원본 복원 (오버라이드 삭제)
+    on('#gb-skill-restore', 'click', async () => {
+      const selId = model.state.selected.skills;
+      if (!selId || !BUILTIN_SKILLS[selId]) return;
+      model.db.customSkills = (model.db.customSkills || []).filter(x => x.id !== selId);
+      await saveDb(); await saveState(); renderApp();
+      toast(`↩️ "${selId}" 원본으로 복원 완료`);
+    });
 
     // Equipment tab handlers
     on('#gb-eq-new', 'click', async () => { model.state.selected.equipment = ''; await saveState(); renderApp(); });
