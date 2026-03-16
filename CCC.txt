@@ -1,0 +1,1034 @@
+
+
+# Hunter World — NPC 스킬 시스템 종합 설계서
+
+> 기준: `skill_system.md` + `lorebook_export.json` + 사용자 초안
+> 포지션: 전열 / 중열 / 후열 | 탱커 / 딜러 / 서포터 / 힐러
+> 비전투: 제작자 / 짐꾼 / 채굴꾼
+
+---
+
+## 목차
+1. [공통 규칙](#1-공통-규칙)
+2. [최유나 — 전열탱커 (무직업)](#2-최유나)
+3. [오하나 — 중열딜러 (투척가)](#3-오하나)
+4. [안도현 — 비전투 (수리가)](#4-안도현)
+5. [송하늘 — 후열딜러 (궁수)](#5-송하늘)
+6. [김민수 — 전열탱커 (무직업)](#6-김민수)
+7. [이하은 — 후열  러 (클레릭)](#7-이하은)
+8. [이사벨 헤이즈 — 전열탱커 (크루세이더)](#8-이사벨-헤이즈)
+9. [최민준 — 전열탱커 (백부장)](#9-최민준)
+10. [서지한 — 후열서포터 (무직업/저주체질)](#10-서지한)
+11. [박소원 — 후열서포터 (연금술사)](#11-박소원)
+12. [강유라 — 전열딜러 (스트라이커)](#12-강유라)
+13. [한서연 — 후열딜러 (마법사)](#13-한서연)
+14. [하루 이토 — 중열딜러/서포터 (정령술사)](#14-하루-이토)
+15. [유진성 — 비전투 (대장장이)](#15-유진성)
+16. [한아람 — 비전투/전열보조 (짐꾼/포터)](#16-한아람)
+
+---
+
+## 1. 공통 규칙
+
+### 스킬 카테고리 (복습)
+| 카테고리 | 코드 | 대상 |
+|---|---|---|
+| 단일공격 | singleAttack | 적 1체 |
+| 광역공격 | aoeAttack | 전체 적 |
+| 단일CC | singleCC | 적 1체 + 상태이상 |
+| 광역CC | aoeCC | 전체 적 + 상태이상 |
+| 단일힐 | singleHeal | 아군 1체 |
+| 광역힐 | aoeHeal | 전체 아군 |
+| 버프 | buff | 자신/아군 |
+| 유틸리티 | utility | 자원·상태 관리 |
+| 패시브 | passive | 상시 적용 |
+
+### 계수/비용 기준 (단일 대상)
+| 등급 | 계수 | 비용 |
+|:---:|:---:|:---:|
+| E | 1.2~1.5 | 20~40 |
+| D | 1.92~2.4 | 25~45 |
+| C | 2.88~3.6 | 30~50 |
+| B | 4.8~6.0 | 40~60 |
+| A | 7.68~9.6 | 55~80 |
+| S | 11.52~14.4 | 70~100 |
+
+### 파생 규칙
+- **광역공격**: 단일 계수 × 0.58
+- **단일CC**: 광역공격 수준 계수 + CC 판정
+- **광역CC**: 단일CC 계수 × 0.5 / 비용 × 2
+- **성장형(Rare)**: 상한값 사용
+- **버프 스탯 보너스**: E+2 / D+4 / C+6 / B+8 / A+10 / S+12~15
+
+### 데미지 공식
+```
+rawBase = (2 × MainStat) + (3 × ATK)
+rawDamage = rawBase × coef × critMult × elementMul × resistMult × typeMul × incomingMul × outgoingMul
+최종피해 = 방어 공식 적용 (DEF 기반)
+```
+
+### 회복 공식
+```
+Heal = (2 × INT + 3 × ATK) × 스킬계수 × curseMul
+출혈 대상 → 회복량 50% 감소
+```
+
+### 위협(Threat) 시스템
+- 도발 스킬: 위협 수치 강제 증가 → 몬스터 타겟 고정
+- 기본 위협: 딜량 비례 / 힐량 비례 (×0.5)
+- 탱커 기본 위협 배율: ×1.5
+
+---
+
+## 2. 최유나
+**E랭크 · 전열탱커 · 무직업 · Lv.6**
+**주스탯: CON 19 | 보조: AGI 14, STR 12**
+
+| # | 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|---|
+| 1 | 강철 모루 | steelAnvil | E→S | Rare | passive | 성장형. P.DEF/M.DEF 상시 증가 |
+| 2 | 방패숙련 | shieldProficiency | E | Normal | passive | 방패 계열 SP 비용 -10% |
+| 3 | 단검숙련 | daggerHandling | E | Normal | passive | 단검/투척 계열 SP 비용 -10% |
+
+### 강철 모루 (Steel Anvil) — 성장형 포지션 스킬
+| 등급 | P.DEF | M.DEF |
+|:---:|:---:|:---:|
+| E | +1 | +1 |
+| D | +3 | +3 |
+| C | +5 | +5 |
+| B | +7 | +7 |
+| A | +9 | +9 |
+| S | +11 | +11 |
+
+> 패시브 · CON 스탯 · 상시 적용
+> 진화 가능: Platinum Anvil (백금 모루) [Unique] — 협회 예측
+
+### 방패숙련 (Shield Proficiency)
+- 타입: E Normal · passive
+- 효과: 방패 장착 시 모든 방패 관련 스킬 SP 비용 -10%
+
+### 단   숙련 (Dagger Handling)
+- 타입: E Normal · passive
+- 효과: 단검/투척 장착 시 관련 스킬 SP 비용 -10%
+
+---
+
+## 3. 오하나
+**E랭크 · 중열 원거리 물리 딜러 · 투척가 · Lv.6**
+**주스탯: AGI 16, SEN 15 | 보조: CON 11**
+
+| # | 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|---|
+| 1 | 퀵스로 | quickThrow | E | Normal | singleAttack | 투척 단일 공격 |
+| 2 | 무기회수 | knifeRecall | E | Class | utility | 회수 + 확률 공격 |
+| 3 | 정밀한 조준 | preciseAim | E→S | Rare/Class | buff | 성장형 광역버프 |
+
+### 퀵스로 (Quick Throw)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | singleAttack |
+| 계수 | 1.5 |
+| 비용 | SP 40 |
+| 스탯 | AGI + SEN |
+| 속성 | physical |
+| 비고 | 투척 무기 소모 (회수 별도) |
+
+### 무기회수 (Knife Recall)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | utility |
+| 비용 | MP 20 |
+| 스탯 | AGI + SEN |
+| 효과 | 투척 무기 1개 즉시 회수 |
+| 부가 | 30% 확률로 회수 경로 상 적 1체에 계수 1.5 물리 피해 |
+| 비고 | SP +10 회복 |
+
+### 정밀한 조준 (Precise Aim) — 성장형 직업 스킬
+| 등급 | AGI 보너스 | SEN 보너스 | MP 비용 |
+|:---:|:---:|:---:|:---:|
+| E | +2 | +2 | 25 |
+| D | +4 | +4 | 30 |
+| C | +6 | +6 | 40 |
+| B | +8 | +8 | 50 |
+| A | +10 | +10 | 65 |
+| S | +12 | +12 | 85 |
+
+> 카테고리: buff (aoe) · 3턴 지속 · 전체 아군 대상
+
+---
+
+## 4. 안도현
+**E랭크 · 비전투 (수리가) · Lv.4**
+**주스탯: SEN 15 | 보조: STR 12, CON 12**
+
+| # | 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|---|
+| 1 | 탁월한 손재주 | exceptionalDexterity | E→S | Normal/Class | passive | 성장형. SEN 보너스 + 상위 장비 지원 |
+| 2 | 현장정비 | fieldMaintenance | E | Class | passive (utility) | 내구도 소모 -50% |
+| 3 | 빠른수리 | quickRepair | E | Class | utility (passive) | 일시 내구도 +10 |
+| 4 | 응급처치지원 | fieldAidSupport | E | Normal | passive (utility) | 야영 회복 +10% |
+
+### 탁월한 손재주 (Exceptional Dexterity) — 성장형 직업 스킬
+| 등급 | SEN 보너스 | 장비 지원 가능 범위 |
+|:---:|:---:|---|
+| E | +1 | 현재 등급 +1 (D급까지) |
+| D | +2 | C급까지 |
+| C | +3 | B급까지 |
+| B | +4 | A급까지 |
+| A | +5 | S급까지 |
+| S | +6 | S급 + Unique |
+
+> 패시브 · SEN 스탯 · 전투 외 장비 수리/정비/제작 지원 시 효과 적용
+> 전투용 스킬이 아니므로 계수/비용 없음
+
+### 현장정비 (Field Maintenance)
+- 타입: E Class · passive
+- 효과: 게이트 내 파티원 전원 장비 내구도 소모량 50% 감소
+- 조건: 안도현이 파티에 편성되어 있을 때 상시
+
+### 빠른수리 (Quick Repair)
+- 타입: E Class · utility (active)
+- 효과: 대상 장비 1개의 내구도를 즉시 +10 (현재 최대치 초과 불가)
+- 제한: 장비 1개당 게이트 내 1회 한정
+- 비용: 없음 (비전투 스킬)
+- 소요 시간: 전투 외 1턴
+
+### 응급처치지원 (Field Aid Support)
+- 타입: E Normal · passive
+- 효과: 휴식/야영 시 파티원 전원의 HP/MP/SP 자연 회복 효율 +10%
+- 조건: 안도현이 현장에서 처치를 수행할 때
+
+---
+
+## 5. 송하늘
+**E랭크 · 후열 원거리 물리 딜러 · 궁수 · Lv.6**
+**주스탯: AGI 18, SEN 14 | 보조: CON 12**
+
+| # | 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|---|
+| 1 | 파워샷 | powerShot | E | Normal | singleAttack | 고계수 단일 |
+| 2 | 퀵샷 | quickShot | E | Normal | singleAttack | 저비용 단일 |
+| 3 | 전탄회수 | fullArrowRecovery | E→S | Rare/Class | utility + aoeAttack | 성장형. 화살 회수 + 광역 |
+| 4 | 트리플샷 | tripleShot | — | Rare/Class | singleAttack | D등급 해금. 성장형 3연타 |
+
+### 파워샷 (Power Shot)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | singleAttack |
+| 계수 | 1.5 |
+| 비용 | MP 20 + SP 20 |
+| 스탯 | AGI |
+| 속성 | physical |
+
+### 퀵샷 (Quick Shot)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | singleAttack |
+| 계수 | 1.2 |
+| 비용 | SP 15 |
+| 스탯 | AGI |
+| 속성 | physical |
+
+### 전탄회수 (Full Arrow Recovery) — 성장형 직업 스킬
+| 등급 | 계수 | MP 비용 |
+|:---:|:---:|:---:|
+| E | 0.875 | 40 |
+| D | 1.4 | 50 |
+| C | 2.1 | 60 |
+| B | 3.5 | 70 |
+| A | 5.6 | 80 |
+| S | 8.4 | 100 |
+
+> 카테고리: utility + aoeAttack
+> 발동 조건: 해당 전투에서 화살 공격 3회 이상 수행 후 사용 가능
+> 효과: ① 전    중 소모한 화살 전량 회수 ② 회수 경로 상 전체 적에게 aoe 계수 적용
+> 스탯: AGI · 속성: physical
+
+### 트리플샷 (Triple Shot) — 성장형 직업 스킬 (D등급 해금)
+| 등급 | 계수 (총합) | MP 비용 | SP 비용 |
+|:---:|:---:|:---:|:---:|
+| E | 1.5 | 15 | 15 |
+| D | 2.4 | 15 | 15 |
+| C | 3.6 | 18 | 18 |
+| B | 6.0 | 25 | 25 |
+| A | 9.6 | 30 | 30 |
+| S | 14.4 | 40 | 40 |
+
+> 카테고리: singleAttack · 3연타 (총계수 일괄 적용)
+> 스탯: AGI · 속성: physical · Rare
+
+---
+
+## 6. 김민수
+**E랭크 · 전열탱커 · 무직업 · Lv.5**
+**주스탯: CON 14, STR 13 | 보조: AGI 10**
+
+| # | 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|---|
+| 1 | 이목집중 | spotlight | E→S | Rare/Position | utility (buff) | 성장형. 광역도발 |
+| 2 | 실드강타 | shieldBash | E | Normal | singleCC | 방패 타격 + 기절 |
+| 3 | 도발 | taunt | E | Normal | buff | 단일 도발 |
+
+### 이목집중 (Spotlight) — 성장형 포지션 스킬
+| 등급 | 위협 증가량 | MP 비용 | 지속 |
+|:---:|:---:|:---:|:---:|
+| E | +10 | 30 | 3턴 |
+| D | +20 | 35 | 3턴 |
+| C | +30 | 45 | 3턴 |
+| B | +40 | 55 | 3턴 |
+| A | +50 | 70 | 3턴 |
+| S | +60 | 90 | 3턴 |
+
+> 카테고리: utility (광역 도발) · 아군/적 모두에게 주목 강제
+> 특이: 일반 Taunt과 달리 **아군의 집중도 끌어당길 수 있음** — 오용 시 아군 타이밍 교란
+> 스탯: CON · Rare
+
+### 실드강타 (Shield Bash)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | singleCC |
+| 계수 | 0.875 |
+| 비용 | MP 20 + SP 20 |
+| 스탯 | CON |
+| 속성 | physical |
+| CC | 기절 (stun) 16% 기본 확률 · 1턴 |
+
+### 도발 (Taunt)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | buff (self) |
+| 비용 | SP 20 |
+| 효과 | 위협 +5 · 3턴 |
+
+---
+
+## 7. 이하은
+**D랭크 · 후열힐러 · 클레릭 · Lv.14**
+**주스탯: INT 35 | 보조: SEN 20, CON 16**
+
+| # | 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|---|
+| 1 | 기도 | pray | D | Normal | singleHeal | 단일 회복 |
+| 2 | 빛의 축복 | blessingOfLight | D | Normal | buff (aoe) | INT 버프 |
+| 3 | 작은 정원 | smallGarden | E→S | Rare/Class | aoeHeal | 성장형 광역 회복 |
+
+### 기도 (Pray)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | singleHeal |
+| 계수 | 2.2 |
+| 비용 | MP 45 |
+| 스탯 | INT |
+| 비고 | 출혈 대상 회복량 -50% |
+
+### 빛의 축복 (Blessing of Light)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | buff (aoe) |
+| 비용 | MP 25 |
+| 효과 | 전 아군 INT +4 · 3턴 |
+| 스탯 | INT / SEN |
+
+### 작은 정원 (Small Garden) — 성장형 직업 스킬
+| 등급 | 계수 | MP 비용 |
+|:---:|:---:|:---:|
+| E | 0.875 | 30 |
+| D | 1.4 | 35 |
+| C | 2.1 | 40 |
+| B | 3.5 | 50 |
+| A | 5.6 | 65 |
+| S | 8.4 | 90 |
+
+> 카테고리: aoeHeal · 스탯: INT
+> 각 부상 아군에게 계수 기반 회복량 개별 적용 (분배 아님)
+> 출혈 대상 회복량 -50%
+
+---
+
+## 8. 이사벨 헤이즈
+**D랭크 · 전열탱커 · 크루세이더 · Lv.12**
+**주스탯: CON 28, STR 20 | 보조: INT 18, SEN 15**
+
+| # | 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|---|
+| 1 | 방어선 유지 | holdTheLine | D | Class | buff (self) | CC 면역 |
+| 2 | 신성한 도발 | holyProvocation | D | Class | buff (단일 강제도발) | 대상 고정 |
+| 3 | 신의 보호 | divineProtection | D | Class | singleHeal | 치유 + 초과 보호막 |
+| 4 | 성스러운 빛 | holyLight | D | Normal | singleAttack | 빛 속성 공격 |
+| 5 | 아테나의 파편 | fragmentOfAthena | — | Unique | passive | **잠재/미발현** |
+
+### 방어선 유지 (Hold the Line)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | buff (self) |
+| 비용 | SP 40 |
+| 효과 | 3턴 CC 완전 면역 (stun, sleep, bind 등) |
+| 비고 | 자기 자신만 대상 |
+
+### 신성한 도발 (Holy Provocation)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | buff (utility) |
+| 비용 | MP 15 + SP 15 |
+| 효과 | 선택 대상 1체를 2턴 강제 도발 (해당 적은 이사벨만 공격) |
+| 스탯 | CON |
+| 비고 | 보스급에게는 1턴 적용, 이후 3턴 쿨타임 |
+
+### 신의 보호 (Divine Protection)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | singleHeal |
+| 계수 | 2.0 |
+| 비용 | MP 30 |
+| 스탯 | INT |
+| 특수 | HP가 최대인 대상에게 사용 시, 회복량이 **보호막**으로 전환 (최대 HP의 20% 한도) |
+| 비고 | 출혈 대상 회복량 -50% (보호막 전환 시에는 미적용) |
+
+### 성스러운 빛 (Holy Light)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | singleAttack |
+| 계수 | 1.92 |
+| 비용 | MP 30 |
+| 스탯 | INT |
+| 속성 | magic (light) |
+| 비고 | 언데드/암흑 계열 약점 시 ×1.3 |
+
+### 아테나의 파편 (Fragment of Athena)
+- 타입: Unique · passive · **잠재/미발현**
+- 현재 효과: 없음
+- 진화 경로: Fragment → Successor of Athena (A) → Avatar of Athena (S)
+- 비고: 이사벨 본인 미인지
+
+---
+
+## 9. 최민준
+**C랭크 · 전열탱커 · 백부장(Hidden) · Lv.28**
+**주스탯: CON 48, STR 42 | 보조: AGI 22, SEN 18, INT 15**
+
+| # | 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|---|
+| 1 | 투심 향상 | fightingSpiritBoost | C→S | Rare/Class | buff (aoe) | 성장형. STR+AGI 버프 |
+| 2 | 진형 지휘 | formationCommand | C | Class | passive | 전투 초반 피해감소 |
+| 3 | 사기관리 | moraleManagement | C | Class | passive | 전투 초반 자원 절약 |
+| 4 | 방패강타 | shieldSmash | C | Normal | singleCC | 도끼방패 타격 + 기절 |
+| 5 | 도발함성 | battleCry | C | Normal | buff (aoe utility) | 광역 도발 |
+| 6 | 돌진 | charge | C | Normal | singleAttack | 돌진 공격 |
+
+### 투심 향상 (Fighting Spirit Boost) — 성장형 직업 스킬
+| 등급 | STR 보너스 | AGI 보너스 | MP 비용 | 지속 |
+|:---:|:---:|:---:|:---:|:---:|
+| C | +3 | +3 | 30 | 3턴 |
+| B | +4 | +4 | 40 | 3턴 |
+| A | +5 | +5 | 55 | 3턴 |
+| S | +8 | +7 | 70 | 3턴 |
+
+> 카테고리: buff (aoe) · 전 아군 대상
+> 스탯: CON · Rare
+> 비고: 백부장 직업 전용. C등급 해금(직업 획득 시)
+
+### 진형 지휘 (Formation Command)
+- 타입: C Class · passive
+- 효과: 전투 시작 후 2턴 동안 전 아군 **물리/마법 피해 감소 +8%**
+- 비고: 최민준이 전열에 위치할 때만 발동
+
+### 사기관리 (Morale Management)
+- 타입: C Class · passive
+- 효과: 전투 시작 후 2턴 동안 전 아군 **SP/MP 소모량 -12%**
+- 비고: 최민준이 파티에 편성되어 있을 때 발동
+
+### 방패강타 (Shield Smash)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | singleCC |
+| 계수 | 2.88 |
+| 비용 | MP 25 + SP 25 |
+| 스탯 | CON + STR |
+| 속성 | physical |
+| CC | 기절 (stun) 20% 기본 확률 · 1턴 |
+
+### 도발함성 (Battle Cry)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | buff (aoe utility) |
+| 비용 | SP 30 |
+| 효과 | 위협 +8 · 3턴 · 전체 적 대상 도발 |
+
+### 돌진 (Charge)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | singleAttack |
+| 계수 | 3.2 |
+| 비용 | MP 20 + SP 30 |
+| 스탯 | STR |
+| 속성 | physical |
+| 비고 | 후열 적에게 사용 시 계수 ×1.2 |
+
+---
+
+## 10. 서지한
+**C랭크 · 후열서포터 · 무직업(저주체질) · Lv.22**
+**주스탯: INT 42 | 보조: SEN 28, CON 20**
+
+| # | 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|---|
+| 1 | 힐 | heal | D | Normal | singleHeal | 단일 회복 |
+| 2 | 헤이스트 | haste | D | Normal | buff | AGI 버프 |
+| 3 | 빛의 축복 | blessingOfLight | D | Normal | buff (aoe) | INT 버프 |
+| 4 | 에너지볼트 | energyBolt | E | Normal | singleAttack | 단일 마법 공격 |
+| 5 | 흡혈 본능 | vampiricInstinct | C | Curse | passive | **저주 체질** |
+| 6 | 피의 감각 | bloodSense | C | Curse | passive | 위험 감지 |
+
+### 힐 (Heal)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | singleHeal |
+| 계수 | 2.0 |
+| 비용 | MP 40 |
+| 스탯 | INT |
+
+### 헤이스트 (Haste)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | buff |
+| 비용 | MP 25 |
+| 효과 | 대상 AGI +4 · 3턴 |
+
+### 빛의 축복 (Blessing of Light)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | buff (aoe) |
+| 비용 | MP 25 |
+| 효과 | 전 아군 INT +4 · 3턴 |
+
+### 에너지볼트 (Energy Bolt)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | singleAttack |
+| 계수 | 1.5 |
+| 비용 | MP 30 |
+| 스탯 | INT |
+| 속성 | magic |
+
+### 흡혈 본능 (Vampiric Instinct) — 저주 체질
+- 타입: C Curse · passive
+- 효과: 마나 고갈(MP 10% 이하) 시 **다음 일반 공격이 대상 HP의 5%를 흡수** (자가 HP 회복)
+- 패널티: 발동 후 3턴간 **INT -3** (갈증 부작용)
+- 비고: 의도적 사용 불가 — 임계치 도달 시 자동 발동
+
+### 피의 감각 (Blood Sense) — 저주 체질
+- 타입: C Curse · passive
+- 효과: 반경 내 **출혈 상태 적/아군의 위치 및 HP 잔량 감지**
+- 부가: 던전 내 **기습 공격 회피율 +15%**
+- 비고: 흡혈 충동을 억제하며 체득한 부산물
+
+---
+
+## 11. 박소원
+**C랭크 · 후열서포터 · 연금술사 · Lv.25**
+**주스탯: INT 38, SEN 30 | 보조: CON 22, STR 15**
+
+| # | 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|---|
+| 1 | 포션제조 | potionCraft | E→S | Rare/Class | utility | 성장형. 포션 현장 제조 |
+| 2 | 포션던지기 | potionToss | C | Class | utility | 아군 대상 포션 투척 |
+| 3 | 재료분석 | materialAnalysis | C | Normal | utility (passive) | 재료 식별 |
+| 4 | 에너지샤워 | energyShower | E | Normal | aoeAttack | 광역 마법 (비상용) |
+
+### 포션제조 (Potion Craft) — 성장형 직업 스킬
+
+**일반 포션 제조 (일반 재료)**
+| 포션 등급 | 필요 재료 |
+|---|---|
+| 최하급 | E급 일반 재료 ×2 |
+| 하급 | D급 일반 재료 ×2 |
+| 중급 | C급 일반 재료 ×2 |
+| 중상급 | B급 일반 재료 ×2 |
+| 상급 | A급 일반 재료 ×2 |
+| 최상급 | S급 일반 재료 ×1 |
+
+> 해독 포션: 기본 비용 ×10 / 기절해제 포션: ×15 / 저주해제 포션: ×20
+
+**특수 포션 제조 (희귀 재료)**
+| 포션 등급 | 필요 재료 |
+|---|---|
+| 최하급 | E급 4티어 희귀 재료 ×1 |
+| 하급 | D급 4티어 희귀 재료 ×1 |
+| 중급 | C급 4티어 희귀 재료 ×1 |
+| 중상급 | B급 4티어 희귀 재료 ×1 |
+| 상급 | A급 4티어 희귀 재료 ×1 |
+| 최상급 | S급 4티어 희귀 재료 ×4 |
+
+> 제한: 자신 등급 이하의 포션만 제조 가능
+> 제조 시간: 전투 외 2턴 (일반) / 3턴 (특수)
+
+### 포션던지기 (Potion Toss) — 직업 스킬
+| 항목 | 값 |
+|---|---|
+| 카테고리 | utility (active) |
+| 비용 | 포션 1개 소모 |
+| 효과 | 중거리 내 아군 1체에게 포션 효과 적용 |
+| 특수 | **자가 제조 포션 사용 시 부작용(1일 5회 제한) 미적용** |
+| 비고 | 구매 포션은 일반 부작용 규칙 적용 |
+
+### 재료분석 (Material Analysis)
+- 타입: C Normal · utility (passive)
+- 효과: 게이트 내 채집물/드랍 재료의 등급·속성·용도를 자동 감별
+- 비고: SEN 스탯 기반
+
+---
+
+## 12. 강유라
+**C랭크 · 전열 근접 딜러 · 스트라이커 · Lv.28**
+**주스탯: AGI 48, STR 38 | 보조: CON 28**
+
+| # | 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|---|
+| 1 | 신체강화 | bodyReinforce | C→S | Normal/Class | buff (self) | 성장형. STR+AGI 자가 버프 |
+| 2 | 파쇄격 | crushingKick | C | Normal | singleAttack | 근접 고계수 발차기 |
+| 3 | 회전축격 | spinSweep | C | Normal | aoeAttack | 전열 광역 발차기 |
+| 4 | 급소가격 | vitalStrike | C | Normal | singleCC | 단일 CC + 피해 |
+
+### 신체강화 (Body Reinforcement) — 성장형 직업 스킬
+| 등급 | STR 보너스 | AGI 보너스 | MP 비용 | 지속 |
+|:---:|:---:|:---:|:---:|:---:|
+| C | +3 | +3 | 25 | 3턴 |
+| B | +4 | +4 | 35 | 3턴 |
+| A | +5 | +5 | 50 | 3턴 |
+| S | +7 | +7 | 65 | 3턴 |
+
+> 카테고리: buff (self) · 자기 자신만 대상
+
+### 파쇄격 (Crushing Kick)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | singleAttack |
+| 계수 | 3.4 |
+| 비용 | MP 20 + SP 30 |
+| 스탯 | STR + AGI |
+| 속성 | physical |
+| 비고 | 근접 전용 |
+
+### 회전축격 (Spin Sweep)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | aoeAttack |
+| 계수 | 2.0 (≈ 3.4 × 0.58) |
+| 비용 | MP 30 + SP 35 |
+| 스탯 | STR + AGI |
+| 속성 | physical |
+| 비고 | 전열 적 전체 대상 |
+
+### 급소가격 (Vital Strike)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | singleCC |
+| 계수 | 2.0 |
+| 비용 | MP 20 + SP 25 |
+| 스탯 | AGI + SEN |
+| 속성 | physical |
+| CC | 속박 (bind) 22% 기본 확률 · 2턴 |
+| 비고 | 다리 타격 — 감각/명중 감소 |
+
+---
+
+## 13. 한서연
+**B랭크 · 후열 원거리 마법 딜러 · 마법사(화염) · Lv.38**
+**주스탯: INT 65 | 보조: SEN 32, AGI 28, CON 22**
+
+| # | 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|---|
+| 1 | 화염창 | flameLance | B | Normal | singleAttack | 단일 고계수 화염 |
+| 2 | 유성포격 | meteorBarrage | B | Normal | aoeAttack | 광역 화염 |
+| 3 | 화염벽 | flameWall | B | Normal | aoeCC | 광역 CC + 화상 |
+| 4 | 마나집중 | manaFocus | B | Normal | buff (self) | INT 자가 버프 |
+| 5 | 에너지볼트 | energyBolt | E | Normal | singleAttack | 기본 마법 |
+
+### 화염창 (Flame Lance)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | singleAttack |
+| 계수 | 5.6 |
+| 비용 | MP 50 |
+| 스탯 | INT |
+| 속성 | magic (fire) |
+| 비고 | 빙결 대상 ×1.3 |
+
+### 유성포격 (Meteor Barrage)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | aoeAttack |
+| 계수 | 3.2 (≈ 5.6 × 0.58) |
+| 비용 | MP 55 |
+| 스탯 | INT |
+| 속성 | magic (fire) |
+
+### 화염벽 (Flame Wall)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | aoeCC |
+| 계수 | 1.6 (≈ 3.2 × 0.5) |
+| 비용 | MP 45 + SP 45 |
+| 스탯 | INT |
+| 속성 | magic (fire) |
+| CC | 화상 (burn) 32% 기본 확률 · 5턴 (최대 5중첩) |
+| 부가 | 화염벽 지속 2턴: 벽 통과 적에게 추가 화상 판정 |
+
+### 마나집중 (Mana Focus)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | buff (self) |
+| 비용 | MP 40 |
+| 효과 | INT +8 · 3턴 |
+| 비고 | 자기 자신만 대상 |
+
+---
+
+## 14. 하루 이토
+**B랭크 · 중열 딜러/서포터 · 정령술사 · Lv.35**
+**주스탯: INT 58, AGI 52 | 보조: SEN 38, CON 20**
+
+| # | 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|---|
+| 1 | 정령소환: 제피르 | summonZephyr | B | Class | utility + buff | 바람 정령 소환 |
+| 2 | 정령소환: 바크 | summonBark | B | Class | utility + buff | 나무 정령 소환 |
+| 3 | 질풍격 | galeStrike | B | Normal | singleAttack | 바람 속성 단일 |
+| 4 | 뿌리속박 | rootBind | B | Normal | aoeCC | 식물 CC |
+| 5 | 대지의 치유 | earthHeal | B | Class | aoeHeal | 정령 기반 광역 힐 |
+| 6 | 지형 전환 | terrainShift | B | Class | utility | 전장 지형 변환 |
+
+### 정령소환: 제피르 (Summon Zephyr)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | utility + buff |
+| 비용 | MP 45 |
+| 효과 | 소환 지속 5턴 · 전 아군 AGI +6 · 바람 속성 공격 보조 가능 |
+| 비고 | 제피르 존재 시 질풍격 계수 ×1.2 |
+
+### 정령소환: 바크 (Summon Bark)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | utility + buff |
+| 비용 | MP 45 |
+| 효과 | 소환 지속 5턴 · 전 아군 CON +4 · 식물 계열 CC 보조 가능 |
+| 비고 | 바크 존재 시 뿌리속박 CC 확률 +10% |
+
+### 질풍격 (Gale Strike)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | singleAttack |
+| 계수 | 5.2 |
+| 비용 | MP 40 + SP 20 |
+| 스탯 | INT + AGI |
+| 속성 | magic (wind) |
+| 비고 | 제피르 소환 시 계수 6.24 (×1.2) |
+
+### 뿌리속박 (Root Bind)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | aoeCC |
+| 계수 | 1.5 |
+| 비용 | MP 50 + SP 40 |
+| 스탯 | INT |
+| 속성 | magic (earth/plant) |
+| CC | 속박 (bind) 22% 기본 확률 · 2턴 |
+| 비고 | 바크 소환 시 CC 확률 32% |
+
+### 대지의 치유 (Earth Heal)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | aoeHeal |
+| 계수 | 3.8 |
+| 비용 | MP 50 |
+| 스탯 | INT |
+| 조건 | 정령(어느 것이든) 소환 상태에서만 사용 가능 |
+| 비고 | 각 대상 개별 적용 · 출혈 대상 -50% |
+
+### 지형 전환 (Terrain Shift)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | utility |
+| 비용 | MP 55 |
+| 효과 | 전장 지형을 3턴간 "숲/초원"으로 변경 |
+| 부가 | 숲 지형: 식물 계열 스킬 계수 +15%, 화염 계열 스킬 계수 -10% |
+| 비고 | 1 전투 1회 한정 |
+
+---
+
+## 15. 유진성
+**D랭크 · 비전투 (대장장이) · Lv.15**
+**주스탯: STR 28, SEN 22 | 보조: CON 20**
+
+| # | 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|---|
+| 1 | 장비제작 | equipmentCraft | D→S | Rare/Class | utility | 성장형. 장비 제조 |
+| 2 | 감정 | appraisal | D→S | Rare/Class | utility (passive) | 성장형. 장비/재료 감정 |
+| 3 | 전장 응급수선 | battlefieldRepair | D | Normal | utility | 전투 중 긴급 수리 |
+| 4 | 화력 최적화 | firepowerTuning | D | Class | buff | 무기 일시 강화 |
+
+### 장비제작 (Equipment Craft) — 성장형 직업 스킬
+| 등급 | 제작 가능 범위 | STR 보너스 (작업 시) |
+|:---:|---|:---:|
+| D | D급 이하 일반 장비 | +1 |
+| C | C급 이하 + Rare 재료 인퓨전 | +2 |
+| B | B급 이하 + 특수 강화 | +3 |
+| A | A급 이하 + Unique 재료 활용 | +4 |
+| S | S급 + Unique 장비 제작 가능 | +5 |
+
+> 전투 외 전용 · 시간/재료 필요
+> SEN 보조 스탯: 제작 성공률·옵션 품질에 영향
+
+### 감정 (Appraisal) — 성장형 직업 스킬
+| 등급 | 감정 가능 범위 | 상세도 |
+|:---:|---|---|
+| D | D급 이하 장비/재료 | 기본 스탯, 등급 |
+| C | C급 이하 | + 숨겨진 옵션 일부 |
+| B | B급 이하 | + 제작 이력, 강화 여지 |
+| A | A급 이하 | + Unique 특성 일부 |
+| S | S급 포함 전체 | 완전 감정 |
+
+### 전장 응급수선 (Battlefield Repair)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | utility (active) |
+| 비용 | SP 30 |
+| 효과 | 전투 중 대상 장비 1개 내구도 +15 (최대치 초과 불가) |
+| 제한 | 대상 1체당 전투 1회 한정 · 사용 턴 행동 종료 |
+
+### 화력 최적화 (Firepower Tuning)
+| 항목 | 값 |
+|---|---|
+| 카테고리 | buff (단일) |
+| 비용 | MP 20 + SP 20 |
+| 효과 | 대상 1체 무기 ATK +5 · 3턴 |
+| 비고 | 유진성 전용 기술 — "화력 보장" |
+
+---
+
+## 16. 한아람
+**E랭크 · 비전투(포터)/전열보조 · 무직업(신체강화형) · Lv.4**
+**주스탯: STR 14, CON 13 | 보조: AGI 11, SEN 10**
+
+| # | 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|---|
+| 1 | 이면의 완력 | hiddenMight | E→S | Rare/Position | passive | 성장형. STR 상시 증가 |
+| 2 | 하역지원 | cargoSupport | E | Normal | passive | 짐 운반 효율 |
+| 3 | 긴급회피 | emergencyDodge | E | Normal | utility | 위기 회피 |
+
+### 이면의 완력 (Hidden Might) — 성장형 포지션 스킬
+| 등급 | STR 보너스 |
+|:---:|:---:|
+| E | +1 |
+| D | +2 |
+| C | +3 |
+| B | +4 |
+| A | +5 |
+| S | +6 |
+
+> 패시브 · STR 스탯 · 상시 적용
+> 비고: 포터 업무 및 비상 시 근접 보조에 활용
+
+### 하역지원 (Cargo Support)
+- 타입: E Normal · passive
+- 효과: 파티 전체 아이템 운반 가능량 +20% (한아람 존재 시)
+- 부가: 채굴/수집 작업 속도 +10%
+
+### 긴급회피 (Emergency Dodge)
+- 타입: E Normal · utility (active)
+- 비용: SP 25
+- 효과: 다음 1회 공격 100% 회피 (자기 자신 전용)
+- 쿨타임: 5턴
+- 비고: 비전투원 생존용 스킬
+
+---
+
+## 부록 A: 고랭크 NPC 스킬 요약
+
+아래는 로어북의 A/S랭크 NPC들의 주요 스킬을 시스템에 맞게 정리한 것입니다. 상세 수치는 별도 문서로 분리 가능합니다.
+
+### 강민혁 (A랭크 · 검사 · 흑사)
+| 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|
+| 오라 마스터리 | auraMastery | A | Unique | passive | 오라 제어 정밀도 극대화 — 안정적 중거리 투사 |
+| 그림자 발도 | shadowDraw | A | Rare | singleAttack | 계수 8.5 · MP40+SP40 · AGI+STR · 선제 발도 — 우선 행동 |
+| 오라 참격 | auraSlash | A | Normal | singleAttack | 계수 7.8 · MP35+SP25 · STR · 중거리 검기 투사 |
+| 오라 호 | auraArc | A | Normal | aoeAttack | 계수 4.5 · MP45 · STR · 중거리 반원 검기 |
+
+### 강우석 (A랭크 · 탱커 · 백련)
+| 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|
+| 충격 감소 | impactReduction | A | Rare | passive | 받는 물리 피해 -15% 상시 |
+| 방어 태세 | defensiveStance | A | Normal | buff (self) | MP30+SP30 · CON+8 · 3턴 · 이동불가 |
+| 도발 | taunt | A | Normal | buff | SP30 · 위협+10 · 3턴 |
+| 돌진 | charge | A | Normal | singleAttack | 계수 7.2 · MP30+SP40 · CON · 후열 ×1.2 |
+| 방패숙련 | shieldMastery | A | Normal | passive | 방패 SP -15% |
+| 체력증강 | conBoost | A | Normal | passive | CON +6 상시 |
+| 스태미나 회복 | staminaRecovery | A | Normal | passive | 턴 시작 SP +5% 자연 회복 |
+| 감각증강 | senBoost | A | Normal | passive | SEN +4 상시 |
+
+### 사사키 유아 (A랭크 · 딜러/탱커 · 저승무사)
+| 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|
+| 혼령 갑주 | spiritArmor | A | Class | buff (self) | MP50 · P.DEF+12 M.DEF+8 · 5턴 |
+| 무장 구현 | weaponManifestation | A | Class | buff (self) | MP45 · ATK+15    물리/영적 듀얼 속성 · 5턴 |
+| 삼일월 | crescentSlash | A | Normal | singleAttack | 계수 8.2 · MP30+SP35 · STR+AGI |
+| 귀혼참 | spiritSever | A | Rare | singleCC | 계수 5.0 · MP40+SP40 · INT+STR · 수면 18% 2턴 |
+
+### 임설희 (A랭크 · 딜러 · 백련)
+| 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|
+| 아이스 메이커 | iceMaker | A | Unique | utility + singleAttack/aoeAttack | 자유 형태 빙결 조형 — 무기/방벽/지형 생성 |
+| 얼음창 투사 | icicleLance | A | Normal | singleAttack | 계수 8.8 · MP45 · INT · 빙결 |
+| 서리꽃 | frostFlower | A | Normal | aoeCC | 계수 2.5 · MP55+SP30 · INT · 속박 20% 2턴 |
+| 계단&미끄럼틀 | stairAndSlide | A | Normal | utility | MP35 · 전술 이동로 생성 · 3턴 유지 |
+
+### 백휘성 (S랭크 · 딜러 · 협회)
+| 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|
+| 심판자의 기운 | auraOfJudge | S | Rare | passive | 적대 대상 마나 흐름 교란 — 적 스킬 비용 +10% |
+| 헬리오스 노바 | heliosNova | S | Class | aoeAttack | 계수 12.0 · MP90+SP50 · INT · 빛/열 · 광역 섬멸 |
+| 빛의 속박 | shacklesOfRadiance | S | Rare | singleCC | 계수 8.0 · MP70 · INT · 빛 · 마법 완전 봉인 3턴 |
+
+### 한지원 (S랭크 · 서포터 · 적호)
+| 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|
+| 진실의 시선 | trueGaze | S | Unique | utility (passive) | 연속 시각 집중으로 대상 스탯/약점 해석 |
+| 결계 조작 | barrierManipulation | S | Rare | buff + utility | MP60~120 · 다층 방벽/유틸 구조물 생성 |
+| 치유 마법 | healingMagic | S | Normal | singleHeal | 계수 2.4 · MP45 · INT · 경상 즉시 회복 |
+
+### 박준호 (S랭크 · 탱커 · 적호)
+| 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|
+| 벽력장 | byeokryeokjang | S | Class | buff (self) | MP80+SP60 · 번개 갑주 — P.DEF+20 M.DEF+15 · 접촉 시 stun 25% 1턴 · 5턴 |
+| 우레격 | uraegyeok | S | Class | aoeCC | 계수 9.0 · MP100+SP80 · CON+STR · 물리/뇌 · 광역 stun 20% 1턴 · 8턴 쿨 |
+
+### 하월영 (S랭크 · 탱커(?) · 무소속)
+| 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|
+| 순보 | shunpo | S | Rare | utility | SP40 · 초고속 이동 |
+| 월섬 "삼월" | wolseomTriple | S | Rare | singleAttack | 계수 13.5 · MP50+SP60 · AGI+STR · 3연참 |
+| 받아치기 | parry | S | Normal | utility (reactive) | SP25 · 피격 직전 반격 자세 — 회피 성공 시 반격 계수 4.0 |
+| 통찰 | insight | S | Normal | passive | 적 의도/궤적 선읽기 — 회피율 +10% 상시 |
+
+### 앨리스 크로프트 (A랭크 · 서포터 · 크로노스의 후계자)
+| 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|
+| 시간 감속 | slowTime | A | Class | aoeCC (적) / buff (아군) | MP65 · 범위 내 적 AGI -8 / 아군 AGI +4 · 3턴 |
+| 시간 가속 | hasteTime | A | Class | buff (aoe) | MP55 · 전 아군 AGI +8 · 2턴 |
+| 시간 감지 | temporalSense | A | Class | passive | 유사 시간 능력 탐지 및 분석적 교란 |
+| 소모품 연장 | itemExtension | A | Unique | passive | 소모품 효과 지속시간 +20% |
+
+### 이지혜 (A랭크 · 딜러/소환사 · Nyx)
+| 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|
+| 반전 소환 | reverseSummon | A | Class | utility | MP30 · 야간/그림자 근처 포탈 개방 — 존재가 올지는 랜덤 · 장기 지속 |
+| 밤의 장막 | nightsVeil | A | Class | passive | 비전투 시 은폐 + 어그로 감소 |
+| 공유된 나른함 | sharedLethargy | A | Class | passive | 어둡거나 조용한 환경에서 적 경계심 감소 |
+
+### 임진태 (S랭크 · 딜러 · 은랑)
+| 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|
+| 늑대 변신 (부분) | partialTransform | S | Class | buff (self) | MP60 · STR+12 AGI+10 CON+8 · 5턴 |
+| 늑대 변신 (완전) | fullTransform | S | Class | buff (self) | MP100+SP80 · 전 스탯 대폭 증가 · 체구 변화 · 3턴 |
+| 탐식 본능 | gluttonousInstinct | S | Unique | passive | 적 출혈/사망 시 전 스탯 비례 증가 — 과부하 시 폭주 위험 |
+
+### 제이크 밀러 (S랭크 · 딜러 · 무투가 · 무소속)
+| 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|
+| 분쇄격 | devastatingBlow | S | Normal | singleAttack | 계수 13.0 · SP80 · STR · 물리 · 순수 주먹 |
+| 지진타 | quakeStrike | S | Normal | aoeAttack | 계수 7.5 · SP70+MP30 · STR+CON · 지면 충격파 |
+| 무투가의 각성 | martialAwakening | S | Class | buff (self) | MP50+SP50 · STR+15 AGI+10 · 3턴 |
+| 본능 읽기 | instinctRead | S | Normal | passive | 적 미세 움직임 선읽기 — 회피율 +12% |
+
+---
+
+## 부록 B: 적대 NPC 스킬 요약
+
+### 강태식 (실제 C랭크 · 딜러/암살자 · 무직업)
+| 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|
+| 은밀 | stealth | C | Normal | passive | 전투 외 존재감 억제 — 감지 난이도 상승 |
+| 기습 | ambush | C | Normal | singleAttack | 계수 3.6 · SP35 · AGI · 은신 상태 시 자동 치명타 |
+| 독도포 | poisonBlade | C | Normal | singleCC | 계수 2.5 · SP25+MP15 · AGI · 독 35% 3턴 |
+| 도주 | escape | C | Normal | utility | SP40 · 전투 이탈 — 다음 턴 전투장 벗어남 |
+
+### 권도윤 (B랭크 · 블랙마켓 · 무직업)
+| 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|
+| 암시 | suggestion | B | Rare | singleCC | MP45 · INT · 대상 판단력 교란 — 1턴 혼란 (non-boss) |
+| 환영보 | phantomStep | B | Rare | utility | SP35 · 단거리 무음 이동 — 은신+회피 |
+| 단검 일격 | knifeStrike | B | Normal | singleAttack | 계수 5.0 · SP40 · AGI · 물리 |
+
+### 유진혁 (A~S급 추정 · 딜러 · 에레보스의 피조물)
+| 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|
+| 어둠 조작 | darknessManipulation | A | Class | utility + singleAttack/aoeAttack | MP50~80 · INT+STR · 암흑 형태 자유 생성(무기/장벽/올가미) |
+| 그림자 융합 | shadowMeld | A | Class | utility (reactive) | SP40 · 그림자 속 잠복 → 기습 + 회피 |
+| 심연검 | abyssalBlade | A | Rare | singleAttack | 계수 9.0 · MP45+SP45 · STR+INT · 암흑 · 빛 속성 ×0.7 |
+| 에레보스의 외투 | erebosCloak | A | Class | passive | 어둠 환경 시 전 스탯 +5, 피해 감소 +10% |
+
+### 장은서 (추정 A급+ · 상태창 불신론자 리더)
+| 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|
+| 저주 면역 | curseImmunity | — | Unique | passive | 저주형 아이템 페널티 무시 또는 대폭 감소 |
+| 피식자의 단검 | bloodletterDagger | A (Cursed Item) | — | singleAttack | 계수 8.5 · SP45 · AGI · 적중 시 HP 흡수 5% |
+| 비존재의 장막 | shroudOfNonexistence | A (Cursed Item) | — | passive | 마나 신호 은폐 — 감지 극히 어려움 · 패널티: 주변 불운 유발 |
+
+### 신우현 (비각성 · 이계 숭배단 등불)
+| 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|
+| 오염된 공명 | corruptedResonance | A+ (가변) | Cursed Item | singleAttack/aoeAttack | 오염 마정석 소모 · 폭발/촉수/저주 효과 · 출력 = 석 품질 비례 |
+| 몬스터 친화 | monsterKinship | — | Cursed Item (심장석) | passive | 몬스터 비공격 · 기본 의사소통 |
+| 오염 확산 | corruptSpread | A (가변) | Cursed Item | aoeCC | 오염 마정석 소모 · 범위 내 저주 28% 3턴 + 독 28% 3턴 |
+
+### 나선영 (추정 A급+ · 이계 숭배단 등불)
+| 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|
+| 공포의 속삭임 | whisperOfFear | A | Rare | singleCC | MP50 · INT · 수면 20% 2턴 or 속박 25% 2턴 |
+| 부식의 안개 | corrosiveMist | A | Normal | aoeCC | MP55+SP35 · INT · 독 30% 3턴 + 저주 26% 3턴 |
+| 마나 시야 | manaSight | A | Curse | passive | 시각 대신 마나/감정 패턴 감지 — 은폐 무력화 |
+| 공포 주입 | fearInfusion | A | Rare | singleCC | MP60 · INT · 대상 공포 상태 2턴 (행동 30% 확률 실패) |
+
+### 채하윤 (前 E랭크 · 상태창 불신론자 부사령관)
+| 스킬명 | ID | 등급 | 타입 | 카테고리 | 상세 |
+|---|---|---|:---:|---|---|
+| 마나 탄환 | manaBullet | C+ (Rare) | Rare | singleAttack | MP15~30 · INT+AGI · 탄환 형태 변형 가능 (폭발/관통/추적) |
+| 관통탄 | piercingRound | C | Rare (파생) | singleAttack | 계수 3.2 · MP25 · AGI · 방어 30% 무시 |
+| 폭발탄 | explosiveRound | C | Rare (파생) | aoeAttack | 계수 1.8 · MP30 · INT · 소범위 폭발 |
+| 추적탄 | homingRound | C | Rare (파생) | singleAttack | 계수 2.5 · MP35 · SEN · 회피 불가 (은신 대상 추적) |
+
+---
+
+## 부록 C: 턴제 전투 흐름
+
+```
+[턴 시작]
+  ├─ 1. 상태이상 판정 (독/화상 DoT, 속박/수면/기절 확인)
+  │     └─ 행동불가 상태 → 턴 스킵
+  ├─ 2. 행동 순서 결정 (AGI 기준, 동률 시 SEN 차순)
+  ├─ 3. 각 캐릭터 행동 (택 1)
+  │     ├─ 일반공격 (Normal Attack: 비용 없음, 계수 1.0)
+  │     ├─ 스킬 사용 (MP/SP 소모)
+  │     ├─ 아이템 사용 (포션 등)
+  │     ├─ 방어 (이번 턴 피해 -30%)
+  │     └─ 이동 (열 변경: 전열↔중열↔후열, 1턴 소모)
+  ├─ 4. 피격 → 데미지/회복 계산 → 상태이상 부여 판정
+  ├─ 5. 버프/디버프 지속 턴 -1 (0이 되면 해제)
+  └─ 6. 턴 종료 → 위협 수치 갱신
+[다음 턴]
+```
+
+### 열(Row) 규칙
+| 열 | 위치 | 특성 |
+|---|---|---|
+| 전열 | 몬스터와 직접 접촉 | 근접 공격 가능 · 피격 우선 · 위협 ×1.5 |
+| 중열 | 중간 거리 | 근접/원거리 모두 가능 · 피격 보통 |
+| 후열 | 최후방 | 원거리만 가능 · 피격 최저 · 전열 무너지면 노출 |
+
+### 전열 붕괴
+- 전열 캐릭터 전원 전투불능 시, 중열이 전열이 됨
+- 중열도 전멸 시, 후열 직접 노출
+
+---
+
+이 문서는 `skill_system.md`의 계수/비용 기준, `lorebook_export.json`의 캐릭터 배경·직업·레벨·스탯을 기준으로 설계되었습니다. 각 NPC의 스킬은 해당 캐릭터의 랭크·직업·성격·전투 스타일에 맞게 배분되었으며, 성장형 스킬은 기존 시스템의 E→S 성장 테이블을 따릅니다.
