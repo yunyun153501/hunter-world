@@ -4251,6 +4251,18 @@ function getBuffedStat(unit, statKey) {
         sp = Math.ceil(sp * (1 - reduce));
       }
     }
+    // 심판자의 기운: 적 스킬 비용 +10% (아군 패시브가 적에게 영향)
+    if (typeof model !== 'undefined' && model.state && model.state.runtime) {
+      const runtime = model.state.runtime;
+      const enemySide = unit.side === 'party' ? runtime.enemies : runtime.party;
+      const costMul = getAlive(enemySide).reduce((acc, u) => {
+        return acc * Number((u.passiveMods && u.passiveMods.enemySkillCostMul) || 1);
+      }, 1);
+      if (costMul > 1) {
+        mp = Math.ceil(mp * costMul);
+        sp = Math.ceil(sp * costMul);
+      }
+    }
     return { mp, sp };
   }
   function canUseSkill(unit, skill) {
@@ -4258,6 +4270,8 @@ function getBuffedStat(unit, statKey) {
     if (Number(unit.cooldowns && unit.cooldowns[skill.id] || 0) > 0) return false;
     // 침묵: 스킬 사용 불가 (기본 공격만 가능)
     if (Number(unit.statuses && unit.statuses.silence || 0) > 0) return false;
+    // 대지의 치유: 정령 소환 시에만 사용 가능
+    if (skill.id === 'earthHeal' && !hasSummonBuff(unit, 'zephyr') && !hasSummonBuff(unit, 'bark')) return false;
     const cost = getSkillCost(unit, skill);
     return unit.mp >= cost.mp && unit.sp >= cost.sp;
   }
@@ -4464,7 +4478,16 @@ function getBuffedStat(unit, statKey) {
     if (!summary.highlights.includes(text) && summary.highlights.length < 8) summary.highlights.push(text);
   }
   function applyDamage(target, dmg) {
-    target.hp = Math.max(0, target.hp - dmg);
+    let remaining = dmg;
+    // 보호막 우선 흡수
+    if (Number(target.shieldHp || 0) > 0) {
+      const absorbed = Math.min(target.shieldHp, remaining);
+      target.shieldHp -= absorbed;
+      remaining -= absorbed;
+    }
+    if (remaining > 0) {
+      target.hp = Math.max(0, target.hp - remaining);
+    }
     if (target.hp <= 0) target.dead = true;
   }
   function applyHeal(target, heal) {
@@ -4834,6 +4857,16 @@ function getBuffedStat(unit, statKey) {
       const heal = computeHeal(actor, skill);
       const hpBefore = Number(target.hp || 0);
       const actual = applyHeal(target, heal);
+      // 신의 보호: 만HP 시 보호막 전환 (최대 HP 20%)
+      if (skill.id === 'divineProtection' && target.hp >= target.maxHp) {
+        const shieldMax = Math.round(target.maxHp * 0.20);
+        const overflow = Math.min(heal - actual, shieldMax);
+        if (overflow > 0) {
+          target.shieldHp = Math.min(shieldMax, (target.shieldHp || 0) + overflow);
+          addRoundHighlight(summary, `${target.name} 보호막 +${overflow}`);
+          pushBattleLog(runtime, `${actor.name}의 ${skill.name} → ${target.name} 보호막 ${target.shieldHp}`);
+        }
+      }
       if (actor.side === 'party') summary.partyHealing += actual; else summary.enemyHealing += actual;
       addRoundHighlight(summary, `${actor.name}의 ${skill.name} → ${target.name} 회복 ${actual}`);
       pushHealEventLog(runtime, actor, target, skill.name, actual, hpBefore);
@@ -4948,10 +4981,20 @@ function getBuffedStat(unit, statKey) {
       if (target.dead) { killedNames.push(target.name); if (actor.side === 'party') recordKillExp(runtime, target); }
       if (hit.crit) addRoundHighlight(summary, `${actor.name} 치명타`);
       // 흡혈 (피식자의 단검 등): 피해량의 일정% HP 회복
-      const lifestealPct = Number((skill.passiveMods && skill.passiveMods.lifesteal) || (actor.passiveMods && actor.passiveMods.vampiricDrain) || 0);
+      let lifestealPct = Number((skill.passiveMods && skill.passiveMods.lifesteal) || 0);
+      // 흡혈 본능: MP 10% 이하 시 다음 공격이 대상 HP 5% 흡수
+      const vampiricDrain = Number((actor.passiveMods && actor.passiveMods.vampiricDrain) || 0);
+      if (vampiricDrain > 0 && actor.mp <= actor.maxMp * 0.1) {
+        lifestealPct = Math.max(lifestealPct, vampiricDrain);
+      }
       if (lifestealPct > 0 && dmg > 0 && !actor.dead) {
         const stolen = Math.max(1, Math.round(dmg * lifestealPct));
         applyHeal(actor, stolen);
+        // 흡혈 본능 발동 시 INT -3 3턴 디버프
+        if (vampiricDrain > 0 && actor.mp <= actor.maxMp * 0.1) {
+          actor.buffs = actor.buffs || [];
+          actor.buffs.push({ sourceSkill:'vampiricInstinct', name:'흡혈 후유증', turns:3, stats:{ int:-3 }, threatBonus:0, damageTakenMul:1, source:actor.uid });
+        }
       }
       pushDamageEventLog(runtime, actor, target, skill.name, dmg, hit.crit, target.dead);
       pushHpShiftLog(runtime, target, hpBefore);
@@ -4965,6 +5008,27 @@ function getBuffedStat(unit, statKey) {
       return;
     }
     applyCc(ccTargets, skill, summary, actor.name, runtime);
+    // CC/공격 스킬에 버프 속성이 있으면 적용 (시간 감속 등: 적에게 CC + 아군에게 버프)
+    if (skill.buff && skill.duration) {
+      if (skill.buff.stats) {
+        // 음수 스탯은 적에게, 양수 스탯은 아군에게 적용
+        const hasNeg = Object.values(skill.buff.stats).some(v => v < 0);
+        const hasPos = Object.values(skill.buff.stats).some(v => v > 0);
+        if (hasNeg) {
+          const debuffSkill = Object.assign({}, skill, { buff:{ stats:Object.fromEntries(Object.entries(skill.buff.stats).filter(([,v]) => v < 0)) } });
+          applyBuff(getAlive(foes), debuffSkill, actor);
+        }
+        if (hasPos) {
+          const buffOnlySkill = Object.assign({}, skill, { buff:{ stats:Object.fromEntries(Object.entries(skill.buff.stats).filter(([,v]) => v > 0)) } });
+          applyBuff(getAlive(allies), buffOnlySkill, actor);
+        }
+        if (!hasNeg && !hasPos) {
+          applyBuff(getAlive(foes), skill, actor);
+        }
+      } else {
+        applyBuff(targets, skill, actor);
+      }
+    }
     if (killedNames.length) addRoundHighlight(summary, `${actor.name}의 ${skill.name} → ${killedNames.join(', ')} 처치`);
     else addRoundHighlight(summary, `${actor.name}의 ${skill.name} → 피해 ${totalDamage}`);
     pushBattleLog(runtime, `${actor.name}의 ${skill.name} 총 피해 ${totalDamage}${killedNames.length ? ' / 처치: ' + killedNames.join(', ') : ''}`);
