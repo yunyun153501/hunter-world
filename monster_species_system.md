@@ -66,8 +66,8 @@
 | monsterBaseDamage | 전투 테이블 기반 기본 데미지 |
 | monsterSkillMul | 스킬 배율 |
 | atk | = monsterBaseDamage |
-| 물리피해감소 | = 0 (항상) |
-| 마법피해감소 | = 0 (항상) |
+| 물리방어(PDEF) | = 0 (항상) |
+| 마법방어(MDEF) | = 0 (항상) |
 | stats | = {str:0, con:0, int:0, agi:0, sense:0} |
 
 ---
@@ -154,8 +154,8 @@ rawBase = monsterBaseDamage × monsterSkillMul
 > 몬스터는 개별 스탯(STR/CON 등)이 없으므로 monsterBaseDamage를 직접 사용
 
 ### 방어
-- 몬스터의 물리피해감소 = **0**
-- 몬스터의 마법피해감소 = **0**
+- 몬스터의 물리방어(PDEF) = **0**
+- 몬스터의 마법방어(MDEF) = **0**
 - → 방어 공식 적용 없음 (헌터 공격에 방어 없이 그대로 피해)
 
 ---
