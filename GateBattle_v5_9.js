@@ -1813,7 +1813,7 @@ const RARE_FAMILY_PRESETS = {
   function buildDefaultDb() {
     return {
       inventory: buildDefaultInventory(),
-      characters: buildSampleCharacters(),
+      characters: [],
       monsters: buildSampleMonsters(),
       personas: [
         { id:'persona_main', name:'기본 페르소나', text:'헌터 세계관용 기본 페르소나 메모.' }
@@ -1832,7 +1832,7 @@ const RARE_FAMILY_PRESETS = {
       incomeLog: [],
       guildTaxLog: [],
       battleSetup: {
-        partySlots: ['char_bran', 'char_doyun', 'char_lin', 'char_kain', 'char_ibel', 'char_sera', '', ''],
+        partySlots: Array(MAX_PARTY).fill(''),
         enemySlots: ['mon_hound', 'mon_hound', 'mon_hound', 'mon_lancer', 'mon_lancer', 'mon_echo_mage', 'mon_gate_apex', '', '', '']
       }
     };
@@ -8125,7 +8125,7 @@ function renderCommandPanel(runtime) {
     const list = (model.db.characters || []).map(c => `<button class="gb-list-item ${c.id===model.state.selected.characters?'is-active':''}" data-select-type="characters" data-id="${escapeHtml(c.id)}">${escapeHtml(c.name)} <span class="gb-sub">[${escapeHtml(c.job)}] Lv${Number(c.level||1)}</span></button>`).join('');
     return `
       <div class="gb-grid db">
-        <div class="gb-panel"><div class="gb-section-title">캐릭터 목록</div>${list || '<div class="gb-sub">등록된 캐릭터 없음.</div>'}<div class="gb-btn-row"><button class="gb-btn" id="gb-char-new">새 캐릭터</button></div></div>
+        <div class="gb-panel"><div class="gb-section-title">캐릭터 목록</div>${list || '<div class="gb-sub">등록된 캐릭터 없음.</div>'}<div class="gb-btn-row"><button class="gb-btn" id="gb-char-new">새 캐릭터</button><button class="gb-btn danger" id="gb-char-clear-all">캐릭터 전체삭제</button></div></div>
         <div class="gb-panel">
           <div class="gb-section-title">캐릭터 편집</div>
           <div class="gb-grid two">
@@ -8561,7 +8561,7 @@ function renderCommandPanel(runtime) {
         <div class="gb-skill-list">${builtins}</div>
       </div>
       <div class="gb-grid db" style="margin-top:12px;">
-        <div class="gb-panel"><div class="gb-section-title">커스텀 스킬 목록</div>${list || '<div class="gb-sub">등록된 커스텀 스킬 없음.</div>'}<div class="gb-btn-row"><button class="gb-btn" id="gb-skill-new">새 스킬</button></div></div>
+        <div class="gb-panel"><div class="gb-section-title">커스텀 스킬 목록</div>${list || '<div class="gb-sub">등록된 커스텀 스킬 없음.</div>'}<div class="gb-btn-row"><button class="gb-btn" id="gb-skill-new">새 스킬</button><button class="gb-btn danger" id="gb-skill-clear-all">스킬 전체삭제</button></div></div>
         <div class="gb-panel">
           <div class="gb-section-title">${editorTitle}</div>
           <div class="gb-grid two">
@@ -8967,6 +8967,19 @@ function readPartySlotsFromUI() {
     model.state.gate = buildDefaultGateState();
     generateGateOptions(model.state.gate.size || 'small', model.state.gate.rank || 'E');
     await saveDb(); await saveState(); renderApp(); toast('몬스터 전체 삭제 완료');
+  }
+  async function clearAllCharacters() {
+    model.db.characters = [];
+    model.state.selected.characters = '';
+    model.db.battleSetup.partySlots = Array(MAX_PARTY).fill('');
+    model.db.team = [];
+    model.state.runtime = buildDefaultRuntime();
+    await saveDb(); await saveState(); renderApp(); toast('캐릭터 전체 삭제 완료');
+  }
+  async function clearAllCustomSkills() {
+    model.db.customSkills = [];
+    model.state.selected.skills = '';
+    await saveDb(); await saveState(); renderApp(); toast('커스텀 스킬 전체 삭제 완료');
   }
   
   async function saveMonsterFromForm() {
@@ -10857,6 +10870,7 @@ async function saveMaterialTraitFromForm() {
     });
     on('#gb-char-save', 'click', async () => { try { await saveCharacterFromForm(); } catch (e) { toast(e.message || String(e), true); } });
     on('#gb-char-delete', 'click', async () => { try { await deleteSelected('characters'); } catch (e) { toast(e.message || String(e), true); } });
+    on('#gb-char-clear-all', 'click', async () => { try { await clearAllCharacters(); } catch (e) { toast(e.message || String(e), true); } });
 
     on('#gb-mon-new', 'click', async () => { model.state.selected.monsters = ''; await saveState(); renderApp(); });
     on('#gb-mon-save', 'click', async () => { try { await saveMonsterFromForm(); } catch (e) { toast(e.message || String(e), true); } });
@@ -11008,6 +11022,7 @@ async function saveMaterialTraitFromForm() {
     on('#gb-skill-new', 'click', async () => { model.state.selected.skills = ''; await saveState(); renderApp(); });
     on('#gb-skill-save', 'click', async () => { try { await saveSkillFromForm(); } catch (e) { toast(e.message || String(e), true); } });
     on('#gb-skill-delete', 'click', async () => { try { await deleteSelected('skills'); } catch (e) { toast(e.message || String(e), true); } });
+    on('#gb-skill-clear-all', 'click', async () => { try { await clearAllCustomSkills(); } catch (e) { toast(e.message || String(e), true); } });
     // 내장 스킬 클릭 → 편집기로 불러오기
     on('[data-load-builtin-skill]', 'click', async (ev) => {
       const skillId = ev.currentTarget.getAttribute('data-load-builtin-skill');
