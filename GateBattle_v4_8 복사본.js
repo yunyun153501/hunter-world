@@ -3755,7 +3755,7 @@ function getBuffedStat(unit, statKey) {
     return clamp(0.25 * (getBuffedStat(unit, 'agi') + sense) + bonus, 3, 35) / 100;
   }
   const EVASION_BY_RANK = { E:0.03, D:0.05, C:0.07, B:0.10, A:0.12, S:0.15 };
-  const RANK_DEF_PCT = { E:0.04, D:0.08, C:0.12, B:0.18, A:0.25, S:0.33 };
+
   function getBaseEvasion(unit) {
     const rank = normalizeRank(unit.rank);
     return EVASION_BY_RANK[rank] || 0.03;
@@ -3821,10 +3821,7 @@ function getBuffedStat(unit, statKey) {
     // 물리/마법 피해감소 공식: 피해감소율 = DEF / (DEF + 1.5 × rawDamage)
     const defReduction = (def > 0 && rawDamage > 0) ? def / (def + 1.5 * rawDamage) : 0;
     const afterStatDef = rawDamage * (1 - defReduction);
-    // 등급별 물방/마방 고정 % 감소
-    const rankDefPct = RANK_DEF_PCT[normalizeRank(target.rank)] || 0;
-    const finalDamage = afterStatDef * (1 - rankDefPct);
-    return Math.max(1, Math.round(finalDamage));
+    return Math.max(1, Math.round(afterStatDef));
   }
   function computeHeal(caster, skill) {
     const mainStat = getStatPower(caster, skill);
