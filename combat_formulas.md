@@ -12,8 +12,8 @@
 | **MP** | `100 + INT×10 + SENSE×3` |
 | **SP** | `100 + AGI×10 + SENSE×3` |
 | **ATK** | `무기기본공격력 + STR×0.2 + AGI×0.2 + INT×0.3` |
-| **pDEF** | `CON × 0.4` |
-| **mDEF** | `(INT + SENSE) × 0.25` |
+| **물리피해감소** | `CON × 0.4` |
+| **마법피해감소** | `(INT + SENSE) × 0.25` |
 
 > 레벨업 시 HP/MP/SP에 각각 +2 보너스가 누적 적용됨.
 > 몬스터는 개별 스탯(str/con 등)이 없으며, HP/ATK는 등급별 프로필 테이블에서 가져옴.
@@ -24,20 +24,25 @@
 |---|---|---|---|---|---|
 | 25 | 40 | 60 | 80 | 100 | 150 |
 
+### 등급별 물방/마방 (고정 % 방어)
+
+| E | D | C | B | A | S |
+|---|---|---|---|---|---|
+| 4% | 8% | 12% | 18% | 25% | 33% |
+
 ---
 
 ## 2. 데미지 공식
 
 ### 헌터 기본 공식
 ```
-Damage = rawBase × coefAfterDef × critMult × resistMult × elementMul × typeMul × incomingMul × outgoingMul
+rawDamage = rawBase × coef × critMult × resistMult × elementMul × typeMul × incomingMul × outgoingMul
 ```
 
 각 항목:
 - **rawBase** = `(2 × MainStat) + (3 × ATK)`
   - MainStat = 스킬의 statTypes 평균 (예: `['con']` → CON, `['int','sense']` → (INT+SENSE)/2)
-- **coefAfterDef** = `스킬계수 × (100 / (100 + DEF))`
-  - DEF = 물리 공격이면 pDEF, 마법 공격이면 mDEF
+- **coef** = 스킬 계수 (기본 1.0)
 - **critMult** = 크리티컬 시 `1.5`, 아니면 `1.0`
 - **resistMult** = 대상의 해당 속성 저항 배율 (기본 1.0)
 - **elementMul** = 속성 상성 배율 (유리 1.25, 불리 0.75, 기본 1.0)
@@ -45,11 +50,19 @@ Damage = rawBase × coefAfterDef × critMult × resistMult × elementMul × type
 - **incomingMul** = 대상에게 적용되는 피격 배율 (저주, 화상 등)
 - **outgoingMul** = 공격자에게 적용되는 공격력 배율 (저주 등)
 
+**방어 적용 (2단계)**:
+1. **물리/마법 피해감소** (스탯 기반):
+   - 피해감소율 = `DEF / (DEF + 1.5 × rawDamage)`
+   - afterStatDef = `rawDamage × (1 - 피해감소율)`
+   - DEF = 물리 공격이면 물리피해감소, 마법 공격이면 마법피해감소
+2. **등급별 물방/마방** (고정 % 감소):
+   - finalDamage = `afterStatDef × (1 - 등급별물방%)`
+
 ### 몬스터 기본 공식
 ```
 rawBase = monsterBaseDamage × (스킬 사용 시 monsterSkillMul, 기본공격 시 1)
 ```
-> 이후 과정은 헌터와 동일: `rawBase × coefAfterDef × critMult × resistMult × elementMul × typeMul × incomingMul × outgoingMul`
+> 이후 과정은 헌터와 동일: `rawDamage` 계산 후 2단계 방어 적용
 
 ### 몬스터 JSON → 전투 스탯 변환 과정
 
@@ -57,7 +70,7 @@ rawBase = monsterBaseDamage × (스킬 사용 시 monsterSkillMul, 기본공격 
 전투 시 `monsterProfileForEntry(entry)` 함수가 `MONSTER_COMBAT_TABLE`을 기반으로 런타임 계산:
 
 1. **JSON에 있는 필드**: `id`, `name`, `kind`(Normal/Elite/Boss), `rank`, `hp`, `damageType`, `attackStat`, `skills`, `position`, `row`, `role`, `threatBase`, `note`
-2. **런타임 생성 필드**: `monsterBaseDamage`(=프로필 damage), `monsterSkillMul`(=프로필 skillMul), `atk`(=프로필 damage), `pdef=0`, `mdef=0`, `stats={str:0,con:0,int:0,agi:0,sense:0}`
+2. **런타임 생성 필드**: `monsterBaseDamage`(=프로필 damage), `monsterSkillMul`(=프로필 skillMul), `atk`(=프로필 damage), `물리피해감소=0`, `마법피해감소=0`, `stats={str:0,con:0,int:0,agi:0,sense:0}`
 
 #### MONSTER_COMBAT_TABLE (등급 × 종류별 범위)
 
@@ -118,7 +131,7 @@ E등급 Normal 근거리물리(front열) 몬스터:
 - `monsterBaseDamage` ≈ 9 (범위 7~10, front 보정 +8%)
 - 기본공격: `rawBase = 9`
 - 스킬공격: `rawBase = 9 × 1.0 = 9` (Normal의 skillMul=1.0)
-- DEF 적용: `9 × skillCoef × (100/(100+DEF))`
+- DEF 적용: 2단계 방어 (스탯 기반 피해감소 + 등급별 고정 %)
 
 E등급 Boss 근거리물리(front열) 몬스터:
 - `monsterBaseDamage` ≈ 39 (범위 35~40, front 보정 +8%)
@@ -325,3 +338,44 @@ front: 70, mid: 20, back: 10
 - 패시브 모드: 비용 배율 변경 (`passiveMods`)
   - 예: Shield Proficiency → 방패 계열 SP ×0.9
   - 예: Dagger Handling → 단검/투척 계열 SP ×0.9
+
+---
+
+## 13. 밸런스 총평
+
+### 방어 시스템 리뷰
+
+#### 새 피해감소 공식: `DEF / (DEF + 1.5 × rawDamage)`
+- 기존 `100/(100+DEF)` 대비 **rawDamage에 비례**하여 방어 효과가 변동
+- **약한 공격**: DEF가 상대적으로 크므로 높은 감소율 → 탱커의 소규모 피해 흡수 우수
+- **강한 공격**: rawDamage가 크므로 감소율 하락 → 보스 일격 등 과도한 탱킹 방지
+
+#### 수치 예시
+
+| 상황 | DEF | rawDamage | 피해감소율 | 실제피해 |
+|------|-----|-----------|-----------|---------|
+| E급 탱커 vs E Normal몬스터 | 10 | 9 | 42.6% | 5.2 |
+| E급 탱커 vs E Boss몬스터 | 10 | 39 | 14.6% | 33.3 |
+| D급 탱커(브란) vs D Normal | 18 | 20 | 37.5% | 12.5 |
+| D급 탱커(브란) vs D Boss | 18 | 60 | 16.7% | 50.0 |
+| A급 탱커(CON100) vs A Normal | 40 | 40 | 40.0% | 24.0 |
+| A급 탱커(CON100) vs A Boss | 40 | 120 | 18.2% | 98.2 |
+
+#### 등급별 고정 방어 효과
+- **E:4%** ~ **S:33%** 고정 감소 → 등급 성장에 따른 기본 생존력 보장
+- 물리/마법 피해감소(스탯 기반)와 **곱연산**으로 적용 → 과도한 중첩 방지
+- 몬스터도 등급별 고정 방어 적용 → 상위 등급 몬스터에게 하위 헌터 피해 약화
+
+#### 헌터 vs 몬스터 밸런스
+- **몬스터**: 물리/마법피해감소 = 0 (스탯 없음) → 등급별 고정 방어만 적용
+  - E Normal: 4% 감소만 → 헌터 공격에 취약 (의도된 설계)
+  - S Boss: 33% 감소 → 기본적인 내구도 확보
+- **헌터**: 스탯 기반 피해감소 + 등급별 고정 방어 이중 적용
+  - 탱커(높은 CON): 물리피해감소 높음 → 약한 공격 대폭 감소
+  - 후열 딜러(낮은 CON): 물리피해감소 낮음 → 맞으면 아픔 (포지셔닝 중요)
+
+#### 총평
+- ✅ **rawDamage 연동** 방어: 탱커가 약공격은 잘 버티고, 보스 일격은 완전히 막지 못하는 자연스러운 흐름
+- ✅ **등급별 고정 %**: 성장 체감을 주며, 몬스터에게도 기본 방어력 부여
+- ⚠️ **주의점**: 물리/마법피해감소가 매우 높으면(100+) 약한 공격을 거의 무시 → 고등급 탱커의 소규모 전투 무쌍 가능성
+- 💡 **조정 포인트**: 1.5 계수를 조절하여 방어 곡선 튜닝 가능 (높이면 방어 약화, 낮추면 방어 강화)

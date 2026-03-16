@@ -3755,6 +3755,7 @@ function getBuffedStat(unit, statKey) {
     return clamp(0.25 * (getBuffedStat(unit, 'agi') + sense) + bonus, 3, 35) / 100;
   }
   const EVASION_BY_RANK = { E:0.03, D:0.05, C:0.07, B:0.10, A:0.12, S:0.15 };
+  const RANK_DEF_PCT = { E:0.04, D:0.08, C:0.12, B:0.18, A:0.25, S:0.33 };
   function getBaseEvasion(unit) {
     const rank = normalizeRank(unit.rank);
     return EVASION_BY_RANK[rank] || 0.03;
@@ -3800,7 +3801,6 @@ function getBuffedStat(unit, statKey) {
     const coef = Number(skill && skill.coef != null ? skill.coef : 1.0);
     const damageType = (skill && skill.damageType) || attacker.damageType || 'physical';
     const def = getEffectiveDefense(target, damageType === 'magic' ? 'magic' : 'physical');
-    const coefAfterDef = coef * (100 / (100 + def));
     const critMult = crit ? 1.5 : 1.0;
     const element = normElement((skill && skill.element && skill.element !== 'none') ? skill.element : (attacker.baseElement || 'none'));
     const resistMult = element !== 'none' ? Number((target.resists || {})[element] || 1) : 1;
@@ -3816,7 +3816,15 @@ function getBuffedStat(unit, statKey) {
       const mainStat = getStatPower(attacker, skill);
       rawBase = (2 * mainStat) + (3 * Number(attacker.atk || 0));
     }
-    return Math.max(1, Math.round(rawBase * coefAfterDef * critMult * resistMult * elementMul * typeMul * incomingMul * outgoingMul));
+    // 방어 전 피해량 (rawDamage)
+    const rawDamage = rawBase * coef * critMult * resistMult * elementMul * typeMul * incomingMul * outgoingMul;
+    // 물리/마법 피해감소 공식: 피해감소율 = DEF / (DEF + 1.5 × rawDamage)
+    const defReduction = (def > 0 && rawDamage > 0) ? def / (def + 1.5 * rawDamage) : 0;
+    const afterStatDef = rawDamage * (1 - defReduction);
+    // 등급별 물방/마방 고정 % 감소
+    const rankDefPct = RANK_DEF_PCT[normalizeRank(target.rank)] || 0;
+    const finalDamage = afterStatDef * (1 - rankDefPct);
+    return Math.max(1, Math.round(finalDamage));
   }
   function computeHeal(caster, skill) {
     const mainStat = getStatPower(caster, skill);
@@ -5565,7 +5573,7 @@ function renderEquipShopHtml() {
         const price = Number(e.price || calcEquipEnhancedPrice(calcEquipBasePrice(e.rank, e.part), e.enhance||0, e.rank));
         const canAfford = gold >= price;
         const traitTags = (e.traits||[]).map(t => `<span class="gb-badge">${escapeHtml(equipTraitDisplay(t, e.rank))}</span>`).join(' ');
-        const atkLine = e.part==='weapon' ? `ATK+${e.atk||WEAPON_BASE_ATK[e.rank]||0}` : e.part==='subweapon' ? `P.DEF+${e.pdef||0} / ATK${-Math.ceil((e.pdef||0)/2)}` : e.part==='armor' ? `P.DEF+${e.pdef||0} / M.DEF+${e.mdef||0}${e.resistType?` / ${escapeHtml(EQUIP_TRAIT_LABELS[''+e.resistType]||e.resistType)} 저항 ${e.resistPct||0}%`:''}` : e.part==='accessory' ? (e.traits&&e.traits.length ? `특성: ${(e.traits||[]).map(t=>equipTraitDisplay(t,e.rank)).join(', ')}` : '특성 없음') : '';
+        const atkLine = e.part==='weapon' ? `ATK+${e.atk||WEAPON_BASE_ATK[e.rank]||0}` : e.part==='subweapon' ? `물리피해감소+${e.pdef||0} / ATK${-Math.ceil((e.pdef||0)/2)}` : e.part==='armor' ? `물리피해감소+${e.pdef||0} / 마법피해감소+${e.mdef||0}${e.resistType?` / ${escapeHtml(EQUIP_TRAIT_LABELS[''+e.resistType]||e.resistType)} 저항 ${e.resistPct||0}%`:''}` : e.part==='accessory' ? (e.traits&&e.traits.length ? `특성: ${(e.traits||[]).map(t=>equipTraitDisplay(t,e.rank)).join(', ')}` : '특성 없음') : '';
         const fmt = n => n >= 1e8 ? `${(n/1e8).toFixed(2)}억` : n >= 10000 ? `${Math.round(n/10000)}만` : n.toLocaleString('en-US');
         return `<div class="gb-unit">
           <div class="gb-unit-top">
@@ -5707,8 +5715,8 @@ function renderHunterMarketHtml() {
       const durColor = dur < 30 ? '#ef4444' : dur < 60 ? '#f97316' : '#22c55e';
       const statParts = [];
       if (Number(it.atk||0) > 0)  statParts.push(`⚔️ ATK +${it.atk}`);
-      if (Number(it.pdef||0) > 0) statParts.push(`🛡️ P.DEF +${it.pdef}`);
-      if (Number(it.mdef||0) > 0) statParts.push(`✨ M.DEF +${it.mdef}`);
+      if (Number(it.pdef||0) > 0) statParts.push(`🛡️ 물리피해감소 +${it.pdef}`);
+      if (Number(it.mdef||0) > 0) statParts.push(`✨ 마법피해감소 +${it.mdef}`);
       if (it.mainStat)             statParts.push(`주스탯: ${it.mainStat.toUpperCase()}`);
       if ((it.traits||[]).length)  statParts.push(`특성: ${(it.traits||[]).map(t=>EQUIP_TRAIT_LABELS[t]||t).join(', ')}`);
       const statsLine = statParts.length
@@ -5754,8 +5762,8 @@ function renderHunterMarketHtml() {
     const lines = [`${e.name}${e.rank ? ` [${e.rank}급]` : ''}`, `부위: ${EQUIP_PART_LABELS[e.part||'weapon']||e.part||''}  |  내구도: ${Number(e.durability??100)}/${Number(e.maxDurability??100)}`];
     if (e.enhance > 0) lines.push(`강화: +${e.enhance}`);
     if (Number(e.atk||0) > 0) lines.push(`ATK: +${e.atk}`);
-    if (Number(e.pdef||0) > 0) lines.push(`P.DEF: +${e.pdef}`);
-    if (Number(e.mdef||0) > 0) lines.push(`M.DEF: +${e.mdef}`);
+    if (Number(e.pdef||0) > 0) lines.push(`물리피해감소: +${e.pdef}`);
+    if (Number(e.mdef||0) > 0) lines.push(`마법피해감소: +${e.mdef}`);
     if (e.mainStat) lines.push(`주 스탯: ${e.mainStat.toUpperCase()}`);
     if (Array.isArray(e.traits) && e.traits.length) lines.push(`특성: ${e.traits.map(t=>EQUIP_TRAIT_LABELS[t]||t).join(', ')}`);
     if (e.resistType && e.resistPct) lines.push(`${EQUIP_TRAIT_LABELS[e.resistType]||e.resistType} 저항 ${e.resistPct}%`);
@@ -5777,8 +5785,8 @@ function renderHunterMarketHtml() {
         // 스탯 항상 표시
         const statParts = [];
         if (Number(e.atk||0) > 0)  statParts.push(`⚔️ ATK +${e.atk}`);
-        if (Number(e.pdef||0) > 0) statParts.push(`🛡️ P.DEF +${e.pdef}`);
-        if (Number(e.mdef||0) > 0) statParts.push(`✨ M.DEF +${e.mdef}`);
+        if (Number(e.pdef||0) > 0) statParts.push(`🛡️ 물리피해감소 +${e.pdef}`);
+        if (Number(e.mdef||0) > 0) statParts.push(`✨ 마법피해감소 +${e.mdef}`);
         if (e.mainStat)             statParts.push(`주스탯: ${e.mainStat.toUpperCase()}`);
         if (e.enhance > 0)          statParts.push(`강화: +${e.enhance}`);
         if (e.maxInfuse)            statParts.push(`주입: ${e.infuse||0}/${e.maxInfuse}회`);
@@ -6757,8 +6765,8 @@ function renderInventoryView() {
       const mdefVal = Number(it.mdef || 0);
       const combatLines = [];
       if (it.part === 'weapon') combatLines.push(`ATK: +${atkVal}`);
-      if (it.part === 'subweapon') { combatLines.push(`P.DEF: +${pdefVal}`); combatLines.push(`ATK: ${-Math.ceil(pdefVal/2)}`); }
-      if (it.part === 'armor') { combatLines.push(`P.DEF: +${pdefVal}`); combatLines.push(`M.DEF: +${mdefVal}`); }
+      if (it.part === 'subweapon') { combatLines.push(`물리피해감소: +${pdefVal}`); combatLines.push(`ATK: ${-Math.ceil(pdefVal/2)}`); }
+      if (it.part === 'armor') { combatLines.push(`물리피해감소: +${pdefVal}`); combatLines.push(`마법피해감소: +${mdefVal}`); }
       if (it.part === 'accessory') combatLines.push(it.traits && it.traits.length ? `특성: ${it.traits.map(t=>EQUIP_TRAIT_LABELS[t]||t).join(', ')}` : '특성 없음');
       if (combatLines.length) lines.push(combatLines.join(' / '));
       if (it.mainStat) lines.push(`주 스탯: ${it.mainStat.toUpperCase()}`);
@@ -7109,8 +7117,8 @@ function renderCharacterView() {
         <div class="gb-sub">💧 MP: <strong>${Number(u.mp||0)}</strong></div>
         <div class="gb-sub">⚡ SP: <strong>${Number(u.sp||0)}</strong></div>
         <div class="gb-sub">⚔️ ATK: <strong>${Number(u.atk||0)}</strong></div>
-        <div class="gb-sub">🛡️ P.DEF: <strong>${Number(u.pdef||0)}</strong></div>
-        <div class="gb-sub">🔮 M.DEF: <strong>${Number(u.mdef||0)}</strong></div>
+        <div class="gb-sub">🛡️ 물리피해감소: <strong>${Number(u.pdef||0)}</strong></div>
+        <div class="gb-sub">🔮 마법피해감소: <strong>${Number(u.mdef||0)}</strong></div>
       </div>
       ${freePoints > 0 ? `<div style="color:#34d399;font-weight:700;font-size:14px;margin:8px 0;padding:6px;background:rgba(52,211,153,0.1);border-radius:6px;">🌟 배분 가능 스탯포인트: ${freePoints}</div>` : ''}
       <div style="margin:8px 0;">
@@ -7280,8 +7288,8 @@ function renderCommandPanel(runtime) {
             <label>MP<input class="gb-input" id="gb-char-mp" type="number" value="${escapeHtml(item.mp)}" /></label>
             <label>SP<input class="gb-input" id="gb-char-sp" type="number" value="${escapeHtml(item.sp)}" /></label>
             <label>ATK<input class="gb-input" id="gb-char-atk" type="number" value="${escapeHtml(item.atk)}" /></label>
-            <label>P.DEF<input class="gb-input" id="gb-char-pdef" type="number" value="${escapeHtml(item.pdef)}" /></label>
-            <label>M.DEF<input class="gb-input" id="gb-char-mdef" type="number" value="${escapeHtml(item.mdef)}" /></label>
+            <label>물리피해감소<input class="gb-input" id="gb-char-pdef" type="number" value="${escapeHtml(item.pdef)}" /></label>
+            <label>마법피해감소<input class="gb-input" id="gb-char-mdef" type="number" value="${escapeHtml(item.mdef)}" /></label>
             <label>STR<input class="gb-input" id="gb-char-str" type="number" value="${escapeHtml(item.stats.str)}" /></label>
             <label>CON<input class="gb-input" id="gb-char-con" type="number" value="${escapeHtml(item.stats.con)}" /></label>
             <label>INT<input class="gb-input" id="gb-char-int" type="number" value="${escapeHtml(item.stats.int)}" /></label>
@@ -7370,8 +7378,8 @@ function renderCommandPanel(runtime) {
       ${equipNames.length ? `<div class="gb-sub" style="margin-bottom:6px;">${equipNames.join(' / ')}</div>` : '<div class="gb-sub" style="margin-bottom:6px;color:#64748b;">장착 장비 없음</div>'}
       ${hasAny ? `<div class="gb-grid four" style="gap:4px;font-size:12px;">
         <div>ATK ${fmtDiff(baseAtk, bonus.atk)}</div>
-        <div>P.DEF ${fmtDiff(basePdef, bonus.pdef)}</div>
-        <div>M.DEF ${fmtDiff(baseMdef, bonus.mdef)}</div>
+        <div>물리피해감소 ${fmtDiff(basePdef, bonus.pdef)}</div>
+        <div>마법피해감소 ${fmtDiff(baseMdef, bonus.mdef)}</div>
         <div>STR ${fmtDiff(Number(stats.str||0), bonus.str)}</div>
         <div>CON ${fmtDiff(Number(stats.con||0), bonus.con)}</div>
         <div>INT ${fmtDiff(Number(stats.int||0), bonus.int)}</div>
@@ -7536,8 +7544,8 @@ function renderCommandPanel(runtime) {
             <label>MP(참조값)<input class="gb-input" id="gb-mon-mp" type="number" value="${escapeHtml(item.mp)}" /></label>
             <label>SP(참조값)<input class="gb-input" id="gb-mon-sp" type="number" value="${escapeHtml(item.sp)}" /></label>
             <label>ATK(참조값)<input class="gb-input" id="gb-mon-atk" type="number" value="${escapeHtml(item.atk)}" /></label>
-            <label>P.DEF<input class="gb-input" id="gb-mon-pdef" type="number" value="${escapeHtml(item.pdef)}" /></label>
-            <label>M.DEF<input class="gb-input" id="gb-mon-mdef" type="number" value="${escapeHtml(item.mdef)}" /></label>
+            <label>물리피해감소<input class="gb-input" id="gb-mon-pdef" type="number" value="${escapeHtml(item.pdef)}" /></label>
+            <label>마법피해감소<input class="gb-input" id="gb-mon-mdef" type="number" value="${escapeHtml(item.mdef)}" /></label>
             <label>STR<input class="gb-input" id="gb-mon-str" type="number" value="${escapeHtml(item.stats.str)}" /></label>
             <label>CON<input class="gb-input" id="gb-mon-con" type="number" value="${escapeHtml(item.stats.con)}" /></label>
             <label>INT<input class="gb-input" id="gb-mon-int" type="number" value="${escapeHtml(item.stats.int)}" /></label>
@@ -7591,8 +7599,8 @@ function renderCommandPanel(runtime) {
             <label>MP<input class="gb-input" id="gb-persona-mp" type="number" value="${escapeHtml(item.mp)}" /></label>
             <label>SP<input class="gb-input" id="gb-persona-sp" type="number" value="${escapeHtml(item.sp)}" /></label>
             <label>ATK<input class="gb-input" id="gb-persona-atk" type="number" value="${escapeHtml(item.atk)}" /></label>
-            <label>P.DEF<input class="gb-input" id="gb-persona-pdef" type="number" value="${escapeHtml(item.pdef)}" /></label>
-            <label>M.DEF<input class="gb-input" id="gb-persona-mdef" type="number" value="${escapeHtml(item.mdef)}" /></label>
+            <label>물리피해감소<input class="gb-input" id="gb-persona-pdef" type="number" value="${escapeHtml(item.pdef)}" /></label>
+            <label>마법피해감소<input class="gb-input" id="gb-persona-mdef" type="number" value="${escapeHtml(item.mdef)}" /></label>
             <label>STR<input class="gb-input" id="gb-persona-str" type="number" value="${escapeHtml(item.stats.str)}" /></label>
             <label>CON<input class="gb-input" id="gb-persona-con" type="number" value="${escapeHtml(item.stats.con)}" /></label>
             <label>INT<input class="gb-input" id="gb-persona-int" type="number" value="${escapeHtml(item.stats.int)}" /></label>
@@ -7867,17 +7875,17 @@ function renderCommandPanel(runtime) {
           </div>` : ''}
 
           ${part === 'subweapon' ? `
-          <div class="gb-sub" style="margin-top:6px;">🛡️ 보조무기(방패): P.DEF 입력 시 ATK는 자동으로 -(P.DEF/2) 적용</div>
+          <div class="gb-sub" style="margin-top:6px;">🛡️ 보조무기(방패): 물리피해감소 입력 시 ATK는 자동으로 -(물리피해감소/2) 적용</div>
           <div class="gb-grid two">
-            <label>P.DEF<input class="gb-input" id="gb-eq-pdef" type="number" value="${Number(item.pdef||0)}" /></label>
+            <label>물리피해감소<input class="gb-input" id="gb-eq-pdef" type="number" value="${Number(item.pdef||0)}" /></label>
           </div>` : ''}
 
           ${part === 'armor' ? `
-          <div class="gb-sub" style="margin-top:6px;">🛡 방어구: P.DEF/M.DEF ${armorStat.defRange?armorStat.defRange[0]+'~'+armorStat.defRange[1]:''} | 총 스탯합 ${armorStat.totalStatSum||0} | 강화당 주스탯 +${armorStat.enhanceStat||0}</div>
+          <div class="gb-sub" style="margin-top:6px;">🛡 방어구: 물리피해감소/마법피해감소 ${armorStat.defRange?armorStat.defRange[0]+'~'+armorStat.defRange[1]:''} | 총 스탯합 ${armorStat.totalStatSum||0} | 강화당 주스탯 +${armorStat.enhanceStat||0}</div>
           <div class="gb-sub" style="color:#94a3b8;">⚗️ 저항은 희귀재료 인퓨즈로 부여 (DB에서 직접 수정 가능). 기본 저항 없음.</div>
           <div class="gb-grid two">
-            <label>P.DEF<input class="gb-input" id="gb-eq-pdef" type="number" value="${Number(item.pdef||0)}" /></label>
-            <label>M.DEF<input class="gb-input" id="gb-eq-mdef" type="number" value="${Number(item.mdef||0)}" /></label>
+            <label>물리피해감소<input class="gb-input" id="gb-eq-pdef" type="number" value="${Number(item.pdef||0)}" /></label>
+            <label>마법피해감소<input class="gb-input" id="gb-eq-mdef" type="number" value="${Number(item.mdef||0)}" /></label>
             <label>저항 타입 (인퓨즈 결과)<select class="gb-input" id="gb-eq-resist-type">
               <option value="">없음</option>
               ${['physical','magic','fire','ice','lightning','dark','light'].map(t => `<option value="${t}" ${item.resistType===t?'selected':''}>${t}</option>`).join('')}
