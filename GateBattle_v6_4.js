@@ -131,6 +131,55 @@ const GATE_STAGE_TEMPLATES = {
     { kind:'room', type:'boss' }
   ]
 };
+// ── 주거 보관함 평수 티어 ──────────────────────────────────────────────────
+const HOME_STORAGE_TIERS = [
+  { maxPyeong: 10, storages: [
+    { name:'2도어냉장고', type:'식량', maxSlots:8,  maxWeightKg:20 },
+    { name:'장비거치대',   type:'장비', maxSlots:4 },
+    { name:'재료보관함',   type:'재료', maxSlots:10 },
+    { name:'기타보관함',   type:'기타', maxSlots:10 }
+  ]},
+  { maxPyeong: 20, storages: [
+    { name:'4도어냉장고', type:'식량', maxSlots:16, maxWeightKg:40 },
+    { name:'장비진열대',   type:'장비', maxSlots:8 },
+    { name:'재료수납함',   type:'재료', maxSlots:20 },
+    { name:'기타수납함',   type:'기타', maxSlots:20 }
+  ]},
+  { maxPyeong: 30, storages: [
+    { name:'800L대형냉장고', type:'식량', maxSlots:26, maxWeightKg:80 },
+    { name:'장비전용미니방',   type:'장비', maxSlots:16 },
+    { name:'작은창고방(재료)', type:'재료', maxSlots:40 },
+    { name:'다락방(기타)',     type:'기타', maxSlots:40 }
+  ]},
+  { maxPyeong: Infinity, storages: [
+    { name:'1200L초대형냉장고', type:'식량', maxSlots:40, maxWeightKg:120 },
+    { name:'장비방',             type:'장비', maxSlots:30 },
+    { name:'창고방(재료)',       type:'재료', maxSlots:40 },
+    { name:'창고방(기타)',       type:'기타', maxSlots:40 }
+  ]}
+];
+function parseAreaPyeong(areaStr) {
+  const m = String(areaStr || '').match(/(\d+)/);
+  return m ? Number(m[1]) : 0;
+}
+function getStorageTier(pyeong) {
+  if (pyeong <= 0) pyeong = 10;
+  for (const tier of HOME_STORAGE_TIERS) { if (pyeong <= tier.maxPyeong) return tier; }
+  return HOME_STORAGE_TIERS[HOME_STORAGE_TIERS.length - 1];
+}
+function buildDefaultStoragesForArea(areaStr) {
+  const pyeong = parseAreaPyeong(areaStr);
+  const tier = getStorageTier(pyeong);
+  return tier.storages.map(s => ({
+    id: `storage_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,6)}`,
+    name: s.name, type: s.type, maxSlots: s.maxSlots || 99,
+    maxWeightKg: s.maxWeightKg || 0, items: []
+  }));
+}
+// ── 주거 월세 헬퍼 ─────────────────────────────────────────────────────────
+function formatYM(y, m) { return `${y}-${String(m).padStart(2,'0')}`; }
+function prevMonth(y, m) { return m <= 1 ? { year: y-1, month: 12 } : { year: y, month: m-1 }; }
+function monthDiff(y1,m1,y2,m2) { return (y2 - y1) * 12 + (m2 - m1); }
 const GATE_SECRET_DISCOVER_CHANCE = 0.30;
 const GATE_PUZZLE_ELITE_REWARD_CHANCE = 0.50;
 const RARE_TRAIT_LABELS = {
@@ -1567,8 +1616,8 @@ const RARE_FAMILY_PRESETS = {
       customGuildDesc: '',
       incomeLog: [],
       guildTaxLog: [],
-      homeRegions: [],   // [{id, name, homes:[{id, name, area, houseType, deposit, monthlyRent, purchasePrice, brokerFee, desc, features:[], storages:[{id,name,type,items:[]}]}]}]
-      ownedHome: null,   // {regionId, homeId} or null
+      homeRegions: [],   // [{id, name, homes:[{id, name, area, houseType, deposit, monthlyRent, purchasePrice, brokerFee, desc, features:[], storages:[{id,name,type,maxSlots,maxWeightKg,items:[]}]}]}]
+      ownedHomes: {},    // { [activeCharId]: { regionId, homeId, moveInDate:'2026-01-01', lastRentPaidMonth:'2026-01', rentLog:[{month,amount,paidDate}] } }
       gameDate: { year: 2026, month: 1, day: 1 },
       battleSetup: {
         partySlots: Array(MAX_PARTY).fill(''),
@@ -2567,6 +2616,117 @@ function getActiveGold() {
 function getActiveLabel() {
   const char = getActiveCharacter();
   return char ? char.name : '공용';
+}
+// ── Per-character/persona owned home helpers ──────────────────────────────
+function migrateOwnedHomes() {
+  // Migrate old ownedHome (single) to ownedHomes map
+  if (model.db.ownedHome && typeof model.db.ownedHome === 'object' && !model.db.ownedHomes) {
+    model.db.ownedHomes = { '': model.db.ownedHome };
+    delete model.db.ownedHome;
+  }
+  if (model.db.ownedHome && typeof model.db.ownedHome === 'object' && model.db.ownedHomes) {
+    if (!model.db.ownedHomes['']) model.db.ownedHomes[''] = model.db.ownedHome;
+    delete model.db.ownedHome;
+  }
+  if (!model.db.ownedHomes || typeof model.db.ownedHomes !== 'object') model.db.ownedHomes = {};
+}
+function getActiveOwnedHome() {
+  migrateOwnedHomes();
+  const key = model.state.activeCharId || '';
+  return model.db.ownedHomes[key] || null;
+}
+function setActiveOwnedHome(val) {
+  migrateOwnedHomes();
+  const key = model.state.activeCharId || '';
+  if (val) model.db.ownedHomes[key] = val;
+  else delete model.db.ownedHomes[key];
+}
+function getOwnedHomeData(ownedEntry) {
+  if (!ownedEntry) return null;
+  const region = (model.db.homeRegions || []).find(r => r.id === ownedEntry.regionId);
+  const home = region ? (region.homes || []).find(h => h.id === ownedEntry.homeId) : null;
+  return home ? { region, home } : null;
+}
+function calcRentDue(owned, home, gd) {
+  // Returns { dueAmount, overdueMonths, interestPerDay, totalDebt, isOverdue, canPay, monthLabel }
+  if (!owned || !home || home.houseType !== 'rent') return null;
+  const rent = Number(home.monthlyRent || 0);
+  if (rent <= 0) return null;
+  const lastPaid = owned.lastRentPaidMonth || '';
+  const curYM = formatYM(gd.year, gd.month);
+  const prev = prevMonth(gd.year, gd.month);
+  const prevYM = formatYM(prev.year, prev.month);
+  // How many months unpaid?
+  let unpaidMonths = 0;
+  if (!lastPaid) {
+    // Never paid: count from move-in
+    const mid = owned.moveInDate || `${gd.year}-${String(gd.month).padStart(2,'0')}-01`;
+    const parts = mid.split('-').map(Number);
+    unpaidMonths = Math.max(0, monthDiff(parts[0], parts[1], gd.year, gd.month));
+  } else {
+    const lp = lastPaid.split('-').map(Number);
+    unpaidMonths = Math.max(0, monthDiff(lp[0], lp[1], gd.year, gd.month));
+  }
+  if (unpaidMonths <= 0) return { dueAmount: 0, overdueMonths: 0, interestPerDay: 0, totalDebt: 0, isOverdue: false, canPay: false, monthLabel: curYM };
+  // Target month to pay = the month after lastPaid (or move-in month)
+  const dueAmount = rent * unpaidMonths;
+  // Interest: if day > 10, add daily interest at 10%/year on overdue amount
+  let interest = 0;
+  if (gd.day > 10 && unpaidMonths >= 1) {
+    const overdueDays = gd.day - 10;
+    const dailyRate = 0.10 / 365;
+    interest = Math.floor(dueAmount * dailyRate * overdueDays);
+  }
+  const canPay = gd.day >= 1; // Can always attempt to pay
+  return {
+    dueAmount, overdueMonths: unpaidMonths, interestPerDay: Math.floor(rent * (0.10/365)),
+    totalDebt: dueAmount + interest, interest, isOverdue: gd.day > 10 && unpaidMonths >= 1,
+    canPay, monthLabel: prevYM
+  };
+}
+function processRentOnDateAdvance(gd) {
+  // Called when date advances - check all owned homes for eviction
+  migrateOwnedHomes();
+  const toEvict = [];
+  for (const [charKey, owned] of Object.entries(model.db.ownedHomes)) {
+    const data = getOwnedHomeData(owned);
+    if (!data || data.home.houseType !== 'rent') continue;
+    const rent = Number(data.home.monthlyRent || 0);
+    if (rent <= 0) continue;
+    const lastPaid = owned.lastRentPaidMonth || '';
+    let unpaidMonths = 0;
+    if (!lastPaid) {
+      const mid = owned.moveInDate || `${gd.year}-${String(gd.month).padStart(2,'0')}-01`;
+      const parts = mid.split('-').map(Number);
+      unpaidMonths = monthDiff(parts[0], parts[1], gd.year, gd.month);
+    } else {
+      const lp = lastPaid.split('-').map(Number);
+      unpaidMonths = monthDiff(lp[0], lp[1], gd.year, gd.month);
+    }
+    if (unpaidMonths >= 3) { // 2 full months unpaid (current month is the 3rd)
+      toEvict.push(charKey);
+    }
+  }
+  const messages = [];
+  for (const charKey of toEvict) {
+    const owned = model.db.ownedHomes[charKey];
+    if (!owned) continue;
+    const data = getOwnedHomeData(owned);
+    if (data && data.home && Array.isArray(data.home.storages)) {
+      // Move all items to shared inventory
+      const sharedInv = getInventory();
+      for (const storage of data.home.storages) {
+        for (const item of (storage.items || [])) {
+          grantInventoryItem(item);
+        }
+        storage.items = [];
+      }
+    }
+    const label = charKey ? charKey : '공용';
+    messages.push(`${label} 월세 2개월 미납으로 퇴거 처리됨. 보관함 아이템은 공용 인벤토리로 이동.`);
+    delete model.db.ownedHomes[charKey];
+  }
+  return messages;
 }
 function getPartyCharBags() {
   // Returns array of PARTY_BAGS entries for each character in the party (battleSetup.partySlots)
@@ -7015,21 +7175,54 @@ function renderShopView() {
 function renderHomeView() {
   const db = model.db;
   if (!Array.isArray(db.homeRegions)) db.homeRegions = [];
+  migrateOwnedHomes();
   const homeSub = model.state.homeSub || '';
-  const owned = db.ownedHome || null;
+  const owned = getActiveOwnedHome();
+  const gd = db.gameDate || { year:2026, month:1, day:1 };
+  const charLabel = getActiveLabel();
+
+  // ── Rent log sub-view ──────────────────────────────────────────────────
+  if (homeSub === 'rentLog' && owned) {
+    const data = getOwnedHomeData(owned);
+    if (!data) { model.state.homeSub = 'interior'; return renderHomeView(); }
+    const { home } = data;
+    const rentLog = Array.isArray(owned.rentLog) ? owned.rentLog : [];
+    const moveInDate = owned.moveInDate || '—';
+    const logRows = rentLog.slice(-2).reverse().map(r =>
+      `<div class="gb-unit-top" style="border-bottom:1px solid rgba(148,163,184,0.1);padding:4px 0;">
+        <div><span class="gb-badge">${escapeHtml(r.month)}</span> ₩${Number(r.amount||0).toLocaleString('en-US')}${r.interest ? ` (이자 ₩${Number(r.interest).toLocaleString('en-US')} 포함)` : ''}</div>
+        <div class="gb-sub">${escapeHtml(r.paidDate || '—')}</div>
+      </div>`
+    ).join('') || '<div class="gb-sub">납부 기록이 없다.</div>';
+    return `
+      <div class="gb-panel" style="border-color:#2563eb;">
+        <div class="gb-section-title">📋 월세 기록 — ${escapeHtml(home.name)}</div>
+        <div class="gb-sub">입주일: <strong>${escapeHtml(moveInDate)}</strong></div>
+        <div class="gb-sub">거주자: <strong>${escapeHtml(charLabel)}</strong></div>
+      </div>
+      <div class="gb-panel">
+        <div class="gb-section-title">최근 납부 기록 (최대 2건)</div>
+        ${logRows}
+      </div>
+      <div class="gb-btn-row">
+        <button class="gb-btn" data-home-sub="interior">← 집 내부로</button>
+      </div>`;
+  }
 
   // ── Interior view (inside a home) ────────────────────────────────────
   if (homeSub === 'interior' && owned) {
-    const region = db.homeRegions.find(r => r.id === owned.regionId);
-    const home = region ? (region.homes || []).find(h => h.id === owned.homeId) : null;
-    if (!home) { model.state.homeSub = ''; return renderHomeView(); }
+    const data = getOwnedHomeData(owned);
+    if (!data) { model.state.homeSub = ''; return renderHomeView(); }
+    const { region, home } = data;
     if (!Array.isArray(home.storages)) home.storages = [];
     const storageList = home.storages.map((s, idx) => {
       const itemCount = Array.isArray(s.items) ? s.items.length : 0;
+      const limitInfo = s.maxSlots ? `${itemCount}/${s.maxSlots}칸` : `${itemCount}개`;
+      const weightInfo = s.maxWeightKg ? ` · 무게제한 ${s.maxWeightKg}kg` : '';
       return `
         <div class="gb-panel">
           <div class="gb-unit-top">
-            <div><strong>${escapeHtml(s.name)}</strong> <span class="gb-badge">${escapeHtml(s.type || '기타')}</span> <span class="gb-sub">(${itemCount}개 보관중)</span></div>
+            <div><strong>${escapeHtml(s.name)}</strong> <span class="gb-badge">${escapeHtml(s.type || '기타')}</span> <span class="gb-sub">(${limitInfo}${weightInfo})</span></div>
             <div>
               <button class="gb-btn tiny" data-home-storage-view="${idx}">열기</button>
               <button class="gb-btn tiny danger" data-home-storage-del="${idx}">삭제</button>
@@ -7037,12 +7230,34 @@ function renderHomeView() {
           </div>
         </div>`;
     }).join('') || '<div class="gb-sub">보관함이 없다. 아래에서 추가하라.</div>';
+    // ── Rent section ──
+    let rentSection = '';
+    if (home.houseType === 'rent' && Number(home.monthlyRent || 0) > 0) {
+      const rentInfo = calcRentDue(owned, home, gd);
+      if (rentInfo) {
+        const rentStatus = rentInfo.totalDebt > 0
+          ? `<span style="color:#ef4444;">미납 ₩${rentInfo.totalDebt.toLocaleString('en-US')} (${rentInfo.overdueMonths}개월분${rentInfo.interest > 0 ? ` + 이자 ₩${rentInfo.interest.toLocaleString('en-US')}` : ''})</span>`
+          : '<span style="color:#22c55e;">납부 완료</span>';
+        rentSection = `
+          <div class="gb-panel" style="border-color:#f59e0b;">
+            <div class="gb-section-title">💰 월세 관리</div>
+            <div class="gb-sub">월세: ₩${Number(home.monthlyRent).toLocaleString('en-US')} / 상태: ${rentStatus}</div>
+            ${rentInfo.isOverdue ? `<div class="gb-sub" style="color:#ef4444;">⚠ 10일 초과! 일 이자 ₩${rentInfo.interestPerDay.toLocaleString('en-US')} 부과 중 (연 10%)</div>` : ''}
+            ${rentInfo.overdueMonths >= 2 ? `<div class="gb-sub" style="color:#ef4444;">⚠ 2개월 이상 미납 — 다음날 강제 퇴거 예정!</div>` : ''}
+            <div style="display:flex;gap:6px;margin-top:6px;">
+              ${rentInfo.totalDebt > 0 ? `<button class="gb-btn primary" data-home-pay-rent="">💳 월세내기 (₩${rentInfo.totalDebt.toLocaleString('en-US')})</button>` : ''}
+              <button class="gb-btn tiny" data-home-sub="rentLog">📋 월세기록</button>
+            </div>
+          </div>`;
+      }
+    }
     return `
       <div class="gb-panel" style="border-color:#2563eb;">
         <div class="gb-section-title">🏠 ${escapeHtml(home.name)} — 내부</div>
-        <div class="gb-sub">${escapeHtml(region.name)} · ${escapeHtml(home.area)} · ${home.houseType === 'rent' ? '임대' : home.houseType === 'purchase' ? '매매' : escapeHtml(home.houseType || '임대')}</div>
+        <div class="gb-sub">${escapeHtml(region.name)} · ${escapeHtml(home.area)} · ${home.houseType === 'rent' ? '임대' : home.houseType === 'purchase' ? '매매' : escapeHtml(home.houseType || '임대')} · 거주자: ${escapeHtml(charLabel)}</div>
         ${home.desc ? `<div class="gb-sub" style="margin-top:4px;">${escapeHtml(home.desc)}</div>` : ''}
       </div>
+      ${rentSection}
       <div class="gb-panel">
         <div class="gb-section-title">📦 보관함 목록</div>
         ${storageList}
@@ -7066,11 +7281,14 @@ function renderHomeView() {
   // ── Storage detail view ────────────────────────────────────────────────
   if (homeSub.startsWith('storage:') && owned) {
     const sIdx = parseInt(homeSub.split(':')[1], 10);
-    const region = db.homeRegions.find(r => r.id === owned.regionId);
-    const home = region ? (region.homes || []).find(h => h.id === owned.homeId) : null;
-    if (!home || !home.storages || !home.storages[sIdx]) { model.state.homeSub = 'interior'; return renderHomeView(); }
+    const data = getOwnedHomeData(owned);
+    if (!data) { model.state.homeSub = 'interior'; return renderHomeView(); }
+    const { home } = data;
+    if (!home.storages || !home.storages[sIdx]) { model.state.homeSub = 'interior'; return renderHomeView(); }
     const storage = home.storages[sIdx];
     if (!Array.isArray(storage.items)) storage.items = [];
+    const limitInfo = storage.maxSlots ? `${storage.items.length}/${storage.maxSlots}칸` : `${storage.items.length}개`;
+    const weightInfo = storage.maxWeightKg ? ` · 무게제한 ${storage.maxWeightKg}kg` : '';
     const itemRows = storage.items.map((it, iIdx) => `
       <div class="gb-unit-top" style="border-bottom:1px solid rgba(148,163,184,0.1);padding:4px 0;">
         <div><span class="gb-badge">${escapeHtml(it.category || '기타')}</span> <strong>${escapeHtml(it.name || '아이템')}</strong> ${it.rank ? `<span class="gb-badge">${escapeHtml(it.rank)}</span>` : ''} x${Number(it.count || 1)}</div>
@@ -7079,7 +7297,7 @@ function renderHomeView() {
     return `
       <div class="gb-panel" style="border-color:#2563eb;">
         <div class="gb-section-title">📦 ${escapeHtml(storage.name)} <span class="gb-badge">${escapeHtml(storage.type || '기타')}</span></div>
-        <div class="gb-sub">${storage.items.length}개 보관중</div>
+        <div class="gb-sub">${limitInfo}${weightInfo}</div>
       </div>
       <div class="gb-panel">${itemRows}</div>
       <div class="gb-panel">
@@ -7120,6 +7338,7 @@ function renderHomeView() {
     return `
       <div class="gb-panel">
         <div class="gb-section-title">🏠 새 집 추가 — ${escapeHtml(region.name)}</div>
+        <div class="gb-sub">평수에 따라 보관함이 자동 생성됩니다 (≤10평/11~20평/21~30평/31평~).</div>
         <div id="gb-home-add" style="display:flex;flex-direction:column;gap:8px;">
           <input type="hidden" id="gb-home-add-region" value="${escapeHtml(regionId)}">
           <div style="display:flex;flex-wrap:wrap;gap:6px;">
@@ -7147,10 +7366,11 @@ function renderHomeView() {
 
   // ── Main listing view ──────────────────────────────────────────────────
   const ownedInfo = owned ? (() => {
-    const r = db.homeRegions.find(x => x.id === owned.regionId);
-    const h = r ? (r.homes || []).find(x => x.id === owned.homeId) : null;
-    return h ? `<div class="gb-sub">현재 거주: <strong>${escapeHtml(h.name)}</strong> (${escapeHtml(r.name)} / ${escapeHtml(h.area)} / ${h.houseType === 'rent' ? `월세 ₩${Number(h.monthlyRent||0).toLocaleString('en-US')}` : '자가'})</div>` : '<div class="gb-sub">현재 거주 중인 집이 없다.</div>';
-  })() : '<div class="gb-sub">현재 거주 중인 집이 없다.</div>';
+    const data = getOwnedHomeData(owned);
+    if (!data) return '<div class="gb-sub">현재 거주 중인 집이 없다.</div>';
+    const { region: r, home: h } = data;
+    return `<div class="gb-sub">현재 거주 (${escapeHtml(charLabel)}): <strong>${escapeHtml(h.name)}</strong> (${escapeHtml(r.name)} / ${escapeHtml(h.area)} / ${h.houseType === 'rent' ? `월세 ₩${Number(h.monthlyRent||0).toLocaleString('en-US')}` : '자가'})</div>`;
+  })() : `<div class="gb-sub">${escapeHtml(charLabel)} — 현재 거주 중인 집이 없다.</div>`;
 
   const regionPanels = db.homeRegions.map(region => {
     const homes = (region.homes || []).map(h => {
@@ -7160,6 +7380,10 @@ function renderHomeView() {
         : `보증금 ₩${Number(h.deposit||0).toLocaleString('en-US')} / 월세 ₩${Number(h.monthlyRent||0).toLocaleString('en-US')}`;
       const brokerInfo = h.brokerFee ? ` / 복비 ₩${Number(h.brokerFee).toLocaleString('en-US')}` : '';
       const featureHtml = h.features && h.features.length ? `<div class="gb-sub" style="margin-top:4px;">${h.features.map(f => `<span class="gb-badge">${escapeHtml(f)}</span>`).join(' ')}</div>` : '';
+      // Show storage tier preview
+      const pyeong = parseAreaPyeong(h.area);
+      const tier = getStorageTier(pyeong);
+      const tierLabel = tier.storages.map(s => `${s.name}(${s.maxSlots}칸)`).join(', ');
       return `
         <div class="gb-panel${isOwned ? '" style="border-color:#2563eb;' : ''}">
           <div class="gb-unit-top">
@@ -7176,6 +7400,7 @@ function renderHomeView() {
           </div>
           ${h.desc ? `<div class="gb-sub" style="margin-top:6px;">${escapeHtml(h.desc)}</div>` : ''}
           ${featureHtml}
+          <div class="gb-sub" style="margin-top:4px;color:#94a3b8;">📦 ${escapeHtml(tierLabel)}</div>
           <div class="gb-sub" style="margin-top:6px;color:#fbbf24;">💰 ${escapeHtml(priceInfo)}${escapeHtml(brokerInfo)}</div>
         </div>`;
     }).join('');
@@ -7196,6 +7421,7 @@ function renderHomeView() {
     <div class="gb-panel">
       <div class="gb-section-title">🏠 주거</div>
       <div class="gb-sub">지역을 만들고 그 안에 집을 추가할 수 있다. 입주 시 보증금+복비가 차감된다.</div>
+      <div class="gb-sub">평수에 따라 보관함이 자동 배치된다 (≤10평/11~20평/21~30평/31평~).</div>
       ${ownedInfo}
     </div>
     ${regionPanels}
@@ -9336,7 +9562,10 @@ async function saveMaterialTraitFromForm() {
       gd.year = d.getFullYear();
       gd.month = d.getMonth() + 1;
       gd.day = d.getDate();
+      // Process rent evictions
+      const evictMsgs = processRentOnDateAdvance(gd);
       await saveDb(); renderApp();
+      for (const msg of evictMsgs) toast(msg, true);
     });
     // ── 캐릭터 선택 핸들러 ────────────────────────────────────────────────────
     on('#gb-active-char', 'change', async (ev) => {
@@ -10311,9 +10540,11 @@ async function saveMaterialTraitFromForm() {
         if (!Array.isArray(model.db.homeRegions)) return;
         const idx = model.db.homeRegions.findIndex(r => r.id === regionId);
         if (idx < 0) return;
-        // If currently living in this region, move out
-        const owned = model.db.ownedHome;
-        if (owned && owned.regionId === regionId) model.db.ownedHome = null;
+        // If any character living in this region, move them out
+        migrateOwnedHomes();
+        for (const [key, owned] of Object.entries(model.db.ownedHomes)) {
+          if (owned && owned.regionId === regionId) delete model.db.ownedHomes[key];
+        }
         model.db.homeRegions.splice(idx, 1);
         await saveDb(); renderApp();
         toast('지역이 삭제되었다.');
@@ -10328,10 +10559,11 @@ async function saveMaterialTraitFromForm() {
         const region = model.db.homeRegions.find(r => r.id === regionId);
         if (!region) throw new Error('지역을 찾을 수 없다.');
         if (!Array.isArray(region.homes)) region.homes = [];
+        const area = (fieldValue('#gb-home-area') || '').trim();
         region.homes.push({
           id: `home_${Date.now().toString(36)}`,
           name,
-          area: (fieldValue('#gb-home-area') || '').trim(),
+          area,
           houseType: fieldValue('#gb-home-type') || 'rent',
           deposit: Math.max(0, Number(fieldValue('#gb-home-deposit')) || 0),
           monthlyRent: Math.max(0, Number(fieldValue('#gb-home-rent')) || 0),
@@ -10339,11 +10571,11 @@ async function saveMaterialTraitFromForm() {
           brokerFee: Math.max(0, Number(fieldValue('#gb-home-broker')) || 0),
           desc: (fieldValue('#gb-home-desc') || '').trim(),
           features: (fieldValue('#gb-home-features') || '').split(',').map(s => s.trim()).filter(Boolean),
-          storages: []
+          storages: buildDefaultStoragesForArea(area)
         });
         model.state.homeSub = '';
         await saveDb(); await saveState(); renderApp();
-        toast(`'${name}' 집이 추가되었다.`);
+        toast(`'${name}' 집이 추가되었다. (보관함 자동 생성 완료)`);
       } catch (e) { toast(e.message || String(e), true); }
     });
     on('[data-home-del]', 'click', async (ev) => {
@@ -10355,8 +10587,11 @@ async function saveMaterialTraitFromForm() {
         if (!region || !Array.isArray(region.homes)) return;
         const idx = region.homes.findIndex(h => h.id === homeId);
         if (idx < 0) return;
-        const owned = model.db.ownedHome;
-        if (owned && owned.regionId === regionId && owned.homeId === homeId) model.db.ownedHome = null;
+        // If any character living in this home, move them out
+        migrateOwnedHomes();
+        for (const [key, owned] of Object.entries(model.db.ownedHomes)) {
+          if (owned && owned.regionId === regionId && owned.homeId === homeId) delete model.db.ownedHomes[key];
+        }
         region.homes.splice(idx, 1);
         await saveDb(); renderApp();
         toast('집이 삭제되었다.');
@@ -10376,17 +10611,69 @@ async function saveMaterialTraitFromForm() {
         const currentGold = Number(inv.gold || 0);
         if (cost > 0 && currentGold < cost) throw new Error(`입주 비용이 부족하다. 필요: ₩${cost.toLocaleString('en-US')} / 보유: ₩${currentGold.toLocaleString('en-US')}`);
         if (cost > 0) inv.gold = currentGold - cost;
-        model.db.ownedHome = { regionId, homeId };
+        const gd = model.db.gameDate || { year:2026, month:1, day:1 };
+        const moveInDate = `${gd.year}-${String(gd.month).padStart(2,'0')}-${String(gd.day).padStart(2,'0')}`;
+        setActiveOwnedHome({ regionId, homeId, moveInDate, lastRentPaidMonth: formatYM(gd.year, gd.month), rentLog: [] });
         await saveDb(); await saveState(); renderApp();
-        toast(cost > 0 ? `입주 완료! (₩${cost.toLocaleString('en-US')} 차감)` : '입주 완료!');
+        toast(cost > 0 ? `${getActiveLabel()} 입주 완료! (₩${cost.toLocaleString('en-US')} 차감)` : `${getActiveLabel()} 입주 완료!`);
       } catch (e) { toast(e.message || String(e), true); }
     });
     on('[data-home-moveout]', 'click', async (ev) => {
       try {
-        model.db.ownedHome = null;
+        const owned = getActiveOwnedHome();
+        if (owned) {
+          const data = getOwnedHomeData(owned);
+          // Refund deposit on voluntary move-out
+          if (data && data.home) {
+            const deposit = Number(data.home.deposit || 0);
+            if (deposit > 0) {
+              const inv = getActiveInventory();
+              inv.gold = Number(inv.gold || 0) + deposit;
+              toast(`보증금 ₩${deposit.toLocaleString('en-US')} 환불 완료.`);
+            }
+          }
+        }
+        setActiveOwnedHome(null);
         model.state.homeSub = '';
         await saveDb(); await saveState(); renderApp();
-        toast('퇴거 처리 완료.');
+        toast(`${getActiveLabel()} 퇴거 처리 완료.`);
+      } catch (e) { toast(e.message || String(e), true); }
+    });
+    // ── Rent payment handler ──────────────────────────────────────────────────
+    on('[data-home-pay-rent]', 'click', async (ev) => {
+      try {
+        const owned = getActiveOwnedHome();
+        if (!owned) throw new Error('거주 중인 집이 없다.');
+        const data = getOwnedHomeData(owned);
+        if (!data || data.home.houseType !== 'rent') throw new Error('임대 주택이 아니다.');
+        const gd = model.db.gameDate || { year:2026, month:1, day:1 };
+        const rentInfo = calcRentDue(owned, data.home, gd);
+        if (!rentInfo || rentInfo.totalDebt <= 0) throw new Error('납부할 월세가 없다.');
+        const inv = getActiveInventory();
+        const gold = Number(inv.gold || 0);
+        if (gold < rentInfo.totalDebt) throw new Error(`골드가 부족하다. 필요: ₩${rentInfo.totalDebt.toLocaleString('en-US')} / 보유: ₩${gold.toLocaleString('en-US')}`);
+        inv.gold = gold - rentInfo.totalDebt;
+        // Record rent payment
+        if (!Array.isArray(owned.rentLog)) owned.rentLog = [];
+        const paidDate = `${gd.year}-${String(gd.month).padStart(2,'0')}-${String(gd.day).padStart(2,'0')}`;
+        // Pay all overdue months
+        for (let i = 0; i < rentInfo.overdueMonths; i++) {
+          const rent = Number(data.home.monthlyRent || 0);
+          const isLast = (i === rentInfo.overdueMonths - 1);
+          owned.rentLog.push({
+            month: (() => { let y = gd.year, m = gd.month - rentInfo.overdueMonths + i; while(m<=0){m+=12;y--;} return formatYM(y,m); })(),
+            amount: rent + (isLast ? rentInfo.interest : 0),
+            interest: isLast ? rentInfo.interest : 0,
+            paidDate
+          });
+        }
+        // Keep only last 2 entries
+        if (owned.rentLog.length > 2) owned.rentLog = owned.rentLog.slice(-2);
+        // Update last paid month to previous month (just paid for it)
+        const prev = prevMonth(gd.year, gd.month);
+        owned.lastRentPaidMonth = formatYM(prev.year, prev.month);
+        await saveDb(); await saveState(); renderApp();
+        toast(`월세 ₩${rentInfo.totalDebt.toLocaleString('en-US')} 납부 완료.`);
       } catch (e) { toast(e.message || String(e), true); }
     });
     // ── Storage handlers ──────────────────────────────────────────────────────
@@ -10395,13 +10682,12 @@ async function saveMaterialTraitFromForm() {
         const name = (fieldValue('#gb-storage-name') || '').trim();
         const type = fieldValue('#gb-storage-type') || '기타';
         if (!name) throw new Error('보관함 이름을 입력하라.');
-        const owned = model.db.ownedHome;
+        const owned = getActiveOwnedHome();
         if (!owned) return;
-        const region = (model.db.homeRegions || []).find(r => r.id === owned.regionId);
-        const home = region ? (region.homes || []).find(h => h.id === owned.homeId) : null;
-        if (!home) return;
-        if (!Array.isArray(home.storages)) home.storages = [];
-        home.storages.push({ id: `storage_${Date.now().toString(36)}`, name, type, items: [] });
+        const data = getOwnedHomeData(owned);
+        if (!data) return;
+        if (!Array.isArray(data.home.storages)) data.home.storages = [];
+        data.home.storages.push({ id: `storage_${Date.now().toString(36)}`, name, type, maxSlots: 10, maxWeightKg: 0, items: [] });
         await saveDb(); renderApp();
         toast(`'${name}' 보관함이 추가되었다.`);
       } catch (e) { toast(e.message || String(e), true); }
@@ -10409,13 +10695,12 @@ async function saveMaterialTraitFromForm() {
     on('[data-home-storage-del]', 'click', async (ev) => {
       try {
         const idx = parseInt(ev.currentTarget.getAttribute('data-home-storage-del'), 10);
-        const owned = model.db.ownedHome;
+        const owned = getActiveOwnedHome();
         if (!owned) return;
-        const region = (model.db.homeRegions || []).find(r => r.id === owned.regionId);
-        const home = region ? (region.homes || []).find(h => h.id === owned.homeId) : null;
-        if (!home || !Array.isArray(home.storages) || !home.storages[idx]) return;
-        const sName = home.storages[idx].name;
-        home.storages.splice(idx, 1);
+        const data = getOwnedHomeData(owned);
+        if (!data || !Array.isArray(data.home.storages) || !data.home.storages[idx]) return;
+        const sName = data.home.storages[idx].name;
+        data.home.storages.splice(idx, 1);
         await saveDb(); renderApp();
         toast(`'${sName}' 보관함이 삭제되었다.`);
       } catch (e) { toast(e.message || String(e), true); }
@@ -10429,13 +10714,15 @@ async function saveMaterialTraitFromForm() {
       try {
         const itemIdx = parseInt(fieldValue('#gb-storage-store-item'), 10);
         const count = Math.max(1, Number(fieldValue('#gb-storage-store-count')) || 1);
-        const owned = model.db.ownedHome;
+        const owned = getActiveOwnedHome();
         if (!owned) return;
         const sIdxStr = (model.state.homeSub || '').split(':')[1];
         const sIdx = parseInt(sIdxStr, 10);
-        const region = (model.db.homeRegions || []).find(r => r.id === owned.regionId);
-        const home = region ? (region.homes || []).find(h => h.id === owned.homeId) : null;
-        if (!home || !home.storages || !home.storages[sIdx]) throw new Error('보관함을 찾을 수 없다.');
+        const data = getOwnedHomeData(owned);
+        if (!data || !data.home.storages || !data.home.storages[sIdx]) throw new Error('보관함을 찾을 수 없다.');
+        const storage = data.home.storages[sIdx];
+        // Enforce slot limit
+        if (storage.maxSlots && storage.items.length >= storage.maxSlots) throw new Error(`보관함이 가득 찼다. (최대 ${storage.maxSlots}칸)`);
         const inv = getActiveInventory();
         if (!inv.items || !inv.items[itemIdx]) throw new Error('아이템을 찾을 수 없다.');
         const srcItem = inv.items[itemIdx];
@@ -10443,7 +10730,13 @@ async function saveMaterialTraitFromForm() {
         const toStore = Math.min(count, available);
         const storedItem = deepClone(srcItem);
         storedItem.count = toStore;
-        home.storages[sIdx].items.push(storedItem);
+        // Enforce weight limit for food storages
+        if (storage.maxWeightKg > 0) {
+          const currentWeightG = storage.items.reduce((sum, it) => sum + Number(it.unitWeightG || 0) * Number(it.count || 1), 0);
+          const addWeightG = Number(storedItem.unitWeightG || 0) * toStore;
+          if ((currentWeightG + addWeightG) > storage.maxWeightKg * 1000) throw new Error(`무게 제한 초과. (최대 ${storage.maxWeightKg}kg)`);
+        }
+        storage.items.push(storedItem);
         if (toStore >= available) {
           inv.items.splice(itemIdx, 1);
         } else {
@@ -10458,12 +10751,11 @@ async function saveMaterialTraitFromForm() {
         const parts = (ev.currentTarget.getAttribute('data-home-storage-item-take') || '').split(':');
         const sIdx = parseInt(parts[0], 10);
         const iIdx = parseInt(parts[1], 10);
-        const owned = model.db.ownedHome;
+        const owned = getActiveOwnedHome();
         if (!owned) return;
-        const region = (model.db.homeRegions || []).find(r => r.id === owned.regionId);
-        const home = region ? (region.homes || []).find(h => h.id === owned.homeId) : null;
-        if (!home || !home.storages || !home.storages[sIdx]) return;
-        const storage = home.storages[sIdx];
+        const data = getOwnedHomeData(owned);
+        if (!data || !data.home.storages || !data.home.storages[sIdx]) return;
+        const storage = data.home.storages[sIdx];
         if (!Array.isArray(storage.items) || !storage.items[iIdx]) return;
         const item = storage.items[iIdx];
         grantActiveInventoryItem(item);
