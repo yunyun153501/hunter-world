@@ -2617,6 +2617,29 @@ function getActiveLabel() {
   const char = getActiveCharacter();
   return char ? char.name : '공용';
 }
+function getLabelForCharKey(charKey) {
+  if (!charKey) return '공용';
+  if (charKey.startsWith('persona:')) {
+    const pid = charKey.substring(8);
+    const p = (model.db.personas || []).find(c => c.id === pid);
+    return p ? p.name : charKey;
+  }
+  if (charKey.startsWith('char:')) {
+    const cid = charKey.substring(5);
+    const c = (model.db.characters || []).find(ch => ch.id === cid);
+    return c ? c.name : charKey;
+  }
+  return charKey || '공용';
+}
+function findHomeOccupant(regionId, homeId) {
+  migrateOwnedHomes();
+  for (const [charKey, owned] of Object.entries(model.db.ownedHomes)) {
+    if (owned && owned.regionId === regionId && owned.homeId === homeId) {
+      return { charKey, label: getLabelForCharKey(charKey) };
+    }
+  }
+  return null;
+}
 // ── Per-character/persona owned home helpers ──────────────────────────────
 function migrateOwnedHomes() {
   // Migrate old ownedHome (single) to ownedHomes map
@@ -2746,7 +2769,7 @@ function processRentOnDateAdvance(gd) {
         const sharedInv = getInventory();
         sharedInv.gold = Number(sharedInv.gold || 0) + refund;
       }
-      const label = charKey ? charKey : '공용';
+      const label = getLabelForCharKey(charKey);
       const deductStr = totalDebt > 0 ? ` 미납금 ₩${totalDebt.toLocaleString('en-US')} 보증금에서 차감.` : '';
       const refundStr = refund > 0 ? ` 보증금 잔여 ₩${refund.toLocaleString('en-US')} 환불.` : (deposit > 0 ? ' 보증금 전액 차감.' : '');
       messages.push(`${label} 월세 2개월 미납으로 퇴거 처리됨.${deductStr}${refundStr} 보관함 아이템은 공용 인벤토리로 이동.`);
@@ -7294,16 +7317,6 @@ function renderHomeView() {
         <div class="gb-section-title">📦 보관함 목록</div>
         ${storageList}
       </div>
-      <div class="gb-panel">
-        <div class="gb-section-title">➕ 보관함 추가</div>
-        <div id="gb-home-storage-add" style="display:flex;flex-wrap:wrap;gap:6px;align-items:flex-end;">
-          <label>이름<input id="gb-storage-name" class="gb-input" type="text" placeholder="예: 장비보관고" style="margin-left:4px;width:120px;"></label>
-          <label>종류<select id="gb-storage-type" class="gb-input" style="margin-left:4px;">
-            <option value="재료">재료</option><option value="장비">장비</option><option value="식량">식량</option><option value="기타">기타</option>
-          </select></label>
-          <button type="button" id="gb-home-storage-add-btn" class="gb-btn tiny primary">추가</button>
-        </div>
-      </div>
       <div class="gb-btn-row">
         <button class="gb-btn" data-home-sub="">← 매물 목록</button>
         <button class="gb-btn" data-go="hub">← 허브로</button>
@@ -7408,6 +7421,8 @@ function renderHomeView() {
   const regionPanels = db.homeRegions.map(region => {
     const homes = (region.homes || []).map(h => {
       const isOwned = owned && owned.regionId === region.id && owned.homeId === h.id;
+      const occupant = findHomeOccupant(region.id, h.id);
+      const occupiedByOther = occupant && !isOwned;
       const maintStr = Number(h.maintenanceFee||0) > 0 ? ` + 관리비 ₩${Number(h.maintenanceFee).toLocaleString('en-US')}` : '';
       const priceInfo = h.houseType === 'purchase'
         ? `매매가 ₩${Number(h.purchasePrice||0).toLocaleString('en-US')}`
@@ -7418,17 +7433,28 @@ function renderHomeView() {
       const pyeong = parseAreaPyeong(h.area);
       const tier = getStorageTier(pyeong);
       const tierLabel = tier.storages.map(s => `${s.name}(${s.maxSlots}칸)`).join(', ');
+      // Determine occupancy badge and action buttons
+      const occupantBadge = isOwned
+        ? `<span class="gb-badge" style="background:#16a34a;color:#dcfce7;">현재 거주 중 (${escapeHtml(charLabel)})</span>`
+        : occupiedByOther
+          ? `<span class="gb-badge" style="background:#f59e0b;color:#451a03;">거주 중: ${escapeHtml(occupant.label)}</span>`
+          : '';
+      const actionBtns = isOwned
+        ? `<button class="gb-btn tiny primary" data-home-sub="interior">들어가기</button><button class="gb-btn tiny danger" data-home-moveout="">퇴거</button>`
+        : occupiedByOther
+          ? ''
+          : `<button class="gb-btn tiny primary" data-home-movein="${escapeHtml(region.id)}:${escapeHtml(h.id)}">입주</button>`;
       return `
-        <div class="gb-panel${isOwned ? '" style="border-color:#2563eb;' : ''}">
+        <div class="gb-panel${isOwned ? '" style="border-color:#2563eb;' : occupiedByOther ? '" style="border-color:#f59e0b;' : ''}">
           <div class="gb-unit-top">
             <div>
               <strong>${escapeHtml(h.name)}</strong>
               <span class="gb-badge">${escapeHtml(h.area || '')}</span>
               <span class="gb-badge">${h.houseType === 'rent' ? '임대' : h.houseType === 'purchase' ? '매매' : escapeHtml(h.houseType||'')}</span>
-              ${isOwned ? '<span class="gb-badge" style="background:#16a34a;color:#dcfce7;">현재 거주 중</span>' : ''}
+              ${occupantBadge}
             </div>
             <div style="display:flex;gap:4px;">
-              ${isOwned ? `<button class="gb-btn tiny primary" data-home-sub="interior">들어가기</button><button class="gb-btn tiny danger" data-home-moveout="">퇴거</button>` : `<button class="gb-btn tiny primary" data-home-movein="${escapeHtml(region.id)}:${escapeHtml(h.id)}">입주</button>`}
+              ${actionBtns}
               <button class="gb-btn tiny danger" data-home-del="${escapeHtml(region.id)}:${escapeHtml(h.id)}">삭제</button>
             </div>
           </div>
@@ -10640,6 +10666,9 @@ async function saveMaterialTraitFromForm() {
         const region = (model.db.homeRegions || []).find(r => r.id === regionId);
         const home = region ? (region.homes || []).find(h => h.id === homeId) : null;
         if (!home) throw new Error('집을 찾을 수 없다.');
+        // Prevent double move-in: check if another character already lives here
+        const existingOccupant = findHomeOccupant(regionId, homeId);
+        if (existingOccupant) throw new Error(`이미 ${existingOccupant.label}(이)가 거주 중인 집이다.`);
         // Calculate move-in cost: deposit (or purchasePrice) + broker fee
         const cost = (home.houseType === 'purchase' ? Number(home.purchasePrice || 0) : Number(home.deposit || 0)) + Number(home.brokerFee || 0);
         const inv = getActiveInventory();
@@ -10705,9 +10734,8 @@ async function saveMaterialTraitFromForm() {
         }
         // Keep only last 2 entries
         if (owned.rentLog.length > 2) owned.rentLog = owned.rentLog.slice(-2);
-        // Update last paid month to previous month (just paid for it)
-        const prev = prevMonth(gd.year, gd.month);
-        owned.lastRentPaidMonth = formatYM(prev.year, prev.month);
+        // Update last paid month to current month (marks all months up to prev as paid)
+        owned.lastRentPaidMonth = formatYM(gd.year, gd.month);
         await saveDb(); await saveState(); renderApp();
         toast(`월세 ₩${rentInfo.totalDebt.toLocaleString('en-US')} 납부 완료.`);
       } catch (e) { toast(e.message || String(e), true); }
