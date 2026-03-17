@@ -8,7 +8,7 @@
 
 (async () => {
 try {
-  const PLUGIN_NAME = '[Gate Battle Prototype v2.2.0]';
+  const PLUGIN_NAME = '[Gate Battle Prototype v7.2.0]';
   const UI_ID = 'gate-battle-v22-root';
   const STYLE_ID = 'gate-battle-v22-style';
   const KEY_DB = 'GateBattleV21::db';
@@ -5722,7 +5722,7 @@ function renderHub() {
     ${runInfo}
     ${currentInfo}
     <div class="gb-panel">
-      <div class="gb-section-title">v2.2 범위</div>
+      <div class="gb-section-title">v7.2 범위</div>
       <div class="gb-sub">허브 / 게이트 / 전투 / 파티 / 캐릭터 / 공용인벤 / DB / 협회(정산·경매) / 상점 / 주거 / 길드 / 가방·무게 / 게이트 자동 생성 / 방 단위 진행 / 광맥 채굴.</div>
       <div class="gb-rule">광역CC = 단일CC의 1/2 계수 + 자원 소모 2배</div>
     </div>
@@ -8567,7 +8567,7 @@ function renderCommandPanel(runtime) {
         <div class="gb-panel"><div class="gb-section-title">몬스터 목록</div>${list || '<div class="gb-sub">등록된 몬스터 없음.</div>'}<div class="gb-btn-row"><button class="gb-btn" id="gb-mon-new">새 몬스터</button><button class="gb-btn danger" id="gb-mon-clear-all">몬스터 전체 삭제</button></div></div>
         <div class="gb-panel">
           <div class="gb-section-title">몬스터 편집</div>
-          <div class="gb-sub">v2.2에서는 몬스터 HP/기본피해/스킬배율을 랭크·종류·행 기준 몬스터 프로필로 다시 계산한다. 저장된 이름/종족/스킬/행/포지션은 그대로 활용된다.</div>
+          <div class="gb-sub">v7.2에서는 몬스터 HP/기본피해/스킬배율을 랭크·종류·행 기준 몬스터 프로필로 다시 계산한다. 저장된 이름/종족/스킬/행/포지션은 그대로 활용된다.</div>
           <div class="gb-grid two">
             <label>ID<input class="gb-input" id="gb-mon-id" value="${escapeHtml(item.id)}" /></label>
             <label>이름<input class="gb-input" id="gb-mon-name" value="${escapeHtml(item.name)}" /></label>
@@ -9116,7 +9116,7 @@ function renderApp() {
     <div class="gb-shell ${model.state.visible ? '' : 'hidden'}">
       <div class="gb-header">
         <div>
-          <div class="gb-title">⚔️ Gate Battle Prototype v2.2</div>
+          <div class="gb-title">⚔️ Gate Battle Prototype v7.2</div>
           <div class="gb-sub">허브 · 게이트 · 전투 · 파티 · 캐릭터 · 공용인벤 · DB</div>
         </div>
         <div style="display:flex; gap:8px; align-items:flex-start; flex-wrap:wrap;">
