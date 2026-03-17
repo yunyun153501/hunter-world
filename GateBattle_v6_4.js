@@ -1567,6 +1567,7 @@ const RARE_FAMILY_PRESETS = {
       customGuildDesc: '',
       incomeLog: [],
       guildTaxLog: [],
+      gameDate: { year: 2026, month: 1, day: 1 },
       battleSetup: {
         partySlots: Array(MAX_PARTY).fill(''),
         enemySlots: ['mon_hound', 'mon_hound', 'mon_hound', 'mon_lancer', 'mon_lancer', 'mon_echo_mage', 'mon_gate_apex', '', '', '']
@@ -2537,6 +2538,34 @@ function getInventory() {
   });
   return model.db.inventory;
 }
+function getActiveCharacter() {
+  const raw = model.state.activeCharId || '';
+  if (!raw) return null;
+  if (raw.startsWith('persona:')) {
+    const pid = raw.substring(8);
+    return (model.db.personas || []).find(c => c.id === pid) || null;
+  }
+  if (raw.startsWith('char:')) {
+    const cid = raw.substring(5);
+    return (model.db.characters || []).find(c => c.id === cid) || null;
+  }
+  return (model.db.characters || []).find(c => c.id === raw) || null;
+}
+function getActiveInventory() {
+  const char = getActiveCharacter();
+  if (!char) return getInventory();
+  if (!char.inventory) char.inventory = { gold: 0, items: [], equipped: { weapon:'', armor:'', subweapon:'', accessory:'', bag:'' } };
+  if (!Array.isArray(char.inventory.items)) char.inventory.items = [];
+  if (char.inventory.gold == null || Number.isNaN(Number(char.inventory.gold))) char.inventory.gold = 0;
+  return char.inventory;
+}
+function getActiveGold() {
+  return Number(getActiveInventory().gold || 0);
+}
+function getActiveLabel() {
+  const char = getActiveCharacter();
+  return char ? char.name : '공용';
+}
 function getPartyCharBags() {
   // Returns array of PARTY_BAGS entries for each character in the party (battleSetup.partySlots)
   // Priority: equipped.bag (장비창 가방 슬롯) → bagId (DB 직접 설정)
@@ -2652,6 +2681,21 @@ function grantInventoryItem(raw) {
   if (existing && item.stackable) existing.count = Number(existing.count || 0) + Number(item.count || 0);
   else inv.items.push(item);
   pushInventoryRecent(`${item.name} x${item.count}`);
+  return { ok:true, forced:true, item };
+}
+function grantActiveInventoryItem(raw) {
+  const char = getActiveCharacter();
+  if (!char) return grantInventoryItem(raw);
+  const inv = getActiveInventory();
+  const item = deepClone(raw || {});
+  item.count = Math.max(1, Number(item.count || 1));
+  item.stackable = item.stackable !== false;
+  item.unitWeightG = Math.max(0, Number(item.unitWeightG || 0));
+  const key = inventoryItemKey(item);
+  const existing = inv.items.find(x => inventoryItemKey(x) === key);
+  if (existing && item.stackable) existing.count = Number(existing.count || 0) + Number(item.count || 0);
+  else inv.items.push(item);
+  pushInventoryRecent(`${item.name} x${item.count} → ${char.name}`);
   return { ok:true, forced:true, item };
 }
 function consumeInventoryById(id, count=1) {
@@ -5589,7 +5633,7 @@ function renderAuctionHouseHtml() {
   if (!Array.isArray(model.db.auctionListings)) model.db.auctionListings = [];
   seedNpcAuctionListings();
 
-  const inv = getInventory();
+  const inv = getActiveInventory();
   const gold = Number(inv.gold || 0);
   const tab = model.state.auctionTab || 'browse';
   const fmt = n => n >= 1e8 ? `${(n/1e8).toFixed(2)}억원` : n >= 10000 ? `${Math.round(n/10000)}만원` : `${n.toLocaleString('en-US')}원`;
@@ -6062,7 +6106,7 @@ const HUNTER_STREET_SUBS = [
 ];
 function shopItemsHtml(items, cat) {
   if (!items || !items.length) return '<div class="gb-sub">현재 판매 중인 상품이 없다.</div>';
-  const inv = getInventory();
+  const inv = getActiveInventory();
   return items.map(it => {
     const canAfford = Number(inv.gold || 0) >= it.price;
     return `<div class="gb-unit">
@@ -6078,7 +6122,7 @@ const MAT_SHOP_BUY_MARKUP  = 1.2;   // 상점 판매가 = suggestedPrice × 1.2 
 const MAT_SHOP_PAGE_SIZE   = 20;
 
 function renderMaterialShopHtml() {
-  const inv      = getInventory();
+  const inv      = getActiveInventory();
   const gold     = Number(inv.gold || 0);
   const query    = String(model.state.shopMatQuery || '').trim().toLowerCase();
   const rankF    = String(model.state.shopMatRank  || '');
@@ -6176,7 +6220,7 @@ function renderMaterialShopHtml() {
 
 // ── 장비상점 ─────────────────────────────────────────────────────────────────
 function renderEquipShopHtml() {
-  const inv = getInventory();
+  const inv = getActiveInventory();
   const gold = Number(inv.gold || 0);
   const eqs = model.db.equipments || [];
   const selRank = model.state.shopEquipRank || '';
@@ -6299,7 +6343,7 @@ function seedNpcUsedListings() {
 }
 
 function renderHunterMarketHtml() {
-  const inv = getInventory();
+  const inv = getActiveInventory();
   const gold = Number(inv.gold || 0);
   const tab = model.state.shopHmTab || 'sell';
   const selRank = model.state.shopHmRank || '';
@@ -6544,7 +6588,7 @@ function renderBlackMarketHtml() {
 
 // ── 수리점 ────────────────────────────────────────────────────────────────────
 function renderRepairShopHtml() {
-  const inv = getInventory();
+  const inv = getActiveInventory();
   const gold = Number(inv.gold || 0);
   const ownedEquip = (inv.items || []).filter(it => it.category === 'equipment');
   const selKey = model.state.shopRepairSel || '';
@@ -6624,7 +6668,7 @@ function renderRepairShopHtml() {
 
 
 function renderForgeShopHtml() {
-  const inv = getInventory();
+  const inv = getActiveInventory();
   const gold = Number(inv.gold || 0);
   const ownedEquip = (inv.items||[]).filter(it => it.category === 'equipment');
   const selKey = model.state.shopForgeSel || '';
@@ -6832,8 +6876,8 @@ function renderForgeShopHtml() {
 function renderShopView() {
   const sub = model.state.shopSub || '';
   const hunterSub = model.state.shopHunterSub || '';
-  const inv = getInventory();
-  const goldLine = `<div class="gb-sub">소지금: ₩${Number(inv.gold || 0).toLocaleString('en-US')}</div>`;
+  const inv = getActiveInventory();
+  const goldLine = `<div class="gb-sub">소지금 (${escapeHtml(getActiveLabel())}): ₩${Number(inv.gold || 0).toLocaleString('en-US')}</div>`;
 
   if (!sub) {
     const catCards = SHOP_CATEGORIES.map(c =>
@@ -6854,7 +6898,7 @@ function renderShopView() {
 
   if (sub === 'convenience') {
     const db = getConvFoodDb();
-    const inv2 = getInventory();
+    const inv2 = getActiveInventory();
     const convItemsHtml = db.map(f => {
       const canAfford2 = Number(inv2.gold||0) >= f.price;
       const isCampSupply = f.id === 'conv_ration' || f.id === 'conv_water';
@@ -8642,6 +8686,45 @@ function renderDbView() {
     `;
   }
 
+function renderDateCharBar() {
+  const gd = model.db.gameDate || { year: 2026, month: 1, day: 1 };
+  const chars = (model.db.characters || []).filter(c => !c.id.startsWith('char_guide'));
+  const personas = (model.db.personas || []);
+  const activeId = model.state.activeCharId || '';
+  const charOpts = chars.map(c => {
+    const val = `char:${c.id}`;
+    return `<option value="${escapeHtml(val)}" ${val === activeId ? 'selected' : ''}>${escapeHtml(c.name)}</option>`;
+  }).join('');
+  const personaOpts = personas.map(p => {
+    const val = `persona:${p.id}`;
+    return `<option value="${escapeHtml(val)}" ${val === activeId ? 'selected' : ''}>${escapeHtml(p.name)}</option>`;
+  }).join('');
+  const activeInv = getActiveInventory();
+  const goldDisplay = Number(activeInv.gold || 0);
+  const goldLabel = getActiveLabel();
+  return `
+    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; padding:6px 12px; background:rgba(30,41,59,0.5); border-bottom:1px solid rgba(148,163,184,0.1); font-size:0.85em;">
+      <div style="display:flex; gap:4px; align-items:center;">
+        <span>📅</span>
+        <input type="number" id="gb-date-year" class="gb-input" style="width:64px; padding:2px 4px;" value="${gd.year}" min="1" />
+        <span>년</span>
+        <input type="number" id="gb-date-month" class="gb-input" style="width:44px; padding:2px 4px;" value="${gd.month}" min="1" max="12" />
+        <span>월</span>
+        <input type="number" id="gb-date-day" class="gb-input" style="width:44px; padding:2px 4px;" value="${gd.day}" min="1" max="31" />
+        <span>일</span>
+        <button class="gb-btn tiny" id="gb-date-next">다음날 ▶</button>
+      </div>
+      <div style="display:flex; gap:4px; align-items:center;">
+        <span>🧑</span>
+        <select id="gb-active-char" class="gb-input" style="padding:2px 4px; min-width:120px;">
+          <option value="" ${!activeId ? 'selected' : ''}>📦 공용 인벤토리</option>
+          ${charOpts ? `<optgroup label="캐릭터">${charOpts}</optgroup>` : ''}
+          ${personaOpts ? `<optgroup label="페르소나">${personaOpts}</optgroup>` : ''}
+        </select>
+        <span style="color:#94a3b8;">💰 ₩${goldDisplay.toLocaleString('en-US')} (${escapeHtml(goldLabel)})</span>
+      </div>
+    </div>`;
+}
 
 function renderApp() {
   ensureSelections();
@@ -8684,6 +8767,7 @@ function renderApp() {
           <button class="gb-btn" id="gb-close-ui">닫기</button>
         </div>
       </div>
+      ${renderDateCharBar()}
       ${body}
     </div>
   `;
@@ -9227,6 +9311,37 @@ async function saveMaterialTraitFromForm() {
       await saveState();
       renderApp();
     });
+    // ── 날짜 시스템 핸들러 ─────────────────────────────────────────────────────
+    on('#gb-date-year', 'change', async (ev) => {
+      if (!model.db.gameDate) model.db.gameDate = { year:2026, month:1, day:1 };
+      model.db.gameDate.year = Math.max(1, Number(ev.currentTarget.value) || 2026);
+      await saveDb(); renderApp();
+    });
+    on('#gb-date-month', 'change', async (ev) => {
+      if (!model.db.gameDate) model.db.gameDate = { year:2026, month:1, day:1 };
+      model.db.gameDate.month = Math.max(1, Math.min(12, Number(ev.currentTarget.value) || 1));
+      await saveDb(); renderApp();
+    });
+    on('#gb-date-day', 'change', async (ev) => {
+      if (!model.db.gameDate) model.db.gameDate = { year:2026, month:1, day:1 };
+      model.db.gameDate.day = Math.max(1, Math.min(31, Number(ev.currentTarget.value) || 1));
+      await saveDb(); renderApp();
+    });
+    on('#gb-date-next', 'click', async () => {
+      if (!model.db.gameDate) model.db.gameDate = { year:2026, month:1, day:1 };
+      const gd = model.db.gameDate;
+      const d = new Date(gd.year, gd.month - 1, gd.day);
+      d.setDate(d.getDate() + 1);
+      gd.year = d.getFullYear();
+      gd.month = d.getMonth() + 1;
+      gd.day = d.getDate();
+      await saveDb(); renderApp();
+    });
+    // ── 캐릭터 선택 핸들러 ────────────────────────────────────────────────────
+    on('#gb-active-char', 'change', async (ev) => {
+      model.state.activeCharId = ev.currentTarget.value || '';
+      await saveState(); renderApp();
+    });
     // ── 팀 핸들러 ────────────────────────────────────────────────────────────────
     on('#gb-team-add-btn', 'click', async () => {
       const sel = document.getElementById('gb-team-add-sel');
@@ -9327,9 +9442,9 @@ async function saveMaterialTraitFromForm() {
       try {
         const bidState = model.state.auctionBid;
         if (!bidState) throw new Error('경매 데이터가 없다.');
-        const inv = getInventory();
+        const inv = getActiveInventory();
         const myPrice = Math.round(bidState.marketPrice * bidState.currentRatio);
-        if (Number(inv.gold||0) < myPrice) throw new Error(`소지금 부족 (필요 ${myPrice.toLocaleString('en-US')}원)`);
+        if (Number(inv.gold||0) < myPrice) throw new Error(`소지금 부족 (${getActiveLabel()}: 필요 ${myPrice.toLocaleString('en-US')}원)`);
         bidState.log.push(`[내 입찰] 시장가 ${Math.round(bidState.currentRatio*100)}% = ${myPrice.toLocaleString('en-US')}원`);
         // 경쟁자 판정
         const comp = rollBuyCompetitor(bidState.currentRatio, (bidState.log||[]).length);
@@ -9351,9 +9466,9 @@ async function saveMaterialTraitFromForm() {
       try {
         const bidState = model.state.auctionBid;
         if (!bidState || !bidState.pendingRatio) throw new Error('재입찰 데이터가 없다.');
-        const inv = getInventory();
+        const inv = getActiveInventory();
         const newPrice = Math.round(bidState.marketPrice * bidState.pendingRatio);
-        if (Number(inv.gold||0) < newPrice) throw new Error(`소지금 부족 (필요 ${newPrice.toLocaleString('en-US')}원)`);
+        if (Number(inv.gold||0) < newPrice) throw new Error(`소지금 부족 (${getActiveLabel()}: 필요 ${newPrice.toLocaleString('en-US')}원)`);
         bidState.currentRatio = bidState.pendingRatio;
         bidState.pendingCompetitor = null;
         bidState.pendingRatio = null;
@@ -9382,8 +9497,8 @@ async function saveMaterialTraitFromForm() {
         const idx = model.db.auctionListings.findIndex(l => l.id === auctionId);
         if (idx < 0) throw new Error('해당 경매 물품이 이미 없다. (다른 사람이 낙찰)');
         const listing = model.db.auctionListings[idx];
-        const inv = getInventory();
-        if (Number(inv.gold||0) < bidState.finalPrice) throw new Error(`소지금 부족 (필요 ${bidState.finalPrice.toLocaleString('en-US')}원)`);
+        const inv = getActiveInventory();
+        if (Number(inv.gold||0) < bidState.finalPrice) throw new Error(`소지금 부족 (${getActiveLabel()}: 필요 ${bidState.finalPrice.toLocaleString('en-US')}원)`);
         inv.gold = Number(inv.gold||0) - bidState.finalPrice;
         const buyItem = deepClone(listing.item);
         if (buyItem.category === 'equipment') {
@@ -9394,7 +9509,7 @@ async function saveMaterialTraitFromForm() {
           buyItem.maxDurability = 100;
           if (!buyItem.unitWeightG) buyItem.unitWeightG = EQUIP_WEIGHT_G[buyItem.part] || 1000;
         }
-        grantInventoryItem(buyItem);
+        grantActiveInventoryItem(buyItem);
         model.db.auctionListings.splice(idx, 1);
         model.state.auctionBid = null;
         await saveDb(); await saveState(); renderApp();
@@ -9727,12 +9842,12 @@ async function saveMaterialTraitFromForm() {
         const items = SHOP_ITEMS[cat] || [];
         const shopItem = items.find(it => it.id === itemId);
         if (!shopItem) throw new Error('상품을 찾을 수 없다.');
-        const inv = getInventory();
-        if (Number(inv.gold || 0) < shopItem.price) throw new Error('소지금이 부족하다.');
+        const inv = getActiveInventory();
+        if (Number(inv.gold || 0) < shopItem.price) throw new Error(`소지금이 부족하다. (${getActiveLabel()})`);
         inv.gold = Number(inv.gold || 0) - shopItem.price;
         const item = shopItem.buildFn ? shopItem.buildFn() : null;
         if (!item) throw new Error('아이템 생성 실패.');
-        const res = grantInventoryItem(item);
+        const res = grantActiveInventoryItem(item);
         if (!res.ok) pushInventoryOverflow(item);
         await saveDb(); await saveState(); renderApp();
         toast(`${shopItem.name} 구매 완료 (₩${Number(shopItem.price).toLocaleString('en-US')} 차감)`);
@@ -9745,15 +9860,15 @@ async function saveMaterialTraitFromForm() {
         const db = getConvFoodDb();
         const f = db.find(x => x.id === fId);
         if (!f) throw new Error('상품을 찾을 수 없다.');
-        const inv = getInventory();
-        if (Number(inv.gold||0) < f.price) throw new Error('소지금이 부족하다.');
+        const inv = getActiveInventory();
+        if (Number(inv.gold||0) < f.price) throw new Error(`소지금이 부족하다. (${getActiveLabel()})`);
         inv.gold = Number(inv.gold||0) - f.price;
         // 야영용(ration/water)은 campSupply로, 나머지는 convFood로 추가
         let item;
         if (f.id === 'conv_ration') item = buildSupplyItem('ration', 1);
         else if (f.id === 'conv_water') item = buildSupplyItem('water', 1);
         else item = buildConvFoodItem(f, 1);
-        const res = grantInventoryItem(item);
+        const res = grantActiveInventoryItem(item);
         if (!res.ok) pushInventoryOverflow(item);
         await saveDb(); renderApp();
         toast(`${f.name} 구매 완료 (₩${f.price.toLocaleString('en-US')} 차감)`);
@@ -9813,7 +9928,7 @@ async function saveMaterialTraitFromForm() {
         const key = ev.currentTarget.getAttribute('data-mat-buy') || '';
         const parts = key.split(':');
         const kind = parts[0];
-        const inv = getInventory();
+        const inv = getActiveInventory();
         let item = null;
         let price = 0;
         if (kind === 'rare') {
@@ -9825,9 +9940,9 @@ async function saveMaterialTraitFromForm() {
           item = rewardRowToInventoryItem(Object.assign({}, found, { count: 1 }), 'rare');
         }
         if (!item) throw new Error('아이템 생성 실패.');
-        if (Number(inv.gold || 0) < price) throw new Error('소지금이 부족하다.');
+        if (Number(inv.gold || 0) < price) throw new Error(`소지금이 부족하다. (${getActiveLabel()})`);
         inv.gold = Number(inv.gold || 0) - price;
-        const res = grantInventoryItem(item);
+        const res = grantActiveInventoryItem(item);
         if (!res.ok) pushInventoryOverflow(item);
         await saveDb(); await saveState(); renderApp();
         toast(`${item.name} 구매 완료 (₩${price.toLocaleString('en-US')} 차감)`);
@@ -9854,8 +9969,8 @@ async function saveMaterialTraitFromForm() {
         const eq = (model.db.equipments || []).find(e => e.id === id);
         if (!eq) throw new Error('장비를 찾을 수 없다.');
         const price = Number(eq.price || calcEquipEnhancedPrice(calcEquipBasePrice(eq.rank, eq.part), eq.enhance||0, eq.rank));
-        const inv = getInventory();
-        if (Number(inv.gold || 0) < price) throw new Error(`소지금 부족 (${Number(inv.gold||0).toLocaleString('en-US')}원 / 필요 ${price.toLocaleString('en-US')}원)`);
+        const inv = getActiveInventory();
+        if (Number(inv.gold || 0) < price) throw new Error(`소지금 부족 (${getActiveLabel()}: ${Number(inv.gold||0).toLocaleString('en-US')}원 / 필요 ${price.toLocaleString('en-US')}원)`);
         inv.gold = Number(inv.gold || 0) - price;
         // Add to inventory as owned equipment (new = maxDurability 100, isUsed false)
         const newItem = Object.assign({}, deepClone(eq), {
@@ -9867,9 +9982,9 @@ async function saveMaterialTraitFromForm() {
           unitWeightG: EQUIP_WEIGHT_G[eq.part] || 1000,
           stackKey: `equipment:${eq.id}:${Date.now()}`
         });
-        grantInventoryItem(newItem);
+        grantActiveInventoryItem(newItem);
         await saveDb(); await saveState(); renderApp();
-        toast(`⚔️ ${eq.name} 구매 완료 (-₩${price.toLocaleString('en-US')})`);
+        toast(`⚔️ ${eq.name} 구매 완료 (-₩${price.toLocaleString('en-US')}) [${getActiveLabel()}]`);
       } catch (e) { toast(e.message || String(e), true); }
     });
 
@@ -9899,14 +10014,19 @@ async function saveMaterialTraitFromForm() {
         const lastColon = raw.lastIndexOf(':');
         const ikey = raw.substring(0, lastColon);
         const sellPrice = Number(raw.substring(lastColon+1));
-        const inv = getInventory();
+        const inv = getActiveInventory();
         const it = inv.items.find(x => inventoryItemKey(x) === ikey);
         if (!it) throw new Error('판매할 장비를 찾을 수 없다.');
         // 판매 = 즉시 골드 획득 (헌터마켓 직거래)
-        removeInventoryItem(ikey, 'one');
+        if (getActiveCharacter()) {
+          const idx2 = inv.items.findIndex(x => inventoryItemKey(x) === ikey);
+          if (idx2 >= 0) inv.items.splice(idx2, 1);
+        } else {
+          removeInventoryItem(ikey, 'one');
+        }
         inv.gold = Number(inv.gold||0) + sellPrice;
         await saveDb(); await saveState(); renderApp();
-        toast(`🏷️ ${it.name} 중고 판매 완료 (+₩${sellPrice.toLocaleString('en-US')})`);
+        toast(`🏷️ ${it.name} 중고 판매 완료 (+₩${sellPrice.toLocaleString('en-US')}) [${getActiveLabel()}]`);
       } catch (e) { toast(e.message || String(e), true); }
     });
     on('[data-hm-browse-buy]', 'click', async (ev) => {
@@ -9919,8 +10039,8 @@ async function saveMaterialTraitFromForm() {
         const idx = model.db.hmUsedListings.findIndex(l => l.id === listingId);
         if (idx < 0) throw new Error('해당 중고 매물을 찾을 수 없다. (이미 판매됨)');
         const listing = model.db.hmUsedListings[idx];
-        const inv = getInventory();
-        if (Number(inv.gold||0) < usedPrice) throw new Error(`소지금 부족 (필요 ₩${usedPrice.toLocaleString('en-US')})`);
+        const inv = getActiveInventory();
+        if (Number(inv.gold||0) < usedPrice) throw new Error(`소지금 부족 (${getActiveLabel()}: 필요 ₩${usedPrice.toLocaleString('en-US')})`);
         inv.gold = Number(inv.gold||0) - usedPrice;
         const buyItem = deepClone(listing.item);
         buyItem.category = 'equipment';
@@ -9928,10 +10048,10 @@ async function saveMaterialTraitFromForm() {
         buyItem.stackable = false;
         if (!buyItem.unitWeightG) buyItem.unitWeightG = EQUIP_WEIGHT_G[buyItem.part] || 1000;
         buyItem.stackKey = `equipment:hm_${listingId}_${Date.now()}`;
-        grantInventoryItem(buyItem);
+        grantActiveInventoryItem(buyItem);
         model.db.hmUsedListings.splice(idx, 1);
         await saveDb(); await saveState(); renderApp();
-        toast(`🏷️ ${buyItem.name} 중고 구매 완료 (-₩${usedPrice.toLocaleString('en-US')})`);
+        toast(`🏷️ ${buyItem.name} 중고 구매 완료 (-₩${usedPrice.toLocaleString('en-US')}) [${getActiveLabel()}]`);
       } catch (e) { toast(e.message || String(e), true); }
     });
 
@@ -9944,14 +10064,14 @@ async function saveMaterialTraitFromForm() {
       try {
         const ikey = model.state.shopRepairSel;
         if (!ikey) throw new Error('수리할 장비를 선택하라.');
-        const inv = getInventory();
+        const inv = getActiveInventory();
         const it = inv.items.find(x => inventoryItemKey(x) === ikey);
         if (!it) throw new Error('장비를 찾을 수 없다.');
         const dur = Number(it.durability ?? 100);
         const maxDur = Number(it.maxDurability ?? 100);
         const lost = maxDur - dur;
         const fee = calcRepairFee(it.rank||'E', it.part||'weapon', lost);
-        if (fee > 0 && Number(inv.gold||0) < fee) throw new Error(`소지금 부족 (${Number(inv.gold||0).toLocaleString('en-US')}원 / 필요 ${fee.toLocaleString('en-US')}원)`);
+        if (fee > 0 && Number(inv.gold||0) < fee) throw new Error(`소지금 부족 (${getActiveLabel()}: ${Number(inv.gold||0).toLocaleString('en-US')}원 / 필요 ${fee.toLocaleString('en-US')}원)`);
         inv.gold = Math.max(0, Number(inv.gold||0) - fee);
         applyRepair(it, maxDur);
         await saveDb(); await saveState(); renderApp();
@@ -9962,7 +10082,7 @@ async function saveMaterialTraitFromForm() {
       try {
         const ikey = model.state.shopRepairSel;
         if (!ikey) throw new Error('수리할 장비를 선택하라.');
-        const inv = getInventory();
+        const inv = getActiveInventory();
         const it = inv.items.find(x => inventoryItemKey(x) === ikey);
         if (!it) throw new Error('장비를 찾을 수 없다.');
         const targetDur = Number(fieldValue('#gb-repair-target-dur') || (it.maxDurability ?? 100));
@@ -10045,7 +10165,7 @@ async function saveMaterialTraitFromForm() {
     });
     on('#gb-forge-do', 'click', async (ev) => {
       try {
-        const inv = getInventory();
+        const inv = getActiveInventory();
         const btn = ev.currentTarget;
         const equipKey = btn.getAttribute('data-forge-equip') || '';
         const stoneKey = btn.getAttribute('data-forge-stone-key') || '';
@@ -10079,7 +10199,7 @@ async function saveMaterialTraitFromForm() {
     });
     on('#gb-forge-infuse-do', 'click', async (ev) => {
       try {
-        const inv = getInventory();
+        const inv = getActiveInventory();
         const btn = ev.currentTarget;
         const equipKey = btn.getAttribute('data-forge-equip') || '';
         const matKey = btn.getAttribute('data-forge-mat-key') || '';
