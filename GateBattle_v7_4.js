@@ -572,6 +572,152 @@ const RARE_MATERIAL_WEIGHT_G = 100;
 const MANA_STONE_WEIGHT_G = { E:50, D:80, C:120, B:180, A:300, S:500 };
 const CONSUMABLE_WEIGHT_G = { tent:10000, ration:300, water:500, potion:200, convFood:300 };
 
+// ── 물약 카탈로그 (42종) ─────────────────────────────────────────────────────
+const POTION_CATALOG = [
+  // HP 포션
+  { id:'lowest_hp_potion',  name:'최하급 HP 포션',  type:'hp', grade:'최하급', price:10000,       effectValue:50,   effectDuration:0, targetRank:'', weight:200, note:'HP +50' },
+  { id:'low_hp_potion',     name:'하급 HP 포션',    type:'hp', grade:'하급',   price:50000,       effectValue:100,  effectDuration:0, targetRank:'', weight:200, note:'HP +100' },
+  { id:'mid_hp_potion',     name:'중급 HP 포션',    type:'hp', grade:'중급',   price:500000,      effectValue:150,  effectDuration:0, targetRank:'', weight:200, note:'HP +150' },
+  { id:'midhigh_hp_potion', name:'중상급 HP 포션',  type:'hp', grade:'중상급', price:7500000,     effectValue:250,  effectDuration:0, targetRank:'', weight:200, note:'HP +250' },
+  { id:'high_hp_potion',    name:'상급 HP 포션',    type:'hp', grade:'상급',   price:200000000,   effectValue:500,  effectDuration:0, targetRank:'', weight:200, note:'HP +500' },
+  { id:'highest_hp_potion', name:'최상급 HP 포션',  type:'hp', grade:'최상급', price:5000000000,  effectValue:1000, effectDuration:0, targetRank:'', weight:200, note:'HP +1000' },
+  // MP 포션
+  { id:'lowest_mp_potion',  name:'최하급 MP 포션',  type:'mp', grade:'최하급', price:10000,       effectValue:50,   effectDuration:0, targetRank:'', weight:200, note:'MP +50' },
+  { id:'low_mp_potion',     name:'하급 MP 포션',    type:'mp', grade:'하급',   price:50000,       effectValue:100,  effectDuration:0, targetRank:'', weight:200, note:'MP +100' },
+  { id:'mid_mp_potion',     name:'중급 MP 포션',    type:'mp', grade:'중급',   price:500000,      effectValue:150,  effectDuration:0, targetRank:'', weight:200, note:'MP +150' },
+  { id:'midhigh_mp_potion', name:'중상급 MP 포션',  type:'mp', grade:'중상급', price:7500000,     effectValue:250,  effectDuration:0, targetRank:'', weight:200, note:'MP +250' },
+  { id:'high_mp_potion',    name:'상급 MP 포션',    type:'mp', grade:'상급',   price:200000000,   effectValue:500,  effectDuration:0, targetRank:'', weight:200, note:'MP +500' },
+  { id:'highest_mp_potion', name:'최상급 MP 포션',  type:'mp', grade:'최상급', price:5000000000,  effectValue:1000, effectDuration:0, targetRank:'', weight:200, note:'MP +1000' },
+  // SP 포션
+  { id:'lowest_sp_potion',  name:'최하급 SP 포션',  type:'sp', grade:'최하급', price:10000,       effectValue:50,   effectDuration:0, targetRank:'', weight:200, note:'SP +50' },
+  { id:'low_sp_potion',     name:'하급 SP 포션',    type:'sp', grade:'하급',   price:50000,       effectValue:100,  effectDuration:0, targetRank:'', weight:200, note:'SP +100' },
+  { id:'mid_sp_potion',     name:'중급 SP 포션',    type:'sp', grade:'중급',   price:500000,      effectValue:150,  effectDuration:0, targetRank:'', weight:200, note:'SP +150' },
+  { id:'midhigh_sp_potion', name:'중상급 SP 포션',  type:'sp', grade:'중상급', price:7500000,     effectValue:250,  effectDuration:0, targetRank:'', weight:200, note:'SP +250' },
+  { id:'high_sp_potion',    name:'상급 SP 포션',    type:'sp', grade:'상급',   price:200000000,   effectValue:500,  effectDuration:0, targetRank:'', weight:200, note:'SP +500' },
+  { id:'highest_sp_potion', name:'최상급 SP 포션',  type:'sp', grade:'최상급', price:5000000000,  effectValue:1000, effectDuration:0, targetRank:'', weight:200, note:'SP +1000' },
+  // 해독 포션
+  { id:'lowest_antidote',  name:'최하급 해독포션',  type:'antidote', grade:'최하급', price:100000,        effectValue:0, effectDuration:0, targetRank:'E', weight:200, note:'E급 독 해제' },
+  { id:'low_antidote',     name:'하급 해독포션',    type:'antidote', grade:'하급',   price:500000,        effectValue:0, effectDuration:0, targetRank:'D', weight:200, note:'D급 독 해제' },
+  { id:'mid_antidote',     name:'중급 해독포션',    type:'antidote', grade:'중급',   price:5000000,       effectValue:0, effectDuration:0, targetRank:'C', weight:200, note:'C급 독 해제' },
+  { id:'midhigh_antidote', name:'중상급 해독포션',  type:'antidote', grade:'중상급', price:75000000,      effectValue:0, effectDuration:0, targetRank:'B', weight:200, note:'B급 독 해제' },
+  { id:'high_antidote',    name:'상급 해독포션',    type:'antidote', grade:'상급',   price:2000000000,    effectValue:0, effectDuration:0, targetRank:'A', weight:200, note:'A급 독 해제' },
+  { id:'highest_antidote', name:'최상급 해독포션',  type:'antidote', grade:'최상급', price:50000000000,   effectValue:0, effectDuration:0, targetRank:'S', weight:200, note:'S급 독 해제' },
+  // CC 회복 포션
+  { id:'lowest_cc_cure',  name:'최하급 CC회복포션',  type:'cc_cure', grade:'최하급', price:150000,        effectValue:0, effectDuration:0, targetRank:'E', weight:200, note:'E급 CC 해제' },
+  { id:'low_cc_cure',     name:'하급 CC회복포션',    type:'cc_cure', grade:'하급',   price:750000,        effectValue:0, effectDuration:0, targetRank:'D', weight:200, note:'D급 CC 해제' },
+  { id:'mid_cc_cure',     name:'중급 CC회복포션',    type:'cc_cure', grade:'중급',   price:7500000,       effectValue:0, effectDuration:0, targetRank:'C', weight:200, note:'C급 CC 해제' },
+  { id:'midhigh_cc_cure', name:'중상급 CC회복포션',  type:'cc_cure', grade:'중상급', price:112500000,     effectValue:0, effectDuration:0, targetRank:'B', weight:200, note:'B급 CC 해제' },
+  { id:'high_cc_cure',    name:'상급 CC회복포션',    type:'cc_cure', grade:'상급',   price:3000000000,    effectValue:0, effectDuration:0, targetRank:'A', weight:200, note:'A급 CC 해제' },
+  { id:'highest_cc_cure', name:'최상급 CC회복포션',  type:'cc_cure', grade:'최상급', price:75000000000,   effectValue:0, effectDuration:0, targetRank:'S', weight:200, note:'S급 CC 해제' },
+  // 저주 해제 포션
+  { id:'lowest_curse_cure',  name:'최하급 저주해제포션',  type:'curse_cure', grade:'최하급', price:200000,        effectValue:0, effectDuration:0, targetRank:'E', weight:200, note:'E급 저주 해제' },
+  { id:'low_curse_cure',     name:'하급 저주해제포션',    type:'curse_cure', grade:'하급',   price:1000000,       effectValue:0, effectDuration:0, targetRank:'D', weight:200, note:'D급 저주 해제' },
+  { id:'mid_curse_cure',     name:'중급 저주해제포션',    type:'curse_cure', grade:'중급',   price:10000000,      effectValue:0, effectDuration:0, targetRank:'C', weight:200, note:'C급 저주 해제' },
+  { id:'midhigh_curse_cure', name:'중상급 저주해제포션',  type:'curse_cure', grade:'중상급', price:150000000,     effectValue:0, effectDuration:0, targetRank:'B', weight:200, note:'B급 저주 해제' },
+  { id:'high_curse_cure',    name:'상급 저주해제포션',    type:'curse_cure', grade:'상급',   price:4000000000,    effectValue:0, effectDuration:0, targetRank:'A', weight:200, note:'A급 저주 해제' },
+  { id:'highest_curse_cure', name:'최상급 저주해제포션',  type:'curse_cure', grade:'최상급', price:100000000000,  effectValue:0, effectDuration:0, targetRank:'S', weight:200, note:'S급 저주 해제' },
+  // 버프 포션
+  { id:'lowest_buff',  name:'최하급 버프포션',  type:'buff', grade:'최하급', price:100000,        effectValue:2,  effectDuration:3,  targetRank:'', weight:200, note:'주스탯 +2 / 3턴' },
+  { id:'low_buff',     name:'하급 버프포션',    type:'buff', grade:'하급',   price:500000,        effectValue:4,  effectDuration:3,  targetRank:'', weight:200, note:'주스탯 +4 / 3턴' },
+  { id:'mid_buff',     name:'중급 버프포션',    type:'buff', grade:'중급',   price:5000000,       effectValue:6,  effectDuration:3,  targetRank:'', weight:200, note:'주스탯 +6 / 3턴' },
+  { id:'midhigh_buff', name:'중상급 버프포션',  type:'buff', grade:'중상급', price:75000000,      effectValue:8,  effectDuration:6,  targetRank:'', weight:200, note:'주스탯 +8 / 6턴' },
+  { id:'high_buff',    name:'상급 버프포션',    type:'buff', grade:'상급',   price:2000000000,    effectValue:10, effectDuration:9,  targetRank:'', weight:200, note:'주스탯 +10 / 9턴' },
+  { id:'highest_buff', name:'최상급 버프포션',  type:'buff', grade:'최상급', price:50000000000,   effectValue:15, effectDuration:18, targetRank:'', weight:200, note:'주스탯 +15 / 18턴' },
+];
+
+function buildPotionItem(potionDef, count=1) {
+  return { id: potionDef.id, name: potionDef.name, category:'potion', type: potionDef.type, grade: potionDef.grade, rank: potionDef.targetRank || '', count:Math.max(1,Number(count||1)), unitWeightG:potionDef.weight||200, stackable:true, stackKey:`potion:${potionDef.id}`, note: potionDef.note||'', effectValue: potionDef.effectValue||0, effectDuration: potionDef.effectDuration||0, targetRank: potionDef.targetRank||'', price: potionDef.price||0 };
+}
+
+const POTION_DAILY_MAX = 5;
+
+function getPotionUsesToday() {
+  const gd = model.db.gameDate || { year:2026, month:1, day:1 };
+  const key = `${gd.year}-${gd.month}-${gd.day}`;
+  if (!model.db.potionDailyUse || model.db.potionDailyUse.dateKey !== key) {
+    model.db.potionDailyUse = { dateKey: key, count: 0 };
+  }
+  return model.db.potionDailyUse;
+}
+
+function usePotionOnUnit(potionItem, targetUnit) {
+  const daily = getPotionUsesToday();
+  if (daily.count > POTION_DAILY_MAX) throw new Error('오늘은 더 이상 물약을 사용할 수 없다. (일일 한도 초과)');
+
+  let efficiency = 1.0;
+  if (daily.count === POTION_DAILY_MAX) efficiency = 0.2;
+
+  const isPartyState = targetUnit.currentHp !== undefined;
+  const type = potionItem.type;
+  let resultMsg = '';
+
+  if (type === 'hp') {
+    const heal = Math.floor((potionItem.effectValue || 0) * efficiency);
+    if (isPartyState) {
+      const maxHp = Number(targetUnit.hp || targetUnit.maxHp || 999);
+      targetUnit.currentHp = Math.min(maxHp, Number(targetUnit.currentHp || 0) + heal);
+    } else {
+      const maxHp = Number(targetUnit.maxHp || targetUnit.hp || 999);
+      targetUnit.hp = Math.min(maxHp, Number(targetUnit.hp || 0) + heal);
+    }
+    resultMsg = `${targetUnit.name}: HP +${heal}` + (efficiency < 1 ? ' (부작용: 효율 20%)' : '');
+  } else if (type === 'mp') {
+    const heal = Math.floor((potionItem.effectValue || 0) * efficiency);
+    if (isPartyState) {
+      const maxMp = Number(targetUnit.mp || targetUnit.maxMp || 999);
+      targetUnit.currentMp = Math.min(maxMp, Number(targetUnit.currentMp || 0) + heal);
+    } else {
+      const maxMp = Number(targetUnit.maxMp || targetUnit.mp || 999);
+      targetUnit.mp = Math.min(maxMp, Number(targetUnit.mp || 0) + heal);
+    }
+    resultMsg = `${targetUnit.name}: MP +${heal}` + (efficiency < 1 ? ' (부작용: 효율 20%)' : '');
+  } else if (type === 'sp') {
+    const heal = Math.floor((potionItem.effectValue || 0) * efficiency);
+    if (isPartyState) {
+      const maxSp = Number(targetUnit.sp || targetUnit.maxSp || 999);
+      targetUnit.currentSp = Math.min(maxSp, Number(targetUnit.currentSp || 0) + heal);
+    } else {
+      const maxSp = Number(targetUnit.maxSp || targetUnit.sp || 999);
+      targetUnit.sp = Math.min(maxSp, Number(targetUnit.sp || 0) + heal);
+    }
+    resultMsg = `${targetUnit.name}: SP +${heal}` + (efficiency < 1 ? ' (부작용: 효율 20%)' : '');
+  } else if (type === 'antidote') {
+    if (targetUnit.debuffs) targetUnit.debuffs = targetUnit.debuffs.filter(d => d.type !== 'poison');
+    if (targetUnit.statusEffects) targetUnit.statusEffects = targetUnit.statusEffects.filter(s => s.type !== 'poison');
+    resultMsg = `${targetUnit.name}: 독 해제` + (efficiency < 1 ? ' (부작용: 효율 20%)' : '');
+  } else if (type === 'cc_cure') {
+    if (targetUnit.debuffs) targetUnit.debuffs = targetUnit.debuffs.filter(d => !['stun','sleep','bind'].includes(d.type));
+    if (targetUnit.statusEffects) targetUnit.statusEffects = targetUnit.statusEffects.filter(s => !['stun','sleep','bind'].includes(s.type));
+    if (targetUnit.cc) targetUnit.cc = null;
+    resultMsg = `${targetUnit.name}: CC 해제` + (efficiency < 1 ? ' (부작용: 효율 20%)' : '');
+  } else if (type === 'curse_cure') {
+    if (targetUnit.debuffs) targetUnit.debuffs = targetUnit.debuffs.filter(d => d.type !== 'curse');
+    if (targetUnit.statusEffects) targetUnit.statusEffects = targetUnit.statusEffects.filter(s => s.type !== 'curse');
+    resultMsg = `${targetUnit.name}: 저주 해제` + (efficiency < 1 ? ' (부작용: 효율 20%)' : '');
+  } else if (type === 'buff') {
+    const statBoost = Math.floor((potionItem.effectValue || 0) * efficiency);
+    const duration = potionItem.effectDuration || 3;
+    if (!targetUnit.buffs) targetUnit.buffs = {};
+    targetUnit.buffs.potionBuff = { statBoost, turnsLeft: duration, from: potionItem.name };
+    resultMsg = `${targetUnit.name}: 주스탯 +${statBoost} (${duration}턴)` + (efficiency < 1 ? ' (부작용: 효율 20%)' : '');
+  }
+
+  daily.count++;
+  if (daily.count > POTION_DAILY_MAX) {
+    resultMsg += ' ⚠️ 오늘은 더 이상 물약을 사용할 수 없다!';
+  }
+  return resultMsg;
+}
+
+function consumePotionFromInventory(potionStackKey) {
+  const inv = getActiveInventory();
+  const idx = inv.items.findIndex(it => it.stackKey === potionStackKey);
+  if (idx < 0) throw new Error('해당 물약을 찾을 수 없다.');
+  const item = inv.items[idx];
+  if (item.count > 1) { item.count--; } else { inv.items.splice(idx, 1); }
+  return item;
+}
+
 // ── 편의점 식량 기본 DB ──────────────────────────────────────────────────────
 const DEFAULT_CONV_FOOD_DB = [
   { id:'conv_ration',     name:'전투식량',          price:5000,  weightG:300, note:'야영 보급용 (야영지에서 소비)' },
@@ -580,6 +726,9 @@ const DEFAULT_CONV_FOOD_DB = [
   { id:'conv_dosirak2',   name:'돈까스파스타도시락', price:5400,  weightG:300, note:'편의점 도시락. 식사 시 소모.' },
   { id:'conv_pepsi',      name:'펩시제로',           price:2000,  weightG:250, note:'편의점 음료. 식사 시 소모.' },
   { id:'conv_soda',       name:'칠성사이다',         price:2000,  weightG:250, note:'편의점 음료. 식사 시 소모.' },
+  { id:'pot_lowest_hp',   name:'최하급 HP 포션',     price:10000, weightG:200, note:'HP +50 (물약)' },
+  { id:'pot_lowest_mp',   name:'최하급 MP 포션',     price:10000, weightG:200, note:'MP +50 (물약)' },
+  { id:'pot_lowest_sp',   name:'최하급 SP 포션',     price:10000, weightG:200, note:'SP +50 (물약)' },
 ];
 function getConvFoodDb() {
   if (!Array.isArray(model.db.convFoodDb) || model.db.convFoodDb.length === 0) {
@@ -4289,11 +4438,36 @@ function currentGatePrompt(run) {
           <button class="gb-btn primary" id="gb-postbattle-next">${nextLabel}</button>
           ${allowRest ? `<button class="gb-btn" id="gb-postbattle-rest" ${run.postBattle.restUsed ? 'disabled' : ''}>휴식</button>` : ''}
           ${canMine ? '<button class="gb-btn" id="gb-postbattle-mine">광맥 채굴</button>' : ''}
+          <button class="gb-btn" id="gb-postbattle-potion">🧪 물약</button>
           <button class="gb-btn danger" id="gb-postbattle-retreat">후퇴</button>
           ${run.postBattle.llmBlock ? '<button class="gb-btn" id="gb-postbattle-copy-llm">결과 블록 복사</button>' : ''}
         </div>
+      </div>
+      ${run.showPotionPanel ? renderPostBattlePotionPanel(run) : ''}`;
+  }
+  function renderPostBattlePotionPanel(run) {
+    const inv = getActiveInventory();
+    const potions = inv.items.filter(it => it.category === 'potion');
+    if (!potions.length) return '<div class="gb-panel"><div class="gb-sub">소지 중인 물약이 없다.</div><div class="gb-btn-row"><button class="gb-btn" id="gb-pb-potion-close">닫기</button></div></div>';
+    const daily = getPotionUsesToday();
+    const remaining = Math.max(0, POTION_DAILY_MAX - daily.count);
+    const party = (run.partyState || []).filter(u => Number(u.currentHp || u.hp || 0) > 0);
+    const potionOpts = potions.map(p => `<option value="${escapeHtml(p.stackKey)}">${escapeHtml(p.name)} x${p.count} — ${escapeHtml(p.note||'')}</option>`).join('');
+    const targetOpts = party.map((u, i) => `<option value="${i}">${escapeHtml(u.name)} (HP ${Math.floor(Number(u.currentHp||0))}/${Math.floor(Number(u.hp||0))})</option>`).join('');
+    return `
+      <div class="gb-panel">
+        <div class="gb-section-title">🧪 물약 사용 (전투 후)</div>
+        <div class="gb-sub">남은 일일 사용 횟수: ${remaining}/${POTION_DAILY_MAX}${daily.count >= POTION_DAILY_MAX ? ' ⚠️ 한도 도달 — 다음 사용 시 효율 20%' : ''}</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;">
+          <select class="gb-input" id="gb-pb-potion-select">${potionOpts}</select>
+          <span style="color:#94a3b8;">→</span>
+          <select class="gb-input" id="gb-pb-potion-target">${targetOpts}</select>
+          <button class="gb-btn primary" id="gb-pb-potion-apply">사용</button>
+        </div>
+        <div class="gb-btn-row"><button class="gb-btn" id="gb-pb-potion-close">닫기</button></div>
       </div>`;
   }
+
   if (run.secretPlan && run.secretPlan.offered && !run.sideRoomActive && !run.secretPlan.resolved) {
     return `
       <div class="gb-panel">
@@ -6491,6 +6665,11 @@ const SHOP_ITEMS = {
     { id:'tent_S', name:'S급 게이트펜션야영지', price:38000000,  unit:'개', note:'야영효율+30% (20kg)', buildFn: () => buildTentItem('S', 1) },
   ],
 };
+SHOP_ITEMS.potion = POTION_CATALOG.map(p => ({
+  id: p.id, name: p.name, price: p.price, unit:'개',
+  note: p.note || '',
+  buildFn: () => buildPotionItem(p, 1)
+}));
 const SHOP_CATEGORIES = [
   { id:'convenience',  label:'🏪 편의점',    desc:'식료품, 음료, 기본 보급품.' },
   { id:'department',   label:'🏬 백화점',    desc:'의류, 생활용품, 일반 장비.' },
@@ -6504,7 +6683,7 @@ const HUNTER_STREET_SUBS = [
   { id:'equip',      label:'⚔️ 장비상점',     desc:'무기, 방어구, 헌터 전용 장비 구매·판매.' },
   { id:'repair',     label:'수리점',           desc:'무기/방어구 내구도 회복. E등급 무료. 수리마다 최대내구도 -1 (최소 80).' },
   { id:'forge',      label:'대장간',           desc:'같은 등급 마정석(순도 80~100%)으로 장비 강화. 실패 시 마정석 소멸, 장비 유지.' },
-  { id:'potion',     label:'물약 상점',        desc:'회복약, 마나포션, 버프 아이템. (예정)' },
+  { id:'potion',     label:'물약 상점',        desc:'회복약, 마나포션, 해독제, CC회복, 저주해제, 버프 아이템.' },
   { id:'consumable', label:'소모품 상점',      desc:'곡괭이, 야영 보급품, 기타 소모품.' },
   { id:'material',   label:'재료 상점',        desc:'일반·희귀 재료 구매 및 판매. 검색·필터 지원.' },
 ];
@@ -7323,9 +7502,10 @@ function renderShopView() {
     const convItemsHtml = db.map(f => {
       const canAfford2 = Number(inv2.gold||0) >= f.price;
       const isCampSupply = f.id === 'conv_ration' || f.id === 'conv_water';
+      const isPotion = f.id && f.id.startsWith('pot_');
       return `<div class="gb-unit">
         <div class="gb-unit-top">
-          <div><strong>${escapeHtml(f.name)}</strong> ${isCampSupply ? '<span class="gb-badge" style="background:#15803d44;">야영용</span>' : '<span class="gb-badge">식품</span>'} ${f.note ? `<span class="gb-sub">${escapeHtml(f.note)}</span>` : ''}</div>
+          <div><strong>${escapeHtml(f.name)}</strong> ${isCampSupply ? '<span class="gb-badge" style="background:#15803d44;">야영용</span>' : isPotion ? '<span class="gb-badge" style="background:#7c3aed44;">물약</span>' : '<span class="gb-badge">식품</span>'} ${f.note ? `<span class="gb-sub">${escapeHtml(f.note)}</span>` : ''}</div>
           <div><button class="gb-btn tiny${canAfford2 ? '' : ' danger'}" data-conv-food-buy="${escapeHtml(f.id)}" ${canAfford2 ? '' : 'disabled'}>₩${Number(f.price).toLocaleString('en-US')} / 개</button></div>
         </div>
       </div>`;
@@ -7413,6 +7593,7 @@ function renderShopView() {
     const title = found ? found.label : '헌터거리';
     let itemsHtml = '<div class="gb-sub">상품 목록 준비 중. (예정)</div>';
     if (hunterSub === 'consumable') itemsHtml = shopItemsHtml(SHOP_ITEMS.consumable, 'consumable');
+    if (hunterSub === 'potion') itemsHtml = shopItemsHtml(SHOP_ITEMS.potion, 'potion');
     if (hunterSub === 'material')   itemsHtml = renderMaterialShopHtml();
     if (hunterSub === 'repair')     itemsHtml = renderRepairShopHtml();
     if (hunterSub === 'forge')      itemsHtml = renderForgeShopHtml();
@@ -8406,10 +8587,34 @@ function renderCommandPanel(runtime) {
           <button class="gb-btn primary" id="gb-run-round">라운드 실행</button>
           <button class="gb-btn" id="gb-auto-one">1라운드 자동</button>
           <button class="gb-btn" id="gb-auto-battle">끝까지 자동</button>
+          <button class="gb-btn" id="gb-battle-potion">🧪 물약</button>
           <button class="gb-btn" id="gb-reset-battle">전투 종료/리셋</button>
         </div>
       </div>
     `;
+  }
+
+  function renderBattlePotionPanel(runtime) {
+    const inv = getActiveInventory();
+    const potions = inv.items.filter(it => it.category === 'potion');
+    if (!potions.length) return '<div class="gb-panel"><div class="gb-sub">소지 중인 물약이 없다.</div><div class="gb-btn-row"><button class="gb-btn" id="gb-battle-potion-close">닫기</button></div></div>';
+    const daily = getPotionUsesToday();
+    const remaining = Math.max(0, POTION_DAILY_MAX - daily.count);
+    const partyAlive = getAlive(runtime.party);
+    const potionOpts = potions.map(p => `<option value="${escapeHtml(p.stackKey)}">${escapeHtml(p.name)} x${p.count} — ${escapeHtml(p.note||'')}</option>`).join('');
+    const targetOpts = partyAlive.map(u => `<option value="${escapeHtml(u.uid)}">${escapeHtml(u.name)} (HP ${Math.floor(u.hp)}/${Math.floor(u.maxHp)})</option>`).join('');
+    return `
+      <div class="gb-panel">
+        <div class="gb-section-title">🧪 물약 사용 (전투 중)</div>
+        <div class="gb-sub">남은 일일 사용 횟수: ${remaining}/${POTION_DAILY_MAX}${daily.count >= POTION_DAILY_MAX ? ' ⚠️ 한도 도달 — 다음 사용 시 효율 20%' : ''}</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;">
+          <select class="gb-input" id="gb-battle-potion-select">${potionOpts}</select>
+          <span style="color:#94a3b8;">→</span>
+          <select class="gb-input" id="gb-battle-potion-target">${targetOpts}</select>
+          <button class="gb-btn primary" id="gb-battle-potion-apply">사용</button>
+        </div>
+        <div class="gb-btn-row"><button class="gb-btn" id="gb-battle-potion-close">닫기</button></div>
+      </div>`;
   }
 
   function renderBattleRuntime() {
@@ -8417,6 +8622,7 @@ function renderCommandPanel(runtime) {
     if (!rt.started) return renderBattleSetup();
     return `
       ${renderCommandPanel(rt)}
+      ${rt.showPotionPanel ? renderBattlePotionPanel(rt) : ''}
       <div class="gb-grid two">
         <div class="gb-panel">
           <div class="gb-section-title">아군 (${getAlive(rt.party).length}/${rt.party.length})</div>
@@ -10502,6 +10708,9 @@ async function saveMaterialTraitFromForm() {
         let item;
         if (f.id === 'conv_ration') item = buildSupplyItem('ration', 1);
         else if (f.id === 'conv_water') item = buildSupplyItem('water', 1);
+        else if (f.id === 'pot_lowest_hp') item = buildPotionItem(POTION_CATALOG.find(p => p.id === 'lowest_hp_potion'), 1);
+        else if (f.id === 'pot_lowest_mp') item = buildPotionItem(POTION_CATALOG.find(p => p.id === 'lowest_mp_potion'), 1);
+        else if (f.id === 'pot_lowest_sp') item = buildPotionItem(POTION_CATALOG.find(p => p.id === 'lowest_sp_potion'), 1);
         else item = buildConvFoodItem(f, 1);
         const res = grantActiveInventoryItem(item);
         if (!res.ok) pushInventoryOverflow(item);
@@ -11637,6 +11846,34 @@ async function saveMaterialTraitFromForm() {
         renderApp();
       } catch (e) { toast(e.message || String(e), true); }
     });
+    on('#gb-battle-potion', 'click', () => {
+      const rt = model.state.runtime;
+      rt.showPotionPanel = !rt.showPotionPanel;
+      renderApp();
+    });
+    on('#gb-battle-potion-close', 'click', () => {
+      model.state.runtime.showPotionPanel = false;
+      renderApp();
+    });
+    on('#gb-battle-potion-apply', 'click', async () => {
+      try {
+        const rt = model.state.runtime;
+        const potionKey = fieldValue('#gb-battle-potion-select');
+        const targetUid = fieldValue('#gb-battle-potion-target');
+        if (!potionKey) throw new Error('물약을 선택해.');
+        if (!targetUid) throw new Error('대상을 선택해.');
+        const inv = getActiveInventory();
+        const potionItem = inv.items.find(it => it.stackKey === potionKey);
+        if (!potionItem) throw new Error('해당 물약을 찾을 수 없다.');
+        const target = rt.party.find(u => u.uid === targetUid);
+        if (!target || target.dead || target.hp <= 0) throw new Error('대상이 유효하지 않다.');
+        const msg = usePotionOnUnit(potionItem, target);
+        consumePotionFromInventory(potionKey);
+        await saveState();
+        renderApp();
+        toast(msg);
+      } catch (e) { toast(e.message || String(e), true); }
+    });
     on('#gb-reset-battle', 'click', async () => {
       model.state.runtime = buildDefaultRuntime();
       await saveState();
@@ -11680,6 +11917,34 @@ async function saveMaterialTraitFromForm() {
         await saveDb(); await saveState();
         renderApp();
         toast(lines.length ? '광맥 채굴 완료' : '채굴 결과 없음');
+      } catch (e) { toast(e.message || String(e), true); }
+    });
+    on('#gb-postbattle-potion', 'click', () => {
+      const run = getGateRun();
+      if (run) { run.showPotionPanel = !run.showPotionPanel; renderApp(); }
+    });
+    on('#gb-pb-potion-close', 'click', () => {
+      const run = getGateRun();
+      if (run) { run.showPotionPanel = false; renderApp(); }
+    });
+    on('#gb-pb-potion-apply', 'click', async () => {
+      try {
+        const run = getGateRun();
+        if (!run) throw new Error('게이트 런을 찾을 수 없다.');
+        const potionKey = fieldValue('#gb-pb-potion-select');
+        const targetIdx = Number(fieldValue('#gb-pb-potion-target'));
+        if (!potionKey) throw new Error('물약을 선택해.');
+        const party = (run.partyState || []).filter(u => Number(u.currentHp || u.hp || 0) > 0);
+        const target = party[targetIdx];
+        if (!target) throw new Error('대상이 유효하지 않다.');
+        const inv = getActiveInventory();
+        const potionItem = inv.items.find(it => it.stackKey === potionKey);
+        if (!potionItem) throw new Error('해당 물약을 찾을 수 없다.');
+        const msg = usePotionOnUnit(potionItem, target);
+        consumePotionFromInventory(potionKey);
+        await saveDb(); await saveState();
+        renderApp();
+        toast(msg);
       } catch (e) { toast(e.message || String(e), true); }
     });
     on('#gb-postbattle-retreat', 'click', async () => {
