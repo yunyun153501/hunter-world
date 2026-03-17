@@ -1,6 +1,6 @@
 # Hunter World — 전체 스킬 목록 (BUILTIN_SKILLS)
 
-> GateBattle_v5_9.js 기준 — 총 153개 스킬
+> GateBattle_v6_4.js 기준 — 총 153개 스킬
 
 ---
 
