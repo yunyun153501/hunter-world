@@ -226,8 +226,8 @@ const EQUIP_PRICE_RANGE = {
   A: [5500000000,18000000000],
   S: [250000000000, 750000000000],
 };
-// Price order multiplier by part (weapon > armor > subweapon > accessory)
-const EQUIP_PART_PRICE_MUL = { weapon:1.0, armor:0.75, subweapon:0.55, accessory:0.40 };
+// Price multiplier range by part [min, max] — 드랍/경매 생성시 범위 내 랜덤, 참조가격은 max 사용
+const EQUIP_PART_PRICE_MUL = { weapon:[0.8,1.0], armor:[0.6,0.75], subweapon:[0.4,0.55], accessory:[0.25,0.40] };
 // Skill book: ×5 equipment price
 const SKILL_BOOK_PRICE_MUL = 5;
 
@@ -350,12 +350,20 @@ function equipTraitDisplay(traitId, rank) {
   return pct > 0 ? `${label} +${pct}%` : label;
 }
 
-// Helper: calculate auto base price for an equipment entry
+// Helper: calculate reference base price for an equipment entry (max price — used by editor, shop, settlement fallback)
 function calcEquipBasePrice(rank, part) {
   const range = EQUIP_PRICE_RANGE[rank] || EQUIP_PRICE_RANGE.E;
-  const mid = Math.round((range[0] + range[1]) / 2);
-  const mul = EQUIP_PART_PRICE_MUL[part] || 0.7;
-  return Math.round(mid * mul);
+  const maxPrice = range[1];
+  const mulRange = EQUIP_PART_PRICE_MUL[part] || [0.4, 0.55];
+  return Math.round(maxPrice * mulRange[1]);
+}
+// Helper: calculate random base price for generated equipment (drop/auction/used — range 내 랜덤)
+function calcEquipRandomPrice(rank, part) {
+  const range = EQUIP_PRICE_RANGE[rank] || EQUIP_PRICE_RANGE.E;
+  const maxPrice = range[1];
+  const mulRange = EQUIP_PART_PRICE_MUL[part] || [0.4, 0.55];
+  const mul = mulRange[0] + Math.random() * (mulRange[1] - mulRange[0]);
+  return Math.round(maxPrice * mul);
 }
 // Helper: calculate enhanced item market price (new item sold at auction)
 // formula: basePrice + enhance × (same-rank 100%-purity mana stone price × 1.30)
@@ -3360,30 +3368,31 @@ function pickRareTraitForRoll(roll, bossLike) {
   return pickRareTraitByFamily('increasedHealing');
 }
 // 드랍 장비 생성: 게이트 보스/엘리트 보상으로 드랍되는 장비
-// 20% 확률로 1특성 부여 → maxInfuse+1, 가격에 희귀재료 가치(×1.25) 반영
+// 보조무기·악세서리는 내장 특성 1개(별도 비용 없음), 그 외 20% 확률(희귀재료 비용 반영)
 // 장비 드랍: part 지정 버전 (드랍테이블 결과로 부위 결정 후 호출)
 function buildDropEquipment(rank, forcePart) {
   const r = String(rank || 'E').toUpperCase();
   const part = forcePart || EQUIP_PARTS[Math.floor(Math.random() * EQUIP_PARTS.length)];
   const maxInfuseBase = EQUIP_MAX_INFUSE[part] || 1;
-  // 보조무기는 기본 특성 1개 보유; 그 외 장비는 20% 확률
-  const hasTrait = part === 'subweapon' ? true : (Math.random() < 0.20);
+  // 보조무기·악세서리는 기본 특성 1개 보유; 그 외 장비는 20% 확률
+  const hasTrait = (part === 'subweapon' || part === 'accessory') ? true : (Math.random() < 0.20);
   const traits = [];
   let maxInfuse = maxInfuseBase;
   let traitName = '';
   if (hasTrait) {
     const traitId = EQUIP_TRAIT_TYPES[Math.floor(Math.random() * EQUIP_TRAIT_TYPES.length)];
     traits.push(traitId);
-    if (part !== 'subweapon') maxInfuse = maxInfuseBase + 1;
+    if (part !== 'subweapon' && part !== 'accessory') maxInfuse = maxInfuseBase + 1;
     traitName = EQUIP_TRAIT_LABELS[traitId] || traitId;
   }
-  const basePrice = calcEquipBasePrice(r, part);
-  // 특성 있는 경우 희귀재료 기준가 × 1.25 추가 (특성주입 비용만큼)
-  const traitBonus = hasTrait ? Math.round((RARE_MATERIAL_BASE_WON[r] || RARE_MATERIAL_BASE_WON.E) * 1.25) : 0;
+  const basePrice = calcEquipRandomPrice(r, part);
+  // 보조무기·악세서리 내장 특성은 별도 비용 없음, 그 외 인퓨전 특성은 희귀재료 기준가 × 1.25
+  const builtInTrait = (part === 'subweapon' || part === 'accessory');
+  const traitBonus = (hasTrait && !builtInTrait) ? Math.round((RARE_MATERIAL_BASE_WON[r] || RARE_MATERIAL_BASE_WON.E) * 1.25) : 0;
   const price = basePrice + traitBonus;
   const uid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const partLabel = EQUIP_PART_LABELS[part] || part;
-  const nameSuffixes = { weapon:['검','창','활','완드','도끼'], armor:['갑옷','로브','체인메일','플레이트'], subweapon:['방패','단검'], accessory:['반지','목걸이','팔찌'] };
+  const nameSuffixes = { weapon:['검','창','활','완드','도끼'], armor:['갑옷','로브','체인메일','플레이트'], subweapon:['방패'], accessory:['반지','목걸이','팔찌'] };
   const suffArr = nameSuffixes[part] || [partLabel];
   const suff = suffArr[Math.floor(Math.random() * suffArr.length)];
   const name = `${r}급 드랍 ${suff}${hasTrait ? ` [${traitName}]` : ''}`;
@@ -5471,19 +5480,21 @@ function seedNpcAuctionListings() {
   for (let i = 0; i < needed; i++) {
     const rank = grades[Math.floor(Math.random() * grades.length)];
     if (Math.random() < 0.70) {
-      // 드랍 장비 (반드시 1특성 부여)
+      // 드랍 장비 (반드시 1특성 부여, 악세서리 특성은 내장이라 별도 비용 없음)
       const part = parts[Math.floor(Math.random() * parts.length)];
       const maxInfuseBase = EQUIP_MAX_INFUSE[part] || 1;
       const traitId = EQUIP_TRAIT_TYPES[Math.floor(Math.random() * EQUIP_TRAIT_TYPES.length)];
       const traitName = EQUIP_TRAIT_LABELS[traitId] || traitId;
-      const maxInfuse = maxInfuseBase + 1;
-      const basePrice = calcEquipBasePrice(rank, part);
-      const traitBonus = Math.round((RARE_MATERIAL_BASE_WON[rank] || RARE_MATERIAL_BASE_WON.E) * 1.25);
+      const maxInfuse = (part === 'accessory' || part === 'subweapon') ? maxInfuseBase : maxInfuseBase + 1;
+      const basePrice = calcEquipRandomPrice(rank, part);
+      // 보조무기·악세서리 내장 특성은 별도 비용 없음
+      const builtInTrait = (part === 'subweapon' || part === 'accessory');
+      const traitBonus = builtInTrait ? 0 : Math.round((RARE_MATERIAL_BASE_WON[rank] || RARE_MATERIAL_BASE_WON.E) * 1.25);
       const marketPrice = basePrice + traitBonus;
       const ratio = randomAuctionRatio();
       const askPrice = Math.round(marketPrice * ratio);
       const uid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + i;
-      const nameSuffixes = { weapon:['검','창','활','완드','도끼'], armor:['갑옷','로브','체인메일','플레이트'], subweapon:['방패','단검'], accessory:['반지','목걸이','팔찌'] };
+      const nameSuffixes = { weapon:['검','창','활','완드','도끼'], armor:['갑옷','로브','체인메일','플레이트'], subweapon:['방패'], accessory:['반지','목걸이','팔찌'] };
       const suffArr = nameSuffixes[part] || [EQUIP_PART_LABELS[part]||part];
       const suff = suffArr[Math.floor(Math.random() * suffArr.length)];
       const item = {
@@ -6245,20 +6256,23 @@ function seedNpcUsedListings() {
     const maxDur = Math.max(80, Math.min(99, dur + Math.floor(Math.random() * 10))); // 80~99
     // 강화: 가끔 +1~+3
     const enhance = Math.random() < 0.3 ? Math.floor(Math.random() * 3) + 1 : 0;
-    // 특성: 30% 확률로 1개
-    const hasTrait = Math.random() < 0.30;
+    // 특성: 보조무기·악세서리는 항상 1개(내장), 그 외 30% 확률로 1개
+    const builtInTraitPart = (part === 'subweapon' || part === 'accessory');
+    const hasTrait = builtInTraitPart ? true : (Math.random() < 0.30);
     const traits = hasTrait ? [EQUIP_TRAIT_TYPES[Math.floor(Math.random() * EQUIP_TRAIT_TYPES.length)]] : [];
     const maxInfuseBase = EQUIP_MAX_INFUSE[part] || 1;
-    const maxInfuse = hasTrait ? maxInfuseBase + 1 : maxInfuseBase;
+    const maxInfuse = (hasTrait && !builtInTraitPart) ? maxInfuseBase + 1 : maxInfuseBase;
     const traitName = hasTrait ? (EQUIP_TRAIT_LABELS[traits[0]] || traits[0]) : '';
-    const basePrice = calcEquipBasePrice(rank, part);
+    const basePrice = calcEquipRandomPrice(rank, part);
     const enhancedBase = enhance > 0 ? calcEquipEnhancedPrice(basePrice, enhance, rank) : basePrice;
-    const traitBonus = hasTrait ? Math.round((RARE_MATERIAL_BASE_WON[rank] || RARE_MATERIAL_BASE_WON.E) * 1.25) : 0;
+    // 보조무기·악세서리 내장 특성은 별도 비용 없음, 그 외 인퓨전 특성은 희귀재료 기준가 × 1.25
+    const builtInTrait = (part === 'subweapon' || part === 'accessory');
+    const traitBonus = (hasTrait && !builtInTrait) ? Math.round((RARE_MATERIAL_BASE_WON[rank] || RARE_MATERIAL_BASE_WON.E) * 1.25) : 0;
     const marketPrice = enhancedBase + traitBonus;
     const conditionMul = calcUsedEquipConditionMul(dur, maxDur);
     const usedPrice = Math.round(marketPrice * conditionMul);
     const uid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + i;
-    const nameSuffixes = { weapon:['검','창','활','완드','도끼'], armor:['갑옷','로브','체인메일','플레이트'], subweapon:['방패','단검'], accessory:['반지','목걸이','팔찌'] };
+    const nameSuffixes = { weapon:['검','창','활','완드','도끼'], armor:['갑옷','로브','체인메일','플레이트'], subweapon:['방패'], accessory:['반지','목걸이','팔찌'] };
     const suffArr = nameSuffixes[part] || [EQUIP_PART_LABELS[part]||part];
     const suff = suffArr[Math.floor(Math.random() * suffArr.length)];
     const enhLabel = enhance > 0 ? ` +${enhance}` : '';
