@@ -1,14 +1,14 @@
-//@name Gate Battle Prototype v7.4
-//@display-name ⚔️ 게이트 전투 프로토타입 v7.4
+//@name Gate Battle Prototype v7.5
+//@display-name ⚔️ 게이트 전투 프로토타입 v7.5
 //@api 3.0
-//@version 7.4.0
+//@version 7.5.0
 //@author OpenAI
 //@arg gate_v21_db string "" "v2.1 DB 저장"
 //@arg gate_v21_state string "" "v2.1 UI/전투 상태 저장"
 
 (async () => {
 try {
-  const PLUGIN_NAME = '[Gate Battle Prototype v7.4.0]';
+  const PLUGIN_NAME = '[Gate Battle Prototype v7.5.0]';
   const UI_ID = 'gate-battle-v22-root';
   const STYLE_ID = 'gate-battle-v22-style';
   const KEY_DB = 'GateBattleV21::db';
@@ -286,6 +286,13 @@ const RARE_PRICE_BY_RANK_TIER = {
 };
 // fallback (tier3 중앙값)
 const RARE_MATERIAL_BASE_WON = { E:100000, D:600000, C:6000000, B:85000000, A:2250000000, S:37500000000 };
+// 희귀재료 티어별 가격 조회 헬퍼
+function getRareMatTierPrice(rank, traitId) {
+  const tier = TRAIT_TIER_MAP[traitId] || 3;
+  const tierKey = `tier${tier}`;
+  const tierPrices = RARE_PRICE_BY_RANK_TIER[String(rank||'E').toUpperCase()] || RARE_PRICE_BY_RANK_TIER.E;
+  return tierPrices[tierKey] || (RARE_MATERIAL_BASE_WON[rank] || RARE_MATERIAL_BASE_WON.E);
+}
 // 세금 및 수수료 (협회 정산 기준)
 const ASSOC_TAX_RATE      = 0.033; // 원천세 3.3%
 const ASSOC_FEE_RATE      = 0.017; // 협회 수수료 1.7%
@@ -411,6 +418,9 @@ const EQUIP_TRAIT_TYPES = [
   // 지원
   'healing_done','healing_received','shield_effect','threat_up','threat_down',
 ];
+// 희귀(tier1-2) / 일반(tier3-4) 특성 풀 — 경매장 80/20 비율 제어용
+const RARE_TRAIT_POOL = EQUIP_TRAIT_TYPES.filter(t => (TRAIT_TIER_MAP[t] || 3) <= 2);
+const NORMAL_TRAIT_POOL = EQUIP_TRAIT_TYPES.filter(t => (TRAIT_TIER_MAP[t] || 3) > 2);
 const EQUIP_TRAIT_LABELS = {
   // snake_case (35개 전체)
   physical_damage:'물리 피해 증가', magic_damage:'마법 피해 증가',
@@ -3759,9 +3769,19 @@ function buildDropEquipment(rank, forcePart) {
     traitName = EQUIP_TRAIT_LABELS[traitId] || traitId;
   }
   const basePrice = calcEquipRandomPrice(r, part);
-  // 보조무기·악세서리 내장 특성은 별도 비용 없음, 그 외 인퓨전 특성은 희귀재료 기준가 × 1.25
+  // 무기·방어구 특성: 희귀재료 기준가 × 1.25
+  // 보조무기·악세서리 내장 특성: 티어별 희귀재료 가격 차등 적용
   const builtInTrait = (part === 'subweapon' || part === 'accessory');
-  const traitBonus = (hasTrait && !builtInTrait) ? Math.round((RARE_MATERIAL_BASE_WON[r] || RARE_MATERIAL_BASE_WON.E) * 1.25) : 0;
+  let traitBonus = 0;
+  if (hasTrait && !builtInTrait) {
+    traitBonus = Math.round((RARE_MATERIAL_BASE_WON[r] || RARE_MATERIAL_BASE_WON.E) * 1.25);
+  } else if (hasTrait && builtInTrait) {
+    const tier = TRAIT_TIER_MAP[traits[0]] || 3;
+    const tierPrices = RARE_PRICE_BY_RANK_TIER[r] || RARE_PRICE_BY_RANK_TIER.E;
+    const tier4Price = tierPrices.tier4;
+    const tierPrice = tierPrices[`tier${tier}`] || tier4Price;
+    traitBonus = tierPrice - tier4Price;
+  }
   const price = basePrice + traitBonus;
   const uid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const partLabel = EQUIP_PART_LABELS[part] || part;
@@ -5886,12 +5906,31 @@ function seedNpcAuctionListings() {
       const maxInfuseBase = EQUIP_MAX_INFUSE[part] || 1;
       const builtInTrait = (part === 'subweapon' || part === 'accessory');
       const hasTrait = builtInTrait ? true : (Math.random() < 0.20);
-      const traitId = hasTrait ? EQUIP_TRAIT_TYPES[Math.floor(Math.random() * EQUIP_TRAIT_TYPES.length)] : '';
+      // 보조무기·악세서리: 80% 일반(tier3-4) / 20% 희귀(tier1-2) 풀에서 특성 선택
+      let traitId = '';
+      if (hasTrait) {
+        if (builtInTrait) {
+          const pool = Math.random() < 0.20 ? RARE_TRAIT_POOL : NORMAL_TRAIT_POOL;
+          traitId = pool[Math.floor(Math.random() * pool.length)];
+        } else {
+          traitId = EQUIP_TRAIT_TYPES[Math.floor(Math.random() * EQUIP_TRAIT_TYPES.length)];
+        }
+      }
       const traitName = hasTrait ? (EQUIP_TRAIT_LABELS[traitId] || traitId) : '';
       const maxInfuse = (hasTrait && !builtInTrait) ? maxInfuseBase + 1 : maxInfuseBase;
       const basePrice = calcEquipRandomPrice(rank, part);
-      // 보조무기·악세서리 내장 특성은 별도 비용 없음
-      const traitBonus = (hasTrait && !builtInTrait) ? Math.round((RARE_MATERIAL_BASE_WON[rank] || RARE_MATERIAL_BASE_WON.E) * 1.25) : 0;
+      // 무기·방어구 특성 보너스: 희귀재료 기준가 × 1.25
+      // 보조무기·악세서리 내장 특성: 티어별 희귀재료 가격 차등 적용
+      let traitBonus = 0;
+      if (hasTrait && !builtInTrait) {
+        traitBonus = Math.round((RARE_MATERIAL_BASE_WON[rank] || RARE_MATERIAL_BASE_WON.E) * 1.25);
+      } else if (hasTrait && builtInTrait) {
+        const tier = TRAIT_TIER_MAP[traitId] || 3;
+        const tierPrices = RARE_PRICE_BY_RANK_TIER[rank] || RARE_PRICE_BY_RANK_TIER.E;
+        const tier4Price = tierPrices.tier4;
+        const tierPrice = tierPrices[`tier${tier}`] || tier4Price;
+        traitBonus = tierPrice - tier4Price;
+      }
       const marketPrice = basePrice + traitBonus;
       const ratio = randomAuctionRatio();
       const askPrice = Math.round(marketPrice * ratio);
@@ -5919,10 +5958,10 @@ function seedNpcAuctionListings() {
       };
       model.db.auctionListings.push({ id: `auc_npc_${uid}`, item, askPrice, marketPrice, priceRatio: ratio, isNpc: true, listedAt: Date.now() });
     } else {
-      // 희귀재료 (NPC)
+      // 희귀재료 (NPC) — 티어별 가격 적용
       const traitId = EQUIP_TRAIT_TYPES[Math.floor(Math.random() * EQUIP_TRAIT_TYPES.length)];
       const traitName = EQUIP_TRAIT_LABELS[traitId] || traitId;
-      const marketPrice = RARE_MATERIAL_BASE_WON[rank] || RARE_MATERIAL_BASE_WON.E;
+      const marketPrice = getRareMatTierPrice(rank, traitId);
       const ratio = randomAuctionRatio();
       const askPrice = Math.round(marketPrice * ratio);
       const uid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + '_r' + i;
@@ -6675,9 +6714,19 @@ function seedNpcUsedListings() {
     const traitName = hasTrait ? (EQUIP_TRAIT_LABELS[traits[0]] || traits[0]) : '';
     const basePrice = calcEquipRandomPrice(rank, part);
     const enhancedBase = enhance > 0 ? calcEquipEnhancedPrice(basePrice, enhance, rank) : basePrice;
-    // 보조무기·악세서리 내장 특성은 별도 비용 없음, 그 외 인퓨전 특성은 희귀재료 기준가 × 1.25
+    // 무기·방어구 특성: 희귀재료 기준가 × 1.25
+    // 보조무기·악세서리 내장 특성: 티어별 희귀재료 가격 차등 적용
     const builtInTrait = (part === 'subweapon' || part === 'accessory');
-    const traitBonus = (hasTrait && !builtInTrait) ? Math.round((RARE_MATERIAL_BASE_WON[rank] || RARE_MATERIAL_BASE_WON.E) * 1.25) : 0;
+    let traitBonus = 0;
+    if (hasTrait && !builtInTrait) {
+      traitBonus = Math.round((RARE_MATERIAL_BASE_WON[rank] || RARE_MATERIAL_BASE_WON.E) * 1.25);
+    } else if (hasTrait && builtInTrait) {
+      const tier = TRAIT_TIER_MAP[traits[0]] || 3;
+      const tierPrices = RARE_PRICE_BY_RANK_TIER[rank] || RARE_PRICE_BY_RANK_TIER.E;
+      const tier4Price = tierPrices.tier4;
+      const tierPrice = tierPrices[`tier${tier}`] || tier4Price;
+      traitBonus = tierPrice - tier4Price;
+    }
     const marketPrice = enhancedBase + traitBonus;
     const conditionMul = calcUsedEquipConditionMul(dur, maxDur);
     const usedPrice = Math.round(marketPrice * conditionMul);
