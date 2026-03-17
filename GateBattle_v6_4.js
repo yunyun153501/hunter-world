@@ -6174,12 +6174,12 @@ function renderMaterialShopHtml() {
 
   const searchBar = `
     <div class="gb-panel">
-      <form id="gb-mat-search-form" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+      <div id="gb-mat-search-form" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
         <input id="gb-mat-query" class="gb-input" type="text" placeholder="이름·특성·종족 검색…" value="${escapeHtml(query)}" style="flex:1;min-width:140px;">
         <select id="gb-mat-rank" class="gb-input" style="width:110px;">${rankOptions}</select>
         <select id="gb-mat-tier" class="gb-input" style="width:160px;">${tierOptions}</select>
-        <button type="submit" class="gb-btn tiny">🔍 검색</button>
-      </form>
+        <button type="button" id="gb-mat-search-btn" class="gb-btn tiny">🔍 검색</button>
+      </div>
       <div class="gb-sub" style="margin-top:4px;">희귀재료 전용 · 결과: ${total}개 / ${pages}페이지 | 구매가 = 기준가 × ${Math.round(MAT_SHOP_BUY_MARKUP * 100)}%</div>
     </div>`;
 
@@ -7049,13 +7049,13 @@ function renderHomeView() {
       </div>
       <div class="gb-panel">
         <div class="gb-section-title">➕ 보관함 추가</div>
-        <form id="gb-home-storage-add" style="display:flex;flex-wrap:wrap;gap:6px;align-items:flex-end;">
+        <div id="gb-home-storage-add" style="display:flex;flex-wrap:wrap;gap:6px;align-items:flex-end;">
           <label>이름<input id="gb-storage-name" class="gb-input" type="text" placeholder="예: 장비보관고" style="margin-left:4px;width:120px;"></label>
           <label>종류<select id="gb-storage-type" class="gb-input" style="margin-left:4px;">
             <option value="재료">재료</option><option value="장비">장비</option><option value="식량">식량</option><option value="기타">기타</option>
           </select></label>
-          <button type="submit" class="gb-btn tiny primary">추가</button>
-        </form>
+          <button type="button" id="gb-home-storage-add-btn" class="gb-btn tiny primary">추가</button>
+        </div>
       </div>
       <div class="gb-btn-row">
         <button class="gb-btn" data-home-sub="">← 매물 목록</button>
@@ -7085,13 +7085,13 @@ function renderHomeView() {
       <div class="gb-panel">
         <div class="gb-section-title">➕ 아이템 넣기</div>
         <div class="gb-sub">현재 인벤토리에서 보관함으로 옮길 아이템을 선택하라.</div>
-        <form id="gb-home-storage-item-store" style="display:flex;flex-wrap:wrap;gap:6px;align-items:flex-end;margin-top:6px;">
+        <div id="gb-home-storage-item-store" style="display:flex;flex-wrap:wrap;gap:6px;align-items:flex-end;margin-top:6px;">
           <select id="gb-storage-store-item" class="gb-input" style="min-width:200px;">
             ${(getActiveInventory().items || []).map((it, i) => `<option value="${i}">${escapeHtml(it.name || '아이템')} ${it.rank ? `[${it.rank}]` : ''} x${Number(it.count || 1)}</option>`).join('')}
           </select>
           <input id="gb-storage-store-count" class="gb-input" type="number" min="1" value="1" style="width:60px;" placeholder="수량">
-          <button type="submit" class="gb-btn tiny primary">넣기</button>
-        </form>
+          <button type="button" id="gb-home-storage-item-store-btn" class="gb-btn tiny primary">넣기</button>
+        </div>
       </div>
       <div class="gb-btn-row">
         <button class="gb-btn" data-home-sub="interior">← 집 내부로</button>
@@ -7104,10 +7104,10 @@ function renderHomeView() {
     return `
       <div class="gb-panel">
         <div class="gb-section-title">🗺️ 새 지역 추가</div>
-        <form id="gb-home-region-add" style="display:flex;gap:6px;align-items:flex-end;">
+        <div id="gb-home-region-add" style="display:flex;gap:6px;align-items:flex-end;">
           <label>지역 이름<input id="gb-region-name" class="gb-input" type="text" placeholder="예: 종로, 헌터구역" style="margin-left:4px;width:200px;"></label>
-          <button type="submit" class="gb-btn tiny primary">추가</button>
-        </form>
+          <button type="button" id="gb-home-region-add-btn" class="gb-btn tiny primary">추가</button>
+        </div>
       </div>
       <div class="gb-btn-row"><button class="gb-btn" data-home-sub="">← 취소</button></div>`;
   }
@@ -7120,7 +7120,7 @@ function renderHomeView() {
     return `
       <div class="gb-panel">
         <div class="gb-section-title">🏠 새 집 추가 — ${escapeHtml(region.name)}</div>
-        <form id="gb-home-add" style="display:flex;flex-direction:column;gap:8px;">
+        <div id="gb-home-add" style="display:flex;flex-direction:column;gap:8px;">
           <input type="hidden" id="gb-home-add-region" value="${escapeHtml(regionId)}">
           <div style="display:flex;flex-wrap:wrap;gap:6px;">
             <label>집 이름<input id="gb-home-name" class="gb-input" type="text" placeholder="예: 원룸 A동" style="margin-left:4px;width:160px;"></label>
@@ -7138,10 +7138,10 @@ function renderHomeView() {
           <label>설명<input id="gb-home-desc" class="gb-input" type="text" placeholder="집 설명 (선택)" style="margin-left:4px;width:100%;"></label>
           <label>특징 (쉼표 구분)<input id="gb-home-features" class="gb-input" type="text" placeholder="예: 방음처리,에어컨,복층" style="margin-left:4px;width:100%;"></label>
           <div class="gb-btn-row" style="margin-top:4px;">
-            <button type="submit" class="gb-btn primary">🏠 집 추가</button>
+            <button type="button" id="gb-home-add-btn" class="gb-btn primary">🏠 집 추가</button>
             <button type="button" class="gb-btn" data-home-sub="">← 취소</button>
           </div>
-        </form>
+        </div>
       </div>`;
   }
 
@@ -7232,14 +7232,14 @@ function renderGuildView() {
           <div class="gb-sub">자신만의 길드를 만든다. 이름을 입력하라.</div>
         </div>
         <div class="gb-panel">
-          <form id="gb-guild-create-form" style="display:flex;flex-direction:column;gap:8px;">
+          <div id="gb-guild-create-form" style="display:flex;flex-direction:column;gap:8px;">
             <label>길드 이름<input id="gb-guild-name-input" class="gb-input" type="text" placeholder="길드 이름 (최대 20자)" maxlength="20" style="margin-left:8px;width:200px;"></label>
             <label>길드 소개<input id="gb-guild-desc-input" class="gb-input" type="text" placeholder="소개 (선택)" style="margin-left:8px;width:100%;flex:1;"></label>
             <div class="gb-btn-row" style="margin-top:4px;">
-              <button type="submit" class="gb-btn primary">⚜️ 길드 창설</button>
+              <button type="button" id="gb-guild-create-btn" class="gb-btn primary">⚜️ 길드 창설</button>
               <button type="button" class="gb-btn" data-guild-sub="">← 취소</button>
             </div>
-          </form>
+          </div>
         </div>
         <div class="gb-btn-row"><button class="gb-btn" data-go="hub">← 허브로</button></div>`;
     }
@@ -9912,8 +9912,7 @@ async function saveMaterialTraitFromForm() {
       await saveDb(); renderApp();
     });
     // ── Material shop search/filter/page handlers ─────────────────────────────
-    on('#gb-mat-search-form', 'submit', async (ev) => {
-      ev.preventDefault();
+    on('#gb-mat-search-btn', 'click', async (ev) => {
       model.state.shopMatQuery = fieldValue('#gb-mat-query') || '';
       model.state.shopMatRank  = fieldValue('#gb-mat-rank')  || '';
       model.state.shopMatTier  = fieldValue('#gb-mat-tier')  || '';
@@ -10277,9 +10276,8 @@ async function saveMaterialTraitFromForm() {
       await saveDb(); await saveState(); renderApp();
       toast('길드에서 탈퇴했다.');
     });
-    on('#gb-guild-create-form', 'submit', async (ev) => {
+    on('#gb-guild-create-btn', 'click', async (ev) => {
       try {
-        ev.preventDefault();
         const name = (fieldValue('#gb-guild-name-input') || '').trim().slice(0, 20);
         const desc = (fieldValue('#gb-guild-desc-input') || '').trim();
         if (!name) throw new Error('길드 이름을 입력하라.');
@@ -10296,9 +10294,8 @@ async function saveMaterialTraitFromForm() {
       model.state.homeSub = ev.currentTarget.getAttribute('data-home-sub') || '';
       await saveState(); renderApp();
     });
-    on('#gb-home-region-add', 'submit', async (ev) => {
+    on('#gb-home-region-add-btn', 'click', async (ev) => {
       try {
-        ev.preventDefault();
         const name = (fieldValue('#gb-region-name') || '').trim();
         if (!name) throw new Error('지역 이름을 입력하라.');
         if (!Array.isArray(model.db.homeRegions)) model.db.homeRegions = [];
@@ -10322,9 +10319,8 @@ async function saveMaterialTraitFromForm() {
         toast('지역이 삭제되었다.');
       } catch (e) { toast(e.message || String(e), true); }
     });
-    on('#gb-home-add', 'submit', async (ev) => {
+    on('#gb-home-add-btn', 'click', async (ev) => {
       try {
-        ev.preventDefault();
         const regionId = fieldValue('#gb-home-add-region') || '';
         const name = (fieldValue('#gb-home-name') || '').trim();
         if (!name) throw new Error('집 이름을 입력하라.');
@@ -10394,9 +10390,8 @@ async function saveMaterialTraitFromForm() {
       } catch (e) { toast(e.message || String(e), true); }
     });
     // ── Storage handlers ──────────────────────────────────────────────────────
-    on('#gb-home-storage-add', 'submit', async (ev) => {
+    on('#gb-home-storage-add-btn', 'click', async (ev) => {
       try {
-        ev.preventDefault();
         const name = (fieldValue('#gb-storage-name') || '').trim();
         const type = fieldValue('#gb-storage-type') || '기타';
         if (!name) throw new Error('보관함 이름을 입력하라.');
@@ -10430,9 +10425,8 @@ async function saveMaterialTraitFromForm() {
       model.state.homeSub = `storage:${idx}`;
       await saveState(); renderApp();
     });
-    on('#gb-home-storage-item-store', 'submit', async (ev) => {
+    on('#gb-home-storage-item-store-btn', 'click', async (ev) => {
       try {
-        ev.preventDefault();
         const itemIdx = parseInt(fieldValue('#gb-storage-store-item'), 10);
         const count = Math.max(1, Number(fieldValue('#gb-storage-store-count')) || 1);
         const owned = model.db.ownedHome;
