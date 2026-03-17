@@ -31,32 +31,36 @@ try {
   function rarityColor(rarity) { return RARITY_COLORS[rarity] || RARITY_COLORS.Normal; }
   function rarityStyle(rarity) { const c = rarityColor(rarity); return rarity && rarity !== 'Normal' ? `color:${c};font-weight:600;` : ''; }
 
-  // ── 특수재료 효과 (Special Material Effects) ──
+  // ── 특수효과 (Special Effects) ──
   const SPECIAL_MATERIAL_EFFECTS = [
-    { id:'physical_damage_up',  label:'물리 피해 증가', buffDesc:'+N% 물리 피해', debuffDesc:'+N% 받는 물리 피해 증가', category:'offense' },
-    { id:'magic_damage_up',     label:'마법 피해 증가', buffDesc:'+N% 마법 피해', debuffDesc:'+N% 받는 마법 피해 증가', category:'offense' },
-    { id:'fire_damage_up',      label:'화염 피해 증가', buffDesc:'+N% 화염 피해', debuffDesc:'+N% 받는 화염 피해 증가', category:'offense' },
-    { id:'ice_damage_up',       label:'빙결 피해 증가', buffDesc:'+N% 빙결 피해', debuffDesc:'+N% 받는 빙결 피해 증가', category:'offense' },
-    { id:'lightning_damage_up', label:'번개 피해 증가', buffDesc:'+N% 번개 피해', debuffDesc:'+N% 받는 번개 피해 증가', category:'offense' },
-    { id:'dark_damage_up',      label:'암흑 피해 증가', buffDesc:'+N% 암흑 피해', debuffDesc:'+N% 받는 암흑 피해 증가', category:'offense' },
-    { id:'light_damage_up',     label:'빛 피해 증가',   buffDesc:'+N% 빛 피해',   debuffDesc:'+N% 받는 빛 피해 증가',   category:'offense' },
-    { id:'crit_chance_up',      label:'치명타 확률 증가', buffDesc:'+N% 치확',    debuffDesc:'-N% 치확',   category:'offense' },
-    { id:'crit_damage_up',      label:'치명타 피해 증가', buffDesc:'+N% 치피',    debuffDesc:'-N% 치피',   category:'offense' },
-    { id:'physical_defense_up', label:'물리 방어 증가', buffDesc:'+N% 물리 방어',  debuffDesc:'-N% 물리 방어', category:'defense' },
-    { id:'magic_defense_up',    label:'마법 방어 증가', buffDesc:'+N% 마법 방어',  debuffDesc:'-N% 마법 방어', category:'defense' },
-    { id:'healing_up',          label:'회복량 증가',    buffDesc:'+N% 회복량',     debuffDesc:'-N% 회복량', category:'support' },
-    { id:'shield_up',           label:'보호막 효과 증가', buffDesc:'+N% 보호막 효과', debuffDesc:'-N% 보호막 효과', category:'support' },
-    { id:'stat_str_up',         label:'STR 증가',       buffDesc:'STR +N',         debuffDesc:'STR -N',   category:'stat' },
-    { id:'stat_con_up',         label:'CON 증가',       buffDesc:'CON +N',         debuffDesc:'CON -N',   category:'stat' },
-    { id:'stat_int_up',         label:'INT 증가',       buffDesc:'INT +N',         debuffDesc:'INT -N',   category:'stat' },
-    { id:'stat_agi_up',         label:'AGI 증가',       buffDesc:'AGI +N',         debuffDesc:'AGI -N',   category:'stat' },
-    { id:'stat_sense_up',       label:'SENSE 증가',     buffDesc:'SENSE +N',       debuffDesc:'SENSE -N', category:'stat' },
-    { id:'poison_apply',        label:'독 부여',        buffDesc:'독 부여 +N%',    debuffDesc:'독 부여 +N%', category:'status' },
-    { id:'bleed_apply',         label:'출혈 부여',      buffDesc:'출혈 부여 +N%',  debuffDesc:'출혈 부여 +N%', category:'status' },
-    { id:'burn_apply',          label:'화상 부여',      buffDesc:'화상 부여 +N%',  debuffDesc:'화상 부여 +N%', category:'status' },
-    { id:'curse_apply',         label:'저주 부여',      buffDesc:'저주 부여 +N%',  debuffDesc:'저주 부여 +N%', category:'status' },
+    { id:'physical_damage_up',  label:'물리 피해 증가', buffDesc:'+N% 물리 피해', debuffDesc:'+N% 받는 물리 피해 증가', category:'offense', canDebuff:true },
+    { id:'magic_damage_up',     label:'마법 피해 증가', buffDesc:'+N% 마법 피해', debuffDesc:'+N% 받는 마법 피해 증가', category:'offense', canDebuff:true },
+    { id:'fire_damage_up',      label:'화염 피해 증가', buffDesc:'+N% 화염 피해', debuffDesc:'+N% 받는 화염 피해 증가', category:'offense', canDebuff:true },
+    { id:'ice_damage_up',       label:'빙결 피해 증가', buffDesc:'+N% 빙결 피해', debuffDesc:'+N% 받는 빙결 피해 증가', category:'offense', canDebuff:true },
+    { id:'lightning_damage_up', label:'번개 피해 증가', buffDesc:'+N% 번개 피해', debuffDesc:'+N% 받는 번개 피해 증가', category:'offense', canDebuff:true },
+    { id:'dark_damage_up',      label:'암흑 피해 증가', buffDesc:'+N% 암흑 피해', debuffDesc:'+N% 받는 암흑 피해 증가', category:'offense', canDebuff:true },
+    { id:'light_damage_up',     label:'빛 피해 증가',   buffDesc:'+N% 빛 피해',   debuffDesc:'+N% 받는 빛 피해 증가',   category:'offense', canDebuff:true },
+    { id:'crit_chance_up',      label:'치명타 확률 증가', buffDesc:'+N% 치확',    category:'offense' },
+    { id:'crit_damage_up',      label:'치명타 피해 증가', buffDesc:'+N% 치피',    category:'offense' },
+    { id:'physical_defense_up', label:'물리 방어 증가', buffDesc:'+N% 물리 방어',  category:'defense' },
+    { id:'magic_defense_up',    label:'마법 방어 증가', buffDesc:'+N% 마법 방어',  category:'defense' },
+    { id:'healing_up',          label:'회복량 증가',    buffDesc:'+N% 회복량',     category:'support' },
+    { id:'shield_up',           label:'보호막 효과 증가', buffDesc:'+N% 보호막 효과', category:'support' },
+    { id:'stat_str_up',         label:'STR 증가',       buffDesc:'STR +N',         category:'stat' },
+    { id:'stat_con_up',         label:'CON 증가',       buffDesc:'CON +N',         category:'stat' },
+    { id:'stat_int_up',         label:'INT 증가',       buffDesc:'INT +N',         category:'stat' },
+    { id:'stat_agi_up',         label:'AGI 증가',       buffDesc:'AGI +N',         category:'stat' },
+    { id:'stat_sense_up',       label:'SENSE 증가',     buffDesc:'SENSE +N',       category:'stat' },
+    { id:'bleed_apply',         label:'출혈 부여',      buffDesc:'출혈 부여 +N%',  category:'status' },
+    { id:'burn_apply',          label:'화상 부여',      buffDesc:'화상 부여 +N%',  category:'status' },
+    { id:'curse_apply',         label:'저주 부여',      buffDesc:'저주 부여 +N%',  category:'status' },
   ];
   function getSpecialMaterialEffectById(id) { return SPECIAL_MATERIAL_EFFECTS.find(e => e.id === id); }
+  function smeOptionsHtml(selectedId, type) {
+    const list = type === 'debuff' ? SPECIAL_MATERIAL_EFFECTS.filter(e => e.canDebuff) : SPECIAL_MATERIAL_EFFECTS;
+    return '<option value="" ' + (!selectedId ? 'selected' : '') + '>(선택)</option>' +
+      list.map(e => '<option value="' + e.id + '"' + (selectedId === e.id ? ' selected' : '') + '>' + escapeHtml(e.label + (type === 'debuff' && e.canDebuff ? ' → 받는 ' + e.label : '')) + '</option>').join('');
+  }
 
 const ELEMENTS = DAMAGE_ELEMENTS;
 const SPECIES_LABELS = { undead:'언데드', ghost:'고스트', beast:'야수', plant:'식물', slime:'슬라임', construct:'구조체', elemental:'정령', demon:'악마', frost:'빙정', celestial:'천사체' };
@@ -1636,7 +1640,7 @@ const RARE_FAMILY_PRESETS = {
       customSkills: [
         { id:'skill_guide', name:'⭐ 스킬가이드', grade:'E', category:'singleAttack', target:'singleEnemy',
           costs:{ mp:0, sp:0 }, coef:1.0, damageType:'physical', element:'none', statTypes:['str'], duration:0,
-          desc:'【스킬 만드는 법】\n1. "새 스킬" 클릭 → ID/이름 입력\n2. 각 항목을 설정 후 저장\n\n【카테고리 설명】\nsingleAttack = 단일 공격 (적 1체)\naoeAttack = 광역 공격 (전체 적)\nsingleCC = 단일 CC (적 1체 + 행동방해)\naoeCC = 광역 CC (전체 적 + 행동방해)\nsingleHeal = 단일 회복 (아군 1체)\naoeHeal = 광역 회복 (전체 아군)\nbuff = 버프 (자신/아군 강화)\nutility = 유틸리티 (자원/상태 관리)\n\n【은신(stealth) 버프 만드는 법】\n은신은 buff 카테고리 스킬로 만듭니다.\n1. 카테고리: buff\n2. 대상: self (자기 자신)\n3. 버프 스탯: 원하는 스탯 (예: agi +5)\n4. 지속 턴: 원하는 턴수 (예: 3)\n5. 은신 체크박스: 체크 ✓\n효과: 은신 중에는 모든 공격 대상에서 제외됩니다.\n  보스의 광역(AoE)만 은신을 무시하고 맞출 수 있습니다.\n  은신 상태에서 공격하면 즉시 은신이 해제됩니다.\n  지속 턴이 끝나도 자동 해제됩니다.\n\n【특수재료 효과 설정법】\n장비와 스킬에 특수재료 효과를 추가할 수 있습니다.\n1. 효과 종류: 버프(자신/아군 강화) 또는 디버프(적에게 역효과)\n2. 발동확률: 0~100% (장비는 피격/공격 시, 스킬은 사용 시)\n3. 효과 선택: 물리/마법 피해 증가, 스탯 증가, 상태이상 부여 등\n4. 효과 수치: 효과의 크기 (%, 절대값 등)\n버프: 자신이나 아군의 해당 효과 증가\n디버프: 적에게 반대 효과 적용 (예: 물리 피해 증가 → 받는 물리 피해 증가)\n\n【대상 설명】\nsingleEnemy = 적 1체\nallEnemies = 전체 적 (광역)\nrowFront = 전열 적만 (전열 광역)\nrowMid = 중열 적만\nrowBack = 후열 적만\nrowFrontMid = 전열+중열 적\nrowMidBack = 중열+후열 적\nsingleAlly = 아군 1체\nallAllies = 전체 아군\nself = 자기 자신\n※ 열 공격: 해당 열이 비면 가장 앞 열의 적을 공격\n\n【CC 종류 설명】\nstun = 기절 (행동불가, 1턴, 이후 5턴 면역)\nbind = 속박 (감각-50%, 명중률-50%)\nsleep = 수면 (행동불가, 피격 시 해제, 이후 5턴 면역)\nsilence = 침묵 (스킬 사용불가)\nslow = 둔화 (명중률-30%, 회피율-50%)\n※ CC 확률: 비우면 100%. 0~1 사이 소수로 입력 (예: 0.3=30%)\n\n【상태이상 설명 및 기본 확률/턴수】\npoison = 독 — 확률28%, 3턴, 최대3중첩\n  효과: 매턴 방어무시 DoT (기본값×계수×0.2×중첩수)\nbleed = 출혈 — 확률28%, 3턴\n  효과: 발동 시 해당 공격 피해의 30% 추가피해(1회)\n  + 3턴간 받는 회복량 50% 감소\nburn = 화상 — 확률28%, 5턴, 최대5중첩\n  효과: 매턴 방어무시 DoT (기본값×계수×0.12×중첩수)\n  + 받는 데미지 +10% (중첩 무관)\ncurse = 저주 — 확률24%, 3턴\n  효과: 등급별 공격력 감소 + 받는 피해 증가 (E:10%~S:30%)\nsilence = 침묵 — 확률20%, 3턴\n  효과: 스킬 사용불가 (기본공격만 가능)\nslow = 둔화 — 확률25%, 3턴\n  효과: 명중률 -30%, 회피율 -50%\nbind = 속박 — 확률18%, 2턴\n  효과: 감각(SENSE) -50%, 명중률 -50% (크리율도 함께 감소)\n  둔화보다 명중 감소폭이 크고, 감각 감소로 크리티컬률도 하락\n\n※ 상태이상 확률: 비우면 위 기본값 자동 적용\n0~1 사이 소수로 입력 (예: 0.5=50%)\n\n【등급별 계수 — 순수 공격 (단일 기준)】\n하한 → 상한\nE: 1.2 → 1.5\nD: 1.92 → 2.4\nC: 2.88 → 3.6\nB: 4.8 → 6.0\nA: 7.68 → 9.6\nS: 11.52 → 14.4\n광역/열공격 = 단일 × 0.58\n\n【CC/상태이상 스킬 추천 계수】\n상태이상이 붙는 스킬은 직접 데미지를 낮추는 대신\n상태이상 효과로 총 가치를 보상하는 구조.\n추천: 순수공격 하한값 × 0.8 (20% 약화)\n\n단일 CC/상태이상 추천계수 (기본확률일 경우):\nE: 0.96 / D: 1.54 / C: 2.30\nB: 3.84 / A: 6.14 / S: 9.22\n\n광역 CC/상태이상 추천계수 (단일×0.58):\nE: 0.56 / D: 0.89 / C: 1.33\nB: 2.23 / A: 3.56 / S: 5.35\n\n※ 밸런스 기준:\n직접피해 + 상태이상 효과(DoT/추가피해/디버프)\n총합이 최소 상한계수급 이상이면 적절.\n독/화상: 총합≈상한의 102%\n출혈: 직접+즉시추가≈상한의 83% + 회복량50%감소 유틸\n상태이상이 강할수록 계수를 더 낮춰도 됨.\n\n【데미지 공식】\n기본값 = (2 × 주스탯) + (3 × ATK)\n최종데미지 = 기본값 × 계수 × 크리배율 × 속성배율\n※ 크리티컬: ×1.5 / 속성유리: ×1.25 / 속성불리: ×0.75\n\n【상태이상 효과 공식】\n독(DoT): 매턴 기본값 × 계수 × 0.2 × 중첩수 (최대3)\n화상(DoT): 매턴 기본값 × 계수 × 0.12 × 중첩수 (최대5)\n  + 받는 데미지 +10% (중첩 무관)\n출혈: 발동 시 해당 공격 피해의 30% 추가피해(1회)\n  + 3턴간 받는 회복량 50% 감소\n저주: 등급별 공격력 감소 + 받는 피해 증가 (E:10%~S:30%)\n\n【E급 예시 (주스탯15, ATK5)】\n기본값 = (2×15)+(3×5) = 45\n상한 직접피해 = 45×1.5 = 67.5\n\n■ 순수 단일공격 (계수1.35): 45×1.35 = 60.75\n■ 순수 광역공격 (계수0.78): 45×0.78 = 35.10\n\n■ 단일CC/상태이상 (추천계수0.96):\n  직접피해: 45×0.96 = 43.20\n  독1중첩 3턴합: 45×0.96×0.2×3 = 25.92\n  → 총합: 43.20+25.92 = 69.12 (상한의 102%) ✓\n  화상1중첩 5턴합: 45×0.96×0.12×5 = 25.92\n  → 총합: 43.20+25.92 = 69.12 + 피격+10% ✓\n  출혈 즉시추가: 43.20×0.3 = 12.96\n  → 총합: 43.20+12.96 = 56.16 (상한83%) + 회복량50%감소 ✓\n\n■ 광역CC/상태이상 (추천계수0.56):\n  직접피해: 45×0.56 = 25.20 (각 적)\n  독1중첩 3턴합: 45×0.56×0.2×3 = 15.12\n  → 총합: 25.20+15.12 = 40.32/적\n  출혈 즉시추가: 25.20×0.3 = 7.56\n  → 총합: 25.20+7.56 = 32.76/적 + 회복량50%감소\n\n이 스킬은 삭제해도 됩니다.' }
+          desc:'【스킬 만드는 법】\n1. "새 스킬" 클릭 → ID/이름 입력\n2. 각 항목을 설정 후 저장\n\n【카테고리 설명】\nsingleAttack = 단일 공격 (적 1체)\naoeAttack = 광역 공격 (전체 적)\nsingleCC = 단일 CC (적 1체 + 행동방해)\naoeCC = 광역 CC (전체 적 + 행동방해)\nsingleHeal = 단일 회복 (아군 1체)\naoeHeal = 광역 회복 (전체 아군)\nbuff = 버프 (자신/아군 강화)\nutility = 유틸리티 (자원/상태 관리)\n\n【은신(stealth) 버프 만드는 법】\n은신은 buff 카테고리 스킬로 만듭니다.\n1. 카테고리: buff\n2. 대상: self (자기 자신)\n3. 버프 스탯: 원하는 스탯 (예: agi +5)\n4. 지속 턴: 원하는 턴수 (예: 3)\n5. 은신 체크박스: 체크 ✓\n효과: 은신 중에는 모든 공격 대상에서 제외됩니다.\n  보스의 광역(AoE)만 은신을 무시하고 맞출 수 있습니다.\n  은신 상태에서 공격하면 즉시 은신이 해제됩니다.\n  지속 턴이 끝나도 자동 해제됩니다.\n\n【특수효과 설정법】\n장비와 스킬에 특수효과를 추가할 수 있습니다.\n1. 효과 종류: 버프(자신/아군 강화) 또는 디버프(적에게 받는 피해 증가)\n2. 발동확률: 0~100% (장비는 피격/공격 시, 스킬은 사용 시)\n3. 효과 선택: 버프는 다양한 효과, 디버프는 받는 피해 증가만 선택 가능\n4. 효과 수치: 효과의 크기 (%, 절대값 등)\n버프: 자신이나 아군의 해당 효과 증가\n디버프: 적에게 받는 피해 증가 적용 (물리/마법/속성별 받는 피해 증가)\n\n【대상 설명】\nsingleEnemy = 적 1체\nallEnemies = 전체 적 (광역)\nrowFront = 전열 적만 (전열 광역)\nrowMid = 중열 적만\nrowBack = 후열 적만\nrowFrontMid = 전열+중열 적\nrowMidBack = 중열+후열 적\nsingleAlly = 아군 1체\nallAllies = 전체 아군\nself = 자기 자신\n※ 열 공격: 해당 열이 비면 가장 앞 열의 적을 공격\n\n【CC 종류 설명】\nstun = 기절 (행동불가, 1턴, 이후 5턴 면역)\nbind = 속박 (감각-50%, 명중률-50%)\nsleep = 수면 (행동불가, 피격 시 해제, 이후 5턴 면역)\nsilence = 침묵 (스킬 사용불가)\nslow = 둔화 (명중률-30%, 회피율-50%)\n※ CC 확률: 비우면 100%. 0~1 사이 소수로 입력 (예: 0.3=30%)\n\n【상태이상 설명 및 기본 확률/턴수】\npoison = 독 — 확률28%, 3턴, 최대3중첩\n  효과: 매턴 방어무시 DoT (기본값×계수×0.2×중첩수)\nbleed = 출혈 — 확률28%, 3턴\n  효과: 발동 시 해당 공격 피해의 30% 추가피해(1회)\n  + 3턴간 받는 회복량 50% 감소\nburn = 화상 — 확률28%, 5턴, 최대5중첩\n  효과: 매턴 방어무시 DoT (기본값×계수×0.12×중첩수)\n  + 받는 데미지 +10% (중첩 무관)\ncurse = 저주 — 확률24%, 3턴\n  효과: 등급별 공격력 감소 + 받는 피해 증가 (E:10%~S:30%)\nsilence = 침묵 — 확률20%, 3턴\n  효과: 스킬 사용불가 (기본공격만 가능)\nslow = 둔화 — 확률25%, 3턴\n  효과: 명중률 -30%, 회피율 -50%\nbind = 속박 — 확률18%, 2턴\n  효과: 감각(SENSE) -50%, 명중률 -50% (크리율도 함께 감소)\n  둔화보다 명중 감소폭이 크고, 감각 감소로 크리티컬률도 하락\n\n※ 상태이상 확률: 비우면 위 기본값 자동 적용\n0~1 사이 소수로 입력 (예: 0.5=50%)\n\n【등급별 계수 — 순수 공격 (단일 기준)】\n하한 → 상한\nE: 1.2 → 1.5\nD: 1.92 → 2.4\nC: 2.88 → 3.6\nB: 4.8 → 6.0\nA: 7.68 → 9.6\nS: 11.52 → 14.4\n광역/열공격 = 단일 × 0.58\n\n【CC/상태이상 스킬 추천 계수】\n상태이상이 붙는 스킬은 직접 데미지를 낮추는 대신\n상태이상 효과로 총 가치를 보상하는 구조.\n추천: 순수공격 하한값 × 0.8 (20% 약화)\n\n단일 CC/상태이상 추천계수 (기본확률일 경우):\nE: 0.96 / D: 1.54 / C: 2.30\nB: 3.84 / A: 6.14 / S: 9.22\n\n광역 CC/상태이상 추천계수 (단일×0.58):\nE: 0.56 / D: 0.89 / C: 1.33\nB: 2.23 / A: 3.56 / S: 5.35\n\n※ 밸런스 기준:\n직접피해 + 상태이상 효과(DoT/추가피해/디버프)\n총합이 최소 상한계수급 이상이면 적절.\n독/화상: 총합≈상한의 102%\n출혈: 직접+즉시추가≈상한의 83% + 회복량50%감소 유틸\n상태이상이 강할수록 계수를 더 낮춰도 됨.\n\n【데미지 공식】\n기본값 = (2 × 주스탯) + (3 × ATK)\n최종데미지 = 기본값 × 계수 × 크리배율 × 속성배율\n※ 크리티컬: ×1.5 / 속성유리: ×1.25 / 속성불리: ×0.75\n\n【상태이상 효과 공식】\n독(DoT): 매턴 기본값 × 계수 × 0.2 × 중첩수 (최대3)\n화상(DoT): 매턴 기본값 × 계수 × 0.12 × 중첩수 (최대5)\n  + 받는 데미지 +10% (중첩 무관)\n출혈: 발동 시 해당 공격 피해의 30% 추가피해(1회)\n  + 3턴간 받는 회복량 50% 감소\n저주: 등급별 공격력 감소 + 받는 피해 증가 (E:10%~S:30%)\n\n【E급 예시 (주스탯15, ATK5)】\n기본값 = (2×15)+(3×5) = 45\n상한 직접피해 = 45×1.5 = 67.5\n\n■ 순수 단일공격 (계수1.35): 45×1.35 = 60.75\n■ 순수 광역공격 (계수0.78): 45×0.78 = 35.10\n\n■ 단일CC/상태이상 (추천계수0.96):\n  직접피해: 45×0.96 = 43.20\n  독1중첩 3턴합: 45×0.96×0.2×3 = 25.92\n  → 총합: 43.20+25.92 = 69.12 (상한의 102%) ✓\n  화상1중첩 5턴합: 45×0.96×0.12×5 = 25.92\n  → 총합: 43.20+25.92 = 69.12 + 피격+10% ✓\n  출혈 즉시추가: 43.20×0.3 = 12.96\n  → 총합: 43.20+12.96 = 56.16 (상한83%) + 회복량50%감소 ✓\n\n■ 광역CC/상태이상 (추천계수0.56):\n  직접피해: 45×0.56 = 25.20 (각 적)\n  독1중첩 3턴합: 45×0.56×0.2×3 = 15.12\n  → 총합: 25.20+15.12 = 40.32/적\n  출혈 즉시추가: 25.20×0.3 = 7.56\n  → 총합: 25.20+7.56 = 32.76/적 + 회복량50%감소\n\n이 스킬은 삭제해도 됩니다.' }
       ],
       rareMaterialPack: deepClone(DEFAULT_RARE_MATERIAL_PACK),
       rareMaterialCatalog: [],
@@ -3311,7 +3315,7 @@ function stageTemplateForSize(size) {
   return tpl;
 }
 function buildPartyEntriesFromSetup() {
-  return (model.db.battleSetup.partySlots || []).map(id => getCharById(id)).filter(Boolean).map(base => {
+  return (model.db.battleSetup.partySlots || []).map(id => getCharById(id) || getPersonaById(id)).filter(Boolean).map(base => {
     const e = deepClone(base);
     e.currentHp = Number(e.hp || 0);
     e.currentMp = Number(e.mp || 0);
@@ -7759,6 +7763,7 @@ function optionHtml(value, label, selected) {
     const opts = [];
     if (allowBlank) opts.push(optionHtml('', '(비움)', !selected));
     (model.db.characters || []).forEach(c => opts.push(optionHtml(c.id, `${c.name} [${c.job}]`, selected === c.id)));
+    (model.db.personas || []).forEach(p => opts.push(optionHtml(p.id, `${p.name} [페르소나]`, selected === p.id)));
     return opts.join('');
   }
   function monsterOptions(selected, allowBlank) {
@@ -8853,26 +8858,25 @@ function renderCommandPanel(runtime) {
           </div>
 
           <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(148,163,184,0.15);">
-            <div class="gb-section-title">✨ 특수재료 효과 (Special Material Effect)</div>
-            <div class="gb-sub">버프=아군 강화 효과, 디버프=적에게 역효과 적용.</div>
+            <div class="gb-section-title">✨ 특수효과 (Special Effect)</div>
+            <div class="gb-sub">버프=아군 강화 효과, 디버프=적에게 받는 피해 증가 효과.</div>
             <div class="gb-grid two" style="margin-top:6px;">
               <label>효과 종류<select class="gb-input" id="gb-skill-sme-type">
                 <option value="" ${!(item.specialEffect&&item.specialEffect.type)?'selected':''}>없음</option>
                 <option value="buff" ${(item.specialEffect&&item.specialEffect.type)==='buff'?'selected':''}>버프 (아군 강화)</option>
-                <option value="debuff" ${(item.specialEffect&&item.specialEffect.type)==='debuff'?'selected':''}>디버프 (적 역효과)</option>
+                <option value="debuff" ${(item.specialEffect&&item.specialEffect.type)==='debuff'?'selected':''}>디버프 (받는 피해 증가)</option>
               </select></label>
               <label>발동확률 (%)<input class="gb-input" id="gb-skill-sme-chance" type="number" min="0" max="100" value="${(item.specialEffect&&item.specialEffect.chance)||0}" /></label>
               <label>효과 선택<select class="gb-input" id="gb-skill-sme-effect">
-                <option value="" ${!(item.specialEffect&&item.specialEffect.effectId)?'selected':''}>(선택)</option>
-                ${SPECIAL_MATERIAL_EFFECTS.map(e => `<option value="${e.id}" ${(item.specialEffect&&item.specialEffect.effectId)===e.id?'selected':''}>${escapeHtml(e.label)}</option>`).join('')}
+                ${smeOptionsHtml((item.specialEffect&&item.specialEffect.effectId)||'', (item.specialEffect&&item.specialEffect.type)||'')}
               </select></label>
               <label>효과 수치<input class="gb-input" id="gb-skill-sme-value" type="number" value="${(item.specialEffect&&item.specialEffect.value)||0}" /></label>
             </div>
             ${item.specialEffect && item.specialEffect.effectId ? (() => {
               const eff = getSpecialMaterialEffectById(item.specialEffect.effectId);
               if (!eff) return '';
-              const desc = item.specialEffect.type === 'debuff' ? eff.debuffDesc : eff.buffDesc;
-              return '<div class="gb-sub" style="margin-top:4px;color:#a78bfa;">미리보기: ' + escapeHtml(desc.replace(/N/g, String(item.specialEffect.value||0))) + ' (발동확률 ' + (item.specialEffect.chance||0) + '%)</div>';
+              const desc = (item.specialEffect.type === 'debuff' && eff.canDebuff) ? eff.debuffDesc : eff.buffDesc;
+              return '<div class="gb-sub" style="margin-top:4px;color:#a78bfa;">미리보기: ' + escapeHtml((desc||'').replace(/N/g, String(item.specialEffect.value||0))) + ' (발동확률 ' + (item.specialEffect.chance||0) + '%)</div>';
             })() : ''}
           </div>
 
@@ -9107,26 +9111,25 @@ function renderCommandPanel(runtime) {
           </select></label>
 
           <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(148,163,184,0.15);">
-            <div class="gb-section-title">✨ 특수재료 효과 (Special Material Effect)</div>
-            <div class="gb-sub">특성주입과 별개로 무기/장비에 추가되는 특수 옵션. 버프=자신 강화, 디버프=적에게 역효과.</div>
+            <div class="gb-section-title">✨ 특수효과 (Special Effect)</div>
+            <div class="gb-sub">특성주입과 별개로 무기/장비에 추가되는 특수 옵션. 버프=자신 강화, 디버프=적에게 받는 피해 증가.</div>
             <div class="gb-grid two" style="margin-top:6px;">
               <label>효과 종류<select class="gb-input" id="gb-eq-sme-type">
                 <option value="" ${!(item.specialEffect&&item.specialEffect.type)?'selected':''}>없음</option>
                 <option value="buff" ${(item.specialEffect&&item.specialEffect.type)==='buff'?'selected':''}>버프 (자신 강화)</option>
-                <option value="debuff" ${(item.specialEffect&&item.specialEffect.type)==='debuff'?'selected':''}>디버프 (적 역효과)</option>
+                <option value="debuff" ${(item.specialEffect&&item.specialEffect.type)==='debuff'?'selected':''}>디버프 (받는 피해 증가)</option>
               </select></label>
               <label>발동확률 (%)<input class="gb-input" id="gb-eq-sme-chance" type="number" min="0" max="100" value="${(item.specialEffect&&item.specialEffect.chance)||0}" /></label>
               <label>효과 선택<select class="gb-input" id="gb-eq-sme-effect">
-                <option value="" ${!(item.specialEffect&&item.specialEffect.effectId)?'selected':''}>(선택)</option>
-                ${SPECIAL_MATERIAL_EFFECTS.map(e => `<option value="${e.id}" ${(item.specialEffect&&item.specialEffect.effectId)===e.id?'selected':''}>${escapeHtml(e.label)}</option>`).join('')}
+                ${smeOptionsHtml((item.specialEffect&&item.specialEffect.effectId)||'', (item.specialEffect&&item.specialEffect.type)||'')}
               </select></label>
               <label>효과 수치<input class="gb-input" id="gb-eq-sme-value" type="number" value="${(item.specialEffect&&item.specialEffect.value)||0}" /></label>
             </div>
             ${item.specialEffect && item.specialEffect.effectId ? (() => {
               const eff = getSpecialMaterialEffectById(item.specialEffect.effectId);
               if (!eff) return '';
-              const desc = item.specialEffect.type === 'debuff' ? eff.debuffDesc : eff.buffDesc;
-              return '<div class="gb-sub" style="margin-top:4px;color:#a78bfa;">미리보기: ' + escapeHtml(desc.replace(/N/g, String(item.specialEffect.value||0))) + ' (발동확률 ' + (item.specialEffect.chance||0) + '%)</div>';
+              const desc = (item.specialEffect.type === 'debuff' && eff.canDebuff) ? eff.debuffDesc : eff.buffDesc;
+              return '<div class="gb-sub" style="margin-top:4px;color:#a78bfa;">미리보기: ' + escapeHtml((desc||'').replace(/N/g, String(item.specialEffect.value||0))) + ' (발동확률 ' + (item.specialEffect.chance||0) + '%)</div>';
             })() : ''}
           </div>
 
@@ -11821,6 +11824,18 @@ async function saveMaterialTraitFromForm() {
 
     // Equipment tab handlers
     on('#gb-eq-new', 'click', async () => { model.state.selected.equipment = ''; await saveState(); renderApp(); });
+    // SME type change → re-populate effect dropdown (skill)
+    on('#gb-skill-sme-type', 'change', () => {
+      const typeEl = model.root && model.root.querySelector('#gb-skill-sme-type');
+      const effectEl = model.root && model.root.querySelector('#gb-skill-sme-effect');
+      if (typeEl && effectEl) { effectEl.innerHTML = smeOptionsHtml('', typeEl.value); }
+    });
+    // SME type change → re-populate effect dropdown (equipment)
+    on('#gb-eq-sme-type', 'change', () => {
+      const typeEl = model.root && model.root.querySelector('#gb-eq-sme-type');
+      const effectEl = model.root && model.root.querySelector('#gb-eq-sme-effect');
+      if (typeEl && effectEl) { effectEl.innerHTML = smeOptionsHtml('', typeEl.value); }
+    });
     on('#gb-eq-save', 'click', async () => { try { await saveEquipmentFromForm(); } catch (e) { toast(e.message || String(e), true); } });
     on('#gb-eq-delete', 'click', async () => { try { await deleteSelected('equipment'); } catch (e) { toast(e.message || String(e), true); } });
     on('#gb-eq-export', 'click', async () => {
