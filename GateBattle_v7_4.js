@@ -60,6 +60,9 @@ try {
     { id:'ice_damage_up',       label:'빙결 피해 증가', buffDesc:'+N% 빙결 피해', debuffDesc:'+N% 받는 빙결 피해 증가', category:'offense', canDebuff:true },
     { id:'lightning_damage_up', label:'번개 피해 증가', buffDesc:'+N% 번개 피해', debuffDesc:'+N% 받는 번개 피해 증가', category:'offense', canDebuff:true },
     { id:'dark_damage_up',      label:'암흑 피해 증가', buffDesc:'+N% 암흑 피해', debuffDesc:'+N% 받는 암흑 피해 증가', category:'offense', canDebuff:true },
+    { id:'water_damage_up',     label:'물 피해 증가',   buffDesc:'+N% 물 피해',   debuffDesc:'+N% 받는 물 피해 증가',   category:'offense', canDebuff:true },
+    { id:'earth_damage_up',     label:'대지 피해 증가', buffDesc:'+N% 대지 피해', debuffDesc:'+N% 받는 대지 피해 증가', category:'offense', canDebuff:true },
+    { id:'wind_damage_up',      label:'바람 피해 증가', buffDesc:'+N% 바람 피해', debuffDesc:'+N% 받는 바람 피해 증가', category:'offense', canDebuff:true },
     { id:'light_damage_up',     label:'빛 피해 증가',   buffDesc:'+N% 빛 피해',   debuffDesc:'+N% 받는 빛 피해 증가',   category:'offense', canDebuff:true },
     { id:'crit_chance_up',      label:'치명타 확률 증가', buffDesc:'+N% 치확',    category:'offense' },
     { id:'crit_damage_up',      label:'치명타 피해 증가', buffDesc:'+N% 치피',    category:'offense' },
@@ -1552,7 +1555,7 @@ const RARE_FAMILY_PRESETS = {
       customSkills: [
         { id:'skill_guide', name:'⭐ 스킬가이드', grade:'E', category:'singleAttack', target:'singleEnemy',
           costs:{ mp:0, sp:0 }, coef:1.0, damageType:'physical', element:'none', statTypes:['str'], duration:0,
-          desc:'【스킬 만드는 법】\n1. "새 스킬" 클릭 → ID/이름 입력\n2. 각 항목을 설정 후 저장\n\n【카테고리 설명】\nsingleAttack = 단일 공격 (적 1체)\naoeAttack = 광역 공격 (전체 적)\nsingleCC = 단일 CC (적 1체 + 행동방해)\naoeCC = 광역 CC (전체 적 + 행동방해)\nsingleHeal = 단일 회복 (아군 1체)\naoeHeal = 광역 회복 (전체 아군)\nbuff = 버프 (자신/아군 강화)\nutility = 유틸리티 (자원/상태 관리)\n\n【은신(stealth) 버프 만드는 법】\n은신은 buff 카테고리 스킬로 만듭니다.\n1. 카테고리: buff\n2. 대상: self (자기 자신)\n3. 버프 스탯: 원하는 스탯 (예: agi +5)\n4. 지속 턴: 원하는 턴수 (예: 3)\n5. 은신 체크박스: 체크 ✓\n효과: 은신 중에는 모든 공격 대상에서 제외됩니다.\n  보스의 광역(AoE)만 은신을 무시하고 맞출 수 있습니다.\n  은신 상태에서 공격하면 즉시 은신이 해제됩니다.\n  지속 턴이 끝나도 자동 해제됩니다.\n\n【특수효과 설정법】\n장비와 스킬에 특수효과를 추가할 수 있습니다.\n1. 효과 종류: 버프(자신/아군 강화) 또는 디버프(적에게 받는 피해 증가)\n2. 발동확률: 0~100% (장비는 피격/공격 시, 스킬은 사용 시)\n3. 효과 선택: 버프는 다양한 효과, 디버프는 받는 피해 증가만 선택 가능\n4. 효과 수치: 효과의 크기 (%, 절대값 등)\n버프: 자신이나 아군의 해당 효과 증가\n디버프: 적에게 받는 피해 증가 적용 (물리/마법/속성별 받는 피해 증가)\n\n【대상 설명】\nsingleEnemy = 적 1체\nallEnemies = 전체 적 (광역)\nrowFront = 전열 적만 (전열 광역)\nrowMid = 중열 적만\nrowBack = 후열 적만\nrowFrontMid = 전열+중열 적\nrowMidBack = 중열+후열 적\nsingleAlly = 아군 1체\nallAllies = 전체 아군\nself = 자기 자신\n※ 열 공격: 해당 열이 비면 가장 앞 열의 적을 공격\n\n【CC 종류 설명】\nstun = 기절 (행동불가, 1턴, 이후 5턴 면역)\nbind = 속박 (감각-50%, 명중률-50%)\nsleep = 수면 (행동불가, 피격 시 해제, 이후 5턴 면역)\nsilence = 침묵 (스킬 사용불가)\nslow = 둔화 (명중률-30%, 회피율-50%)\n※ CC 확률: 비우면 100%. 0~1 사이 소수로 입력 (예: 0.3=30%)\n\n【상태이상 설명 및 기본 확률/턴수】\npoison = 독 — 확률28%, 3턴, 최대3중첩\n  효과: 매턴 방어무시 DoT (기본값×계수×0.2×중첩수)\nbleed = 출혈 — 확률28%, 3턴\n  효과: 발동 시 해당 공격 피해의 30% 추가피해(1회)\n  + 3턴간 받는 회복량 50% 감소\nburn = 화상 — 확률28%, 5턴, 최대5중첩\n  효과: 매턴 방어무시 DoT (기본값×계수×0.12×중첩수)\n  + 받는 데미지 +10% (중첩 무관)\ncurse = 저주 — 확률24%, 3턴\n  효과: 등급별 공격력 감소 + 받는 피해 증가 (E:10%~S:30%)\nsilence = 침묵 — 확률20%, 3턴\n  효과: 스킬 사용불가 (기본공격만 가능)\nslow = 둔화 — 확률25%, 3턴\n  효과: 명중률 -30%, 회피율 -50%\nbind = 속박 — 확률18%, 2턴\n  효과: 감각(SENSE) -50%, 명중률 -50% (크리율도 함께 감소)\n  둔화보다 명중 감소폭이 크고, 감각 감소로 크리티컬률도 하락\n\n※ 상태이상 확률: 비우면 위 기본값 자동 적용\n0~1 사이 소수로 입력 (예: 0.5=50%)\n\n【등급별 계수 — 순수 공격 (단일 기준)】\n하한 → 상한\nE: 1.2 → 1.5\nD: 1.92 → 2.4\nC: 2.88 → 3.6\nB: 4.8 → 6.0\nA: 7.68 → 9.6\nS: 11.52 → 14.4\n광역/열공격 = 단일 × 0.58\n\n【CC/상태이상 스킬 추천 계수】\n상태이상이 붙는 스킬은 직접 데미지를 낮추는 대신\n상태이상 효과로 총 가치를 보상하는 구조.\n추천: 순수공격 하한값 × 0.8 (20% 약화)\n\n단일 CC/상태이상 추천계수 (기본확률일 경우):\nE: 0.96 / D: 1.54 / C: 2.30\nB: 3.84 / A: 6.14 / S: 9.22\n\n광역 CC/상태이상 추천계수 (단일×0.58):\nE: 0.56 / D: 0.89 / C: 1.33\nB: 2.23 / A: 3.56 / S: 5.35\n\n※ 밸런스 기준:\n직접피해 + 상태이상 효과(DoT/추가피해/디버프)\n총합이 최소 상한계수급 이상이면 적절.\n독/화상: 총합≈상한의 102%\n출혈: 직접+즉시추가≈상한의 83% + 회복량50%감소 유틸\n상태이상이 강할수록 계수를 더 낮춰도 됨.\n\n【데미지 공식】\n기본값 = (2 × 주스탯) + (3 × ATK)\n최종데미지 = 기본값 × 계수 × 크리배율 × 속성배율\n※ 크리티컬: ×1.5 / 속성유리: ×1.25 / 속성불리: ×0.75\n\n【상태이상 효과 공식】\n독(DoT): 매턴 기본값 × 계수 × 0.2 × 중첩수 (최대3)\n화상(DoT): 매턴 기본값 × 계수 × 0.12 × 중첩수 (최대5)\n  + 받는 데미지 +10% (중첩 무관)\n출혈: 발동 시 해당 공격 피해의 30% 추가피해(1회)\n  + 3턴간 받는 회복량 50% 감소\n저주: 등급별 공격력 감소 + 받는 피해 증가 (E:10%~S:30%)\n\n【E급 예시 (주스탯15, ATK5)】\n기본값 = (2×15)+(3×5) = 45\n상한 직접피해 = 45×1.5 = 67.5\n\n■ 순수 단일공격 (계수1.35): 45×1.35 = 60.75\n■ 순수 광역공격 (계수0.78): 45×0.78 = 35.10\n\n■ 단일CC/상태이상 (추천계수0.96):\n  직접피해: 45×0.96 = 43.20\n  독1중첩 3턴합: 45×0.96×0.2×3 = 25.92\n  → 총합: 43.20+25.92 = 69.12 (상한의 102%) ✓\n  화상1중첩 5턴합: 45×0.96×0.12×5 = 25.92\n  → 총합: 43.20+25.92 = 69.12 + 피격+10% ✓\n  출혈 즉시추가: 43.20×0.3 = 12.96\n  → 총합: 43.20+12.96 = 56.16 (상한83%) + 회복량50%감소 ✓\n\n■ 광역CC/상태이상 (추천계수0.56):\n  직접피해: 45×0.56 = 25.20 (각 적)\n  독1중첩 3턴합: 45×0.56×0.2×3 = 15.12\n  → 총합: 25.20+15.12 = 40.32/적\n  출혈 즉시추가: 25.20×0.3 = 7.56\n  → 총합: 25.20+7.56 = 32.76/적 + 회복량50%감소\n\n이 스킬은 삭제해도 됩니다.' }
+          desc:'【스킬 만드는 법】\n1. "새 스킬" 클릭 → ID/이름 입력\n2. 각 항목을 설정 후 저장\n\n【카테고리 설명】\nsingleAttack = 단일 공격 (적 1체)\naoeAttack = 광역 공격 (전체 적)\nsingleCC = 단일 CC (적 1체 + 행동방해)\naoeCC = 광역 CC (전체 적 + 행동방해)\nsingleHeal = 단일 회복 (아군 1체)\naoeHeal = 광역 회복 (전체 아군)\nbuff = 버프 (자신/아군 강화)\nutility = 유틸리티 (자원/상태 관리)\n\n【은신(stealth) 버프 만드는 법】\n은신은 buff 카테고리 스킬로 만듭니다.\n1. 카테고리: buff\n2. 대상: self (자기 자신)\n3. 버프 스탯: 원하는 스탯 (예: agi +5)\n4. 지속 턴: 원하는 턴수 (예: 3)\n5. 은신 체크박스: 체크 ✓\n효과: 은신 중에는 모든 공격 대상에서 제외됩니다.\n  보스를 포함한 모든 적의 공격에서 은신이 적용됩니다.\n  은신 상태에서 공격하면 즉시 은신이 해제됩니다.\n  지속 턴이 끝나도 자동 해제됩니다.\n\n【특수효과 설정법】\n장비와 스킬에 특수효과를 추가할 수 있습니다.\n1. 효과 종류: 버프(자신/아군 강화) 또는 디버프(적에게 받는 피해 증가)\n2. 발동확률: 0~100% (장비는 피격/공격 시, 스킬은 사용 시)\n3. 효과 선택: 버프는 다양한 효과, 디버프는 받는 피해 증가만 선택 가능\n4. 효과 수치: 효과의 크기 (%, 절대값 등)\n버프: 자신이나 아군의 해당 효과 증가\n디버프: 적에게 받는 피해 증가 적용 (물리/마법/속성별 받는 피해 증가)\n\n【대상 설명】\nsingleEnemy = 적 1체\nallEnemies = 전체 적 (광역)\nrowFront = 전열 적만 (전열 광역)\nrowMid = 중열 적만\nrowBack = 후열 적만\nrowFrontMid = 전열+중열 적\nrowMidBack = 중열+후열 적\nsingleAlly = 아군 1체\nallAllies = 전체 아군\nself = 자기 자신\n※ 열 공격: 해당 열이 비면 가장 앞 열의 적을 공격\n\n【CC 종류 설명】\nstun = 기절 (행동불가, 1턴, 이후 5턴 면역)\nbind = 속박 (감각-50%, 명중률-50%)\nsleep = 수면 (행동불가, 피격 시 해제, 이후 5턴 면역)\nsilence = 침묵 (스킬 사용불가)\nslow = 둔화 (명중률-30%, 회피율-50%)\n※ CC 확률: 비우면 100%. 0~1 사이 소수로 입력 (예: 0.3=30%)\n\n【상태이상 설명 및 기본 확률/턴수】\npoison = 독 — 확률28%, 3턴, 최대3중첩\n  효과: 매턴 방어무시 DoT (기본값×계수×0.2×중첩수)\nbleed = 출혈 — 확률28%, 3턴\n  효과: 발동 시 해당 공격 피해의 30% 추가피해(1회)\n  + 3턴간 받는 회복량 50% 감소\nburn = 화상 — 확률28%, 5턴, 최대5중첩\n  효과: 매턴 방어무시 DoT (기본값×계수×0.12×중첩수)\n  + 받는 데미지 +10% (중첩 무관)\ncurse = 저주 — 확률24%, 3턴\n  효과: 등급별 공격력 감소 + 받는 피해 증가 (E:10%~S:30%)\nsilence = 침묵 — 확률20%, 3턴\n  효과: 스킬 사용불가 (기본공격만 가능)\nslow = 둔화 — 확률25%, 3턴\n  효과: 명중률 -30%, 회피율 -50%\nbind = 속박 — 확률18%, 2턴\n  효과: 감각(SENSE) -50%, 명중률 -50% (크리율도 함께 감소)\n  둔화보다 명중 감소폭이 크고, 감각 감소로 크리티컬률도 하락\n\n※ 상태이상 확률: 비우면 위 기본값 자동 적용\n0~1 사이 소수로 입력 (예: 0.5=50%)\n\n【등급별 계수 — 순수 공격 (단일 기준)】\n하한 → 상한\nE: 1.2 → 1.5\nD: 1.92 → 2.4\nC: 2.88 → 3.6\nB: 4.8 → 6.0\nA: 7.68 → 9.6\nS: 11.52 → 14.4\n광역/열공격 = 단일 × 0.58\n\n【CC/상태이상 스킬 추천 계수】\n상태이상이 붙는 스킬은 직접 데미지를 낮추는 대신\n상태이상 효과로 총 가치를 보상하는 구조.\n추천: 순수공격 하한값 × 0.8 (20% 약화)\n\n단일 CC/상태이상 추천계수 (기본확률일 경우):\nE: 0.96 / D: 1.54 / C: 2.30\nB: 3.84 / A: 6.14 / S: 9.22\n\n광역 CC/상태이상 추천계수 (단일×0.58):\nE: 0.56 / D: 0.89 / C: 1.33\nB: 2.23 / A: 3.56 / S: 5.35\n\n※ 밸런스 기준:\n직접피해 + 상태이상 효과(DoT/추가피해/디버프)\n총합이 최소 상한계수급 이상이면 적절.\n독/화상: 총합≈상한의 102%\n출혈: 직접+즉시추가≈상한의 83% + 회복량50%감소 유틸\n상태이상이 강할수록 계수를 더 낮춰도 됨.\n\n【데미지 공식】\n기본값 = (2 × 주스탯) + (3 × ATK)\n최종데미지 = 기본값 × 계수 × 크리배율 × 속성배율\n※ 크리티컬: ×1.5 / 속성유리: ×1.25 / 속성불리: ×0.75\n\n【상태이상 효과 공식】\n독(DoT): 매턴 기본값 × 계수 × 0.2 × 중첩수 (최대3)\n화상(DoT): 매턴 기본값 × 계수 × 0.12 × 중첩수 (최대5)\n  + 받는 데미지 +10% (중첩 무관)\n출혈: 발동 시 해당 공격 피해의 30% 추가피해(1회)\n  + 3턴간 받는 회복량 50% 감소\n저주: 등급별 공격력 감소 + 받는 피해 증가 (E:10%~S:30%)\n\n【E급 예시 (주스탯15, ATK5)】\n기본값 = (2×15)+(3×5) = 45\n상한 직접피해 = 45×1.5 = 67.5\n\n■ 순수 단일공격 (계수1.35): 45×1.35 = 60.75\n■ 순수 광역공격 (계수0.78): 45×0.78 = 35.10\n\n■ 단일CC/상태이상 (추천계수0.96):\n  직접피해: 45×0.96 = 43.20\n  독1중첩 3턴합: 45×0.96×0.2×3 = 25.92\n  → 총합: 43.20+25.92 = 69.12 (상한의 102%) ✓\n  화상1중첩 5턴합: 45×0.96×0.12×5 = 25.92\n  → 총합: 43.20+25.92 = 69.12 + 피격+10% ✓\n  출혈 즉시추가: 43.20×0.3 = 12.96\n  → 총합: 43.20+12.96 = 56.16 (상한83%) + 회복량50%감소 ✓\n\n■ 광역CC/상태이상 (추천계수0.56):\n  직접피해: 45×0.56 = 25.20 (각 적)\n  독1중첩 3턴합: 45×0.56×0.2×3 = 15.12\n  → 총합: 25.20+15.12 = 40.32/적\n  출혈 즉시추가: 25.20×0.3 = 7.56\n  → 총합: 25.20+7.56 = 32.76/적 + 회복량50%감소\n\n이 스킬은 삭제해도 됩니다.' }
       ],
       rareMaterialPack: deepClone(DEFAULT_RARE_MATERIAL_PACK),
       rareMaterialCatalog: [],
@@ -4466,26 +4469,19 @@ function getBuffedStat(unit, statKey) {
       // 둔화된 헌터: 명중률 -30%
       if (Number(attacker.statuses.slow || 0) > 0) accuracy *= 0.7;
     }
-    // 대상 회피율 계산 (등급별)
-    let evasion = 0;
-    if (!target.isMonster) {
-      evasion = getBaseEvasion(target);
-      // 패시브 회피 보너스 (통찰, 본능 읽기 등)
-      if (target.passiveMods && Number(target.passiveMods.evasionBonus || 0) > 0) {
-        evasion += Number(target.passiveMods.evasionBonus);
-      }
-      // 공격자 등급 > 대상 등급 → 대상 회피율 0%
-      if (rankIndex(attacker.rank) > rankIndex(target.rank)) {
-        evasion = 0;
-      }
-      // 몬스터가 공격자일시 동급헌터의 회피율을 50%만 적용
-      if (attacker.isMonster) {
-        evasion *= 0.5;
-      }
-      // 둔화된 대상: 회피율 -50%
-      if (Number(target.statuses.slow || 0) > 0) {
-        evasion *= 0.5;
-      }
+    // 대상 회피율 계산 (등급별, 헌터·몬스터 모두 적용)
+    let evasion = getBaseEvasion(target);
+    // 패시브 회피 보너스 (통찰, 본능 읽기 등)
+    if (target.passiveMods && Number(target.passiveMods.evasionBonus || 0) > 0) {
+      evasion += Number(target.passiveMods.evasionBonus);
+    }
+    // 공격자 등급 > 대상 등급 → 대상 회피율 0%
+    if (rankIndex(attacker.rank) > rankIndex(target.rank)) {
+      evasion = 0;
+    }
+    // 둔화된 대상: 회피율 -50%
+    if (Number(target.statuses.slow || 0) > 0) {
+      evasion *= 0.5;
     }
     // 최종 적중률 = 명중률 - 대상 회피율, 100% 이상 → 무조건 적중
     return accuracy - evasion;
@@ -4543,14 +4539,7 @@ function getBuffedStat(unit, statKey) {
       traitDefMul = Math.max(0, traitDefMul);
     }
     // 방어 전 피해량 (rawDamage)
-    let terrainMul = 1;
-    // 지형 전환 효과: 식물(earth) +15%, 화염(fire) -10%
-    if (typeof model !== 'undefined' && model.state && model.state.runtime && model.state.runtime.terrain && model.state.runtime.terrain.turnsLeft > 0) {
-      if (element === 'earth') terrainMul *= 1.15;
-      if (element === 'fire') terrainMul *= 0.90;
-      if (attacker.species === 'plant') terrainMul *= 1.15;
-    }
-    const rawDamage = rawBase * coef * critMult * resistMult * elementMul * typeMul * incomingMul * outgoingMul * traitOutMul * terrainMul;
+    const rawDamage = rawBase * coef * critMult * resistMult * elementMul * typeMul * incomingMul * outgoingMul * traitOutMul;
     // 물리/마법 피해감소 공식: 피해감소율 = DEF / (DEF + 1.5 × rawDamage)
     const defReduction = (def > 0 && rawDamage > 0) ? def / (def + 1.5 * rawDamage) : 0;
     let afterStatDef = rawDamage * (1 - defReduction) * traitDefMul;
@@ -4960,10 +4949,8 @@ function getBuffedStat(unit, statKey) {
     const allies = actor.side === 'party' ? runtime.party : runtime.enemies;
     const foes = actor.side === 'party' ? runtime.enemies : runtime.party;
     if (!skill) return [];
-    const isBoss = String(actor.kind || '').toLowerCase() === 'boss';
-    // 은신 필터: 보스가 아닌 경우 은신 유닛은 광역에서도 제외
+    // 은신 필터: 은신 유닛은 공격 대상에서 제외 (보스 포함 모든 적에게 적용)
     const filterStealth = (list) => {
-      if (isBoss) return list; // 보스의 광역기는 은신도 맞춤
       const visible = list.filter(u => !(u.buffs || []).some(b => b && b.stealth && b.turns > 0));
       return visible.length ? visible : []; // 모두 은신이면 빈 배열 (미스)
     };
@@ -5184,12 +5171,6 @@ function getBuffedStat(unit, statKey) {
         // duration 없는 버프: 1턴 임시 적용
         const tempSkill = Object.assign({}, skill, { duration:1 });
         applyBuff([actor], tempSkill, actor);
-      }
-      // 지형 전환: 전장 환경 변경 (식물 +15%, 화염 -10%)
-      if (skill.id === 'terrainShift') {
-        runtime.terrain = { type:'forest', turnsLeft:3 };
-        addRoundHighlight(summary, `${actor.name} 지형 전환: 숲/초원 (식물 +15%, 화염 -10%)`);
-        pushBattleLog(runtime, `${actor.name} 지형 전환 발동 — 3턴간 식물 +15%, 화염 -10%`);
       }
       addRoundHighlight(summary, `${actor.name}의 ${skill.name}`);
       pushBattleLog(runtime, `${actor.name} 사용: ${skill.name}`);
@@ -8532,10 +8513,15 @@ function renderCommandPanel(runtime) {
       bonus.atk   += Number(eq.atk   || 0);
       bonus.pdef  += Number(eq.pdef  || 0);
       bonus.mdef  += Number(eq.mdef  || 0);
-      // mainStat +value (간단히 장비 rank 기반 약식 보너스)
-      const rankBonus = { E:2, D:5, C:10, B:18, A:28, S:40 };
-      const rb = rankBonus[eq.rank||'E'] || 2;
-      if (eq.mainStat && bonus[eq.mainStat] !== undefined) bonus[eq.mainStat] += rb;
+      // 방어구/악세서리만 totalStatSum 기반 주스탯 보너스 적용 (무기/보조무기는 주스탯 없음)
+      if (part === 'armor' && eq.mainStat && bonus[eq.mainStat] !== undefined) {
+        const armorData = ARMOR_STAT_BY_RANK[eq.rank || 'E'] || ARMOR_STAT_BY_RANK.E;
+        bonus[eq.mainStat] += armorData.totalStatSum || 0;
+      }
+      if (part === 'accessory' && eq.mainStat && bonus[eq.mainStat] !== undefined) {
+        const accData = ACCESSORY_STAT_BY_RANK[eq.rank || 'E'] || ACCESSORY_STAT_BY_RANK.E;
+        bonus[eq.mainStat] += accData.totalStatSum || 0;
+      }
     });
     return bonus;
   }
