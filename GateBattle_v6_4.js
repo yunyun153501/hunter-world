@@ -5448,7 +5448,7 @@ function renderHub() {
       </button>
       <button class="gb-card-nav" data-go="guild">
         <div class="gb-card-title">⚜️ 길드</div>
-        <div class="gb-sub">길드 정보, 소속 헌터, 임무 보드.</div>
+        <div class="gb-sub">길드 가입, 창설, 탈퇴.</div>
       </button>
     </div>
     ${renderTeamPanel()}
