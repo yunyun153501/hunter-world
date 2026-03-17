@@ -30,13 +30,25 @@ try {
   const RARITY_LABELS = { Normal:'Normal', Rare:'Rare', Unique:'Unique', Legendary:'Legendary' };
   function rarityColor(rarity) { return RARITY_COLORS[rarity] || RARITY_COLORS.Normal; }
   function rarityStyle(rarity) { const c = rarityColor(rarity); return rarity && rarity !== 'Normal' ? `color:${c};font-weight:600;` : ''; }
-  // 장비 희귀도 자동 판정: weapon/armor → 특성 유무, subweapon/accessory → 내장 특성 티어
-  function assignEquipRarity(part, hasTrait) {
+  // 특성 → 가격 티어 매핑 (rare_material_catalog 기준)
+  const TRAIT_TIER_MAP = {
+    crit_chance:1, crit_damage:1, physical_damage:1, magic_damage:1,
+    bleed_apply:2, burn_apply:2, curse_apply:2, poison_apply:2,
+    fire_damage:2, water_damage:2, ice_damage:2, earth_damage:2,
+    wind_damage:2, lightning_damage:2, light_damage:2, dark_damage:2,
+    healing_done:3, magic_defense:3, physical_defense:3, shield_effect:3,
+    healing_received:4, bleed_resist:4, burn_resist:4, curse_resist:4,
+    fire_resist:4, water_resist:4, ice_resist:4, earth_resist:4,
+    wind_resist:4, lightning_resist:4, light_resist:4, dark_resist:4,
+    poison_resist:4, threat_up:4, threat_down:4,
+  };
+  // 장비 희귀도 자동 판정: weapon/armor → 특성 유무, subweapon/accessory → 실제 특성 티어
+  function assignEquipRarity(part, traitId) {
     if (part === 'subweapon' || part === 'accessory') {
-      const tier = Math.floor(Math.random() * 4) + 1; // 1~4
+      const tier = TRAIT_TIER_MAP[traitId] || 3;
       return { rarity: tier <= 2 ? 'Rare' : 'Normal', traitTier: tier };
     }
-    return { rarity: hasTrait ? 'Rare' : 'Normal', traitTier: 0 };
+    return { rarity: traitId ? 'Rare' : 'Normal', traitTier: 0 };
   }
 
   // ── 특수효과 (Special Effects) ──
@@ -3757,7 +3769,7 @@ function buildDropEquipment(rank, forcePart) {
   const suffArr = nameSuffixes[part] || [partLabel];
   const suff = suffArr[Math.floor(Math.random() * suffArr.length)];
   // 희귀도 자동 판정
-  const { rarity: autoRarity, traitTier: autoTier } = assignEquipRarity(part, hasTrait);
+  const { rarity: autoRarity, traitTier: autoTier } = assignEquipRarity(part, traits[0] || '');
   const name = `${r}급 드랍 ${suff}${hasTrait ? ` [${traitName}]` : ''}`;
   return {
     id: `drop_equip_${r.toLowerCase()}_${part}_${uid}`,
@@ -5869,16 +5881,17 @@ function seedNpcAuctionListings() {
   for (let i = 0; i < needed; i++) {
     const rank = grades[Math.floor(Math.random() * grades.length)];
     if (Math.random() < 0.70) {
-      // 드랍 장비 (반드시 1특성 부여, 악세서리 특성은 내장이라 별도 비용 없음)
+      // 드랍 장비 (보조무기·악세서리는 항상 특성, 무기·방어구는 20% 확률)
       const part = parts[Math.floor(Math.random() * parts.length)];
       const maxInfuseBase = EQUIP_MAX_INFUSE[part] || 1;
-      const traitId = EQUIP_TRAIT_TYPES[Math.floor(Math.random() * EQUIP_TRAIT_TYPES.length)];
-      const traitName = EQUIP_TRAIT_LABELS[traitId] || traitId;
-      const maxInfuse = (part === 'accessory' || part === 'subweapon') ? maxInfuseBase : maxInfuseBase + 1;
+      const builtInTrait = (part === 'subweapon' || part === 'accessory');
+      const hasTrait = builtInTrait ? true : (Math.random() < 0.20);
+      const traitId = hasTrait ? EQUIP_TRAIT_TYPES[Math.floor(Math.random() * EQUIP_TRAIT_TYPES.length)] : '';
+      const traitName = hasTrait ? (EQUIP_TRAIT_LABELS[traitId] || traitId) : '';
+      const maxInfuse = (hasTrait && !builtInTrait) ? maxInfuseBase + 1 : maxInfuseBase;
       const basePrice = calcEquipRandomPrice(rank, part);
       // 보조무기·악세서리 내장 특성은 별도 비용 없음
-      const builtInTrait = (part === 'subweapon' || part === 'accessory');
-      const traitBonus = builtInTrait ? 0 : Math.round((RARE_MATERIAL_BASE_WON[rank] || RARE_MATERIAL_BASE_WON.E) * 1.25);
+      const traitBonus = (hasTrait && !builtInTrait) ? Math.round((RARE_MATERIAL_BASE_WON[rank] || RARE_MATERIAL_BASE_WON.E) * 1.25) : 0;
       const marketPrice = basePrice + traitBonus;
       const ratio = randomAuctionRatio();
       const askPrice = Math.round(marketPrice * ratio);
@@ -5886,17 +5899,18 @@ function seedNpcAuctionListings() {
       const nameSuffixes = { weapon:['검','창','활','완드','도끼'], armor:['갑옷','로브','체인메일','플레이트'], subweapon:['방패'], accessory:['반지','목걸이','팔찌'] };
       const suffArr = nameSuffixes[part] || [EQUIP_PART_LABELS[part]||part];
       const suff = suffArr[Math.floor(Math.random() * suffArr.length)];
-      // 희귀도 자동 판정: NPC 경매 장비는 항상 특성 보유 → weapon/armor=Rare, sub/acc=티어 판정
-      const { rarity: npcRarity, traitTier: npcTier } = assignEquipRarity(part, true);
+      // 희귀도 자동 판정: 실제 특성 ID 기반
+      const { rarity: npcRarity, traitTier: npcTier } = assignEquipRarity(part, traitId);
+      const traitLabel = hasTrait ? ` [${traitName}]` : '';
       const item = {
         id: `npc_drop_equip_${rank.toLowerCase()}_${part}_${uid}`,
-        name: `${rank}급 드랍 ${suff} [${traitName}]`,
+        name: `${rank}급 드랍 ${suff}${traitLabel}`,
         part, rank, rarity: npcRarity, traitTier: npcTier,
-        enhance: 0, infuse: 1, maxInfuse, traits: [traitId],
+        enhance: 0, infuse: hasTrait ? 1 : 0, maxInfuse, traits: hasTrait ? [traitId] : [],
         durability: 100, maxDurability: 100, price: marketPrice,
         category: 'equipment', isDropped: true, stackable: false,
         unitWeightG: EQUIP_WEIGHT_G[part] || 1000,
-        stackKey: `equipment:npc_${uid}`, note: `NPC 경매 등록. 특성: ${traitName}`,
+        stackKey: `equipment:npc_${uid}`, note: `NPC 경매 등록${hasTrait ? `. 특성: ${traitName}` : ''}`,
         atk: part === 'weapon' ? (WEAPON_BASE_ATK[rank] || 5) : 0,
         pdef: part === 'armor' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.5) : (part === 'subweapon' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.25) : 0),
         mdef: part === 'armor' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.3) : 0,
@@ -6674,7 +6688,7 @@ function seedNpcUsedListings() {
     const enhLabel = enhance > 0 ? ` +${enhance}` : '';
     const traitLabel = hasTrait ? ` [${traitName}]` : '';
     // 희귀도 자동 판정
-    const { rarity: usedRarity, traitTier: usedTier } = assignEquipRarity(part, hasTrait);
+    const { rarity: usedRarity, traitTier: usedTier } = assignEquipRarity(part, traits[0] || '');
     const item = {
       id: `npc_used_${rank.toLowerCase()}_${part}_${uid}`,
       name: `${rank}급 ${suff}${enhLabel}${traitLabel}`,
@@ -9964,8 +9978,19 @@ async function saveMaterialTraitFromForm() {
       await saveDb(); renderApp();
       toast('🔄 NPC 경매 목록 갱신 완료');
     });
-    // 검색박스 입력
+    // 검색박스 입력 — 한글 IME 조합 중에는 리렌더 방지
+    let auctionSearchComposing = false;
+    on('#gb-auction-search', 'compositionstart', () => { auctionSearchComposing = true; });
+    on('#gb-auction-search', 'compositionend', async (ev) => {
+      auctionSearchComposing = false;
+      model.state.auctionSearchQ = ev.currentTarget.value || '';
+      const cursorPos = ev.currentTarget.selectionStart;
+      await saveState(); renderApp();
+      const searchEl = root.querySelector('#gb-auction-search');
+      if (searchEl) { searchEl.focus(); searchEl.setSelectionRange(cursorPos, cursorPos); }
+    });
     on('#gb-auction-search', 'input', async (ev) => {
+      if (auctionSearchComposing) return; // IME 조합 중 리렌더 스킵
       model.state.auctionSearchQ = ev.currentTarget.value || '';
       const cursorPos = ev.currentTarget.selectionStart;
       await saveState(); renderApp();

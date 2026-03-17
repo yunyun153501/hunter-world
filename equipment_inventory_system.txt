@@ -289,6 +289,48 @@
 > **Unique** / **Legendary** 등급은 사용자가 DB에서 직접 설정한 경우에만 존재합니다.
 > 상점 · 경매장 · 헌터마켓에서는 Unique / Legendary 아이템이 자동으로 노출되지 않습니다.
 
+### 특성 티어 분류 (rare_material_catalog 기준)
+
+| 티어 | 특성 ID | 라벨 |
+|:---:|---------|------|
+| **1** | crit_chance | 치명타 확률 증가 |
+| **1** | crit_damage | 치명타 피해 증가 |
+| **1** | physical_damage | 물리 피해 증가 |
+| **1** | magic_damage | 마법 피해 증가 |
+| **2** | fire_damage | 불 속성 피해 증가 |
+| **2** | water_damage | 물 속성 피해 증가 |
+| **2** | ice_damage | 얼음 속성 피해 증가 |
+| **2** | earth_damage | 대지 속성 피해 증가 |
+| **2** | wind_damage | 바람 속성 피해 증가 |
+| **2** | lightning_damage | 전기 속성 피해 증가 |
+| **2** | light_damage | 빛 속성 피해 증가 |
+| **2** | dark_damage | 어둠 속성 피해 증가 |
+| **2** | poison_apply | 독 부여 확률 증가 |
+| **2** | bleed_apply | 출혈 부여 확률 증가 |
+| **2** | burn_apply | 화상 부여 확률 증가 |
+| **2** | curse_apply | 저주 부여 확률 증가 |
+| **3** | physical_defense | 물리피해감소 증가 |
+| **3** | magic_defense | 마법피해감소 증가 |
+| **3** | healing_done | 치유량 증가 |
+| **3** | shield_effect | 보호막 효과 증가 |
+| **4** | healing_received | 받는 치유량 증가 |
+| **4** | fire_resist | 불 속성 저항 |
+| **4** | water_resist | 물 속성 저항 |
+| **4** | ice_resist | 얼음 속성 저항 |
+| **4** | earth_resist | 대지 속성 저항 |
+| **4** | wind_resist | 바람 속성 저항 |
+| **4** | lightning_resist | 전기 속성 저항 |
+| **4** | light_resist | 빛 속성 저항 |
+| **4** | dark_resist | 어둠 속성 저항 |
+| **4** | poison_resist | 독 저항 |
+| **4** | bleed_resist | 출혈 저항 |
+| **4** | burn_resist | 화상 저항 |
+| **4** | curse_resist | 저주 저항 |
+| **4** | threat_up | 위협 수치 증가 |
+| **4** | threat_down | 위협 수치 감소 |
+
+> 티어 1~2: 악세서리·보조무기에 붙으면 **Rare**, 티어 3~4: **Normal**
+
 ---
 
 ## 12. 특수효과(특수효과) 시스템
