@@ -1616,7 +1616,7 @@ const RARE_FAMILY_PRESETS = {
       customGuildDesc: '',
       incomeLog: [],
       guildTaxLog: [],
-      homeRegions: [],   // [{id, name, homes:[{id, name, area, houseType, deposit, monthlyRent, purchasePrice, brokerFee, desc, features:[], storages:[{id,name,type,maxSlots,maxWeightKg,items:[]}]}]}]
+      homeRegions: [],   // [{id, name, homes:[{id, name, area, houseType, deposit, monthlyRent, maintenanceFee, purchasePrice, brokerFee, desc, features:[], storages:[{id,name,type,maxSlots,maxWeightKg,items:[]}]}]}]
       ownedHomes: {},    // { [activeCharId]: { regionId, homeId, moveInDate:'2026-01-01', lastRentPaidMonth:'2026-01', rentLog:[{month,amount,paidDate}] } }
       gameDate: { year: 2026, month: 1, day: 1 },
       battleSetup: {
@@ -2648,10 +2648,12 @@ function getOwnedHomeData(ownedEntry) {
   return home ? { region, home } : null;
 }
 function calcRentDue(owned, home, gd) {
-  // Returns { dueAmount, overdueMonths, interestPerDay, totalDebt, isOverdue, canPay, monthLabel }
+  // Returns { dueAmount, overdueMonths, interestPerDay, totalDebt, isOverdue, canPay, monthLabel, rent, maint }
   if (!owned || !home || home.houseType !== 'rent') return null;
   const rent = Number(home.monthlyRent || 0);
-  if (rent <= 0) return null;
+  const maint = Number(home.maintenanceFee || 0);
+  const monthlyTotal = rent + maint;
+  if (monthlyTotal <= 0) return null;
   const lastPaid = owned.lastRentPaidMonth || '';
   const curYM = formatYM(gd.year, gd.month);
   const prev = prevMonth(gd.year, gd.month);
@@ -2667,21 +2669,21 @@ function calcRentDue(owned, home, gd) {
     const lp = lastPaid.split('-').map(Number);
     unpaidMonths = Math.max(0, monthDiff(lp[0], lp[1], gd.year, gd.month));
   }
-  if (unpaidMonths <= 0) return { dueAmount: 0, overdueMonths: 0, interestPerDay: 0, totalDebt: 0, isOverdue: false, canPay: false, monthLabel: curYM };
+  if (unpaidMonths <= 0) return { dueAmount: 0, overdueMonths: 0, interestPerDay: 0, totalDebt: 0, isOverdue: false, canPay: false, monthLabel: curYM, rent, maint };
   // Target month to pay = the month after lastPaid (or move-in month)
-  const dueAmount = rent * unpaidMonths;
-  // Interest: if day > 10, add daily interest at 10%/year on overdue amount
+  const dueAmount = monthlyTotal * unpaidMonths;
+  // Interest: if day > 10, add daily interest at 10%/year on overdue rent (not maintenance)
   let interest = 0;
   if (gd.day > 10 && unpaidMonths >= 1) {
     const overdueDays = gd.day - 10;
     const dailyRate = 0.10 / 365;
-    interest = Math.floor(dueAmount * dailyRate * overdueDays);
+    interest = Math.floor((rent * unpaidMonths) * dailyRate * overdueDays);
   }
   const canPay = gd.day >= 1; // Can always attempt to pay
   return {
     dueAmount, overdueMonths: unpaidMonths, interestPerDay: Math.floor(rent * (0.10/365)),
     totalDebt: dueAmount + interest, interest, isOverdue: gd.day > 10 && unpaidMonths >= 1,
-    canPay, monthLabel: prevYM
+    canPay, monthLabel: prevYM, rent, maint
   };
 }
 function processRentOnDateAdvance(gd) {
@@ -2692,7 +2694,8 @@ function processRentOnDateAdvance(gd) {
     const data = getOwnedHomeData(owned);
     if (!data || data.home.houseType !== 'rent') continue;
     const rent = Number(data.home.monthlyRent || 0);
-    if (rent <= 0) continue;
+    const maint = Number(data.home.maintenanceFee || 0);
+    if ((rent + maint) <= 0) continue;
     const lastPaid = owned.lastRentPaidMonth || '';
     let unpaidMonths = 0;
     if (!lastPaid) {
@@ -2712,18 +2715,42 @@ function processRentOnDateAdvance(gd) {
     const owned = model.db.ownedHomes[charKey];
     if (!owned) continue;
     const data = getOwnedHomeData(owned);
-    if (data && data.home && Array.isArray(data.home.storages)) {
-      // Move all items to shared inventory
-      const sharedInv = getInventory();
-      for (const storage of data.home.storages) {
-        for (const item of (storage.items || [])) {
-          grantInventoryItem(item);
-        }
-        storage.items = [];
+    if (data && data.home) {
+      // Calculate: deduct unpaid rent+maint from deposit, refund remainder
+      const deposit = Number(data.home.deposit || 0);
+      const rent = Number(data.home.monthlyRent || 0);
+      const maint = Number(data.home.maintenanceFee || 0);
+      const lastPaid = owned.lastRentPaidMonth || '';
+      let unpaid = 0;
+      if (!lastPaid) {
+        const mid = owned.moveInDate || `${gd.year}-${String(gd.month).padStart(2,'0')}-01`;
+        const parts = mid.split('-').map(Number);
+        unpaid = Math.max(0, monthDiff(parts[0], parts[1], gd.year, gd.month));
+      } else {
+        const lp = lastPaid.split('-').map(Number);
+        unpaid = Math.max(0, monthDiff(lp[0], lp[1], gd.year, gd.month));
       }
+      const totalDebt = (rent + maint) * unpaid;
+      const refund = Math.max(0, deposit - totalDebt);
+      // Move all storage items to shared inventory
+      if (Array.isArray(data.home.storages)) {
+        for (const storage of data.home.storages) {
+          for (const item of (storage.items || [])) {
+            grantInventoryItem(item);
+          }
+          storage.items = [];
+        }
+      }
+      // Refund remainder to shared inventory
+      if (refund > 0) {
+        const sharedInv = getInventory();
+        sharedInv.gold = Number(sharedInv.gold || 0) + refund;
+      }
+      const label = charKey ? charKey : '공용';
+      const deductStr = totalDebt > 0 ? ` 미납금 ₩${totalDebt.toLocaleString('en-US')} 보증금에서 차감.` : '';
+      const refundStr = refund > 0 ? ` 보증금 잔여 ₩${refund.toLocaleString('en-US')} 환불.` : (deposit > 0 ? ' 보증금 전액 차감.' : '');
+      messages.push(`${label} 월세 2개월 미납으로 퇴거 처리됨.${deductStr}${refundStr} 보관함 아이템은 공용 인벤토리로 이동.`);
     }
-    const label = charKey ? charKey : '공용';
-    messages.push(`${label} 월세 2개월 미납으로 퇴거 처리됨. 보관함 아이템은 공용 인벤토리로 이동.`);
     delete model.db.ownedHomes[charKey];
   }
   return messages;
@@ -7194,11 +7221,15 @@ function renderHomeView() {
         <div class="gb-sub">${escapeHtml(r.paidDate || '—')}</div>
       </div>`
     ).join('') || '<div class="gb-sub">납부 기록이 없다.</div>';
+    const maintFee = Number(home.maintenanceFee || 0);
+    const rentFee = Number(home.monthlyRent || 0);
+    const monthlyInfo = `월세 ₩${rentFee.toLocaleString('en-US')}${maintFee > 0 ? ` + 관리비 ₩${maintFee.toLocaleString('en-US')}` : ''}`;
     return `
       <div class="gb-panel" style="border-color:#2563eb;">
         <div class="gb-section-title">📋 월세 기록 — ${escapeHtml(home.name)}</div>
         <div class="gb-sub">입주일: <strong>${escapeHtml(moveInDate)}</strong></div>
         <div class="gb-sub">거주자: <strong>${escapeHtml(charLabel)}</strong></div>
+        <div class="gb-sub">${monthlyInfo}</div>
       </div>
       <div class="gb-panel">
         <div class="gb-section-title">최근 납부 기록 (최대 2건)</div>
@@ -7232,16 +7263,17 @@ function renderHomeView() {
     }).join('') || '<div class="gb-sub">보관함이 없다. 아래에서 추가하라.</div>';
     // ── Rent section ──
     let rentSection = '';
-    if (home.houseType === 'rent' && Number(home.monthlyRent || 0) > 0) {
+    if (home.houseType === 'rent' && (Number(home.monthlyRent || 0) + Number(home.maintenanceFee || 0)) > 0) {
       const rentInfo = calcRentDue(owned, home, gd);
       if (rentInfo) {
         const rentStatus = rentInfo.totalDebt > 0
           ? `<span style="color:#ef4444;">미납 ₩${rentInfo.totalDebt.toLocaleString('en-US')} (${rentInfo.overdueMonths}개월분${rentInfo.interest > 0 ? ` + 이자 ₩${rentInfo.interest.toLocaleString('en-US')}` : ''})</span>`
           : '<span style="color:#22c55e;">납부 완료</span>';
+        const maintLabel = rentInfo.maint > 0 ? ` + 관리비 ₩${rentInfo.maint.toLocaleString('en-US')}` : '';
         rentSection = `
           <div class="gb-panel" style="border-color:#f59e0b;">
             <div class="gb-section-title">💰 월세 관리</div>
-            <div class="gb-sub">월세: ₩${Number(home.monthlyRent).toLocaleString('en-US')} / 상태: ${rentStatus}</div>
+            <div class="gb-sub">월세: ₩${Number(home.monthlyRent||0).toLocaleString('en-US')}${maintLabel} / 상태: ${rentStatus}</div>
             ${rentInfo.isOverdue ? `<div class="gb-sub" style="color:#ef4444;">⚠ 10일 초과! 일 이자 ₩${rentInfo.interestPerDay.toLocaleString('en-US')} 부과 중 (연 10%)</div>` : ''}
             ${rentInfo.overdueMonths >= 2 ? `<div class="gb-sub" style="color:#ef4444;">⚠ 2개월 이상 미납 — 다음날 강제 퇴거 예정!</div>` : ''}
             <div style="display:flex;gap:6px;margin-top:6px;">
@@ -7351,6 +7383,7 @@ function renderHomeView() {
           <div style="display:flex;flex-wrap:wrap;gap:6px;">
             <label>보증금<input id="gb-home-deposit" class="gb-input" type="number" min="0" value="0" style="margin-left:4px;width:130px;"></label>
             <label>월세<input id="gb-home-rent" class="gb-input" type="number" min="0" value="0" style="margin-left:4px;width:130px;"></label>
+            <label>관리비<input id="gb-home-maint" class="gb-input" type="number" min="0" value="0" style="margin-left:4px;width:130px;"></label>
             <label>매매가<input id="gb-home-purchase" class="gb-input" type="number" min="0" value="0" style="margin-left:4px;width:130px;"></label>
             <label>복비<input id="gb-home-broker" class="gb-input" type="number" min="0" value="0" style="margin-left:4px;width:130px;"></label>
           </div>
@@ -7369,15 +7402,16 @@ function renderHomeView() {
     const data = getOwnedHomeData(owned);
     if (!data) return '<div class="gb-sub">현재 거주 중인 집이 없다.</div>';
     const { region: r, home: h } = data;
-    return `<div class="gb-sub">현재 거주 (${escapeHtml(charLabel)}): <strong>${escapeHtml(h.name)}</strong> (${escapeHtml(r.name)} / ${escapeHtml(h.area)} / ${h.houseType === 'rent' ? `월세 ₩${Number(h.monthlyRent||0).toLocaleString('en-US')}` : '자가'})</div>`;
+    return `<div class="gb-sub">현재 거주 (${escapeHtml(charLabel)}): <strong>${escapeHtml(h.name)}</strong> (${escapeHtml(r.name)} / ${escapeHtml(h.area)} / ${h.houseType === 'rent' ? `월세 ₩${Number(h.monthlyRent||0).toLocaleString('en-US')}${Number(h.maintenanceFee||0) > 0 ? ` + 관리비 ₩${Number(h.maintenanceFee).toLocaleString('en-US')}` : ''}` : '자가'})</div>`;
   })() : `<div class="gb-sub">${escapeHtml(charLabel)} — 현재 거주 중인 집이 없다.</div>`;
 
   const regionPanels = db.homeRegions.map(region => {
     const homes = (region.homes || []).map(h => {
       const isOwned = owned && owned.regionId === region.id && owned.homeId === h.id;
+      const maintStr = Number(h.maintenanceFee||0) > 0 ? ` + 관리비 ₩${Number(h.maintenanceFee).toLocaleString('en-US')}` : '';
       const priceInfo = h.houseType === 'purchase'
         ? `매매가 ₩${Number(h.purchasePrice||0).toLocaleString('en-US')}`
-        : `보증금 ₩${Number(h.deposit||0).toLocaleString('en-US')} / 월세 ₩${Number(h.monthlyRent||0).toLocaleString('en-US')}`;
+        : `보증금 ₩${Number(h.deposit||0).toLocaleString('en-US')} / 월세 ₩${Number(h.monthlyRent||0).toLocaleString('en-US')}${maintStr}`;
       const brokerInfo = h.brokerFee ? ` / 복비 ₩${Number(h.brokerFee).toLocaleString('en-US')}` : '';
       const featureHtml = h.features && h.features.length ? `<div class="gb-sub" style="margin-top:4px;">${h.features.map(f => `<span class="gb-badge">${escapeHtml(f)}</span>`).join(' ')}</div>` : '';
       // Show storage tier preview
@@ -10567,6 +10601,7 @@ async function saveMaterialTraitFromForm() {
           houseType: fieldValue('#gb-home-type') || 'rent',
           deposit: Math.max(0, Number(fieldValue('#gb-home-deposit')) || 0),
           monthlyRent: Math.max(0, Number(fieldValue('#gb-home-rent')) || 0),
+          maintenanceFee: Math.max(0, Number(fieldValue('#gb-home-maint')) || 0),
           purchasePrice: Math.max(0, Number(fieldValue('#gb-home-purchase')) || 0),
           brokerFee: Math.max(0, Number(fieldValue('#gb-home-broker')) || 0),
           desc: (fieldValue('#gb-home-desc') || '').trim(),
@@ -10659,10 +10694,11 @@ async function saveMaterialTraitFromForm() {
         // Pay all overdue months
         for (let i = 0; i < rentInfo.overdueMonths; i++) {
           const rent = Number(data.home.monthlyRent || 0);
+          const maint = Number(data.home.maintenanceFee || 0);
           const isLast = (i === rentInfo.overdueMonths - 1);
           owned.rentLog.push({
             month: (() => { let y = gd.year, m = gd.month - rentInfo.overdueMonths + i; while(m<=0){m+=12;y--;} return formatYM(y,m); })(),
-            amount: rent + (isLast ? rentInfo.interest : 0),
+            amount: rent + maint + (isLast ? rentInfo.interest : 0),
             interest: isLast ? rentInfo.interest : 0,
             paidDate
           });
