@@ -1,6 +1,6 @@
 # Hunter World — 게이트 전투 시뮬레이션 플러그인 (v7.4.0)
 
-> **GateBattle_v7_3.js** 기반 — [RisuAI](https://risuai.net) 플러그인
+> **GateBattle_v7_4.js** 기반 — [RisuAI](https://risuai.net) 플러그인
 
 Hunter World는 RisuAI에서 동작하는 게이트 전투 시뮬레이션 게임 플러그인입니다.
 캐릭터, 스킬, 장비, 몬스터 등을 직접 설계하고 전투를 시뮬레이션할 수 있습니다.
