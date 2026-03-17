@@ -1567,6 +1567,8 @@ const RARE_FAMILY_PRESETS = {
       customGuildDesc: '',
       incomeLog: [],
       guildTaxLog: [],
+      homeRegions: [],   // [{id, name, homes:[{id, name, area, houseType, deposit, monthlyRent, purchasePrice, brokerFee, desc, features:[], storages:[{id,name,type,items:[]}]}]}]
+      ownedHome: null,   // {regionId, homeId} or null
       gameDate: { year: 2026, month: 1, day: 1 },
       battleSetup: {
         partySlots: Array(MAX_PARTY).fill(''),
@@ -7010,116 +7012,205 @@ function renderShopView() {
 }
 
 // ── 집 (Home) ────────────────────────────────────────────────────────────────
-const HOME_LISTINGS = [
-  {
-    id: 'home_studio_e',
-    name: '헌터 구역 원룸',
-    area: '20평',
-    type: 'rent',
-    deposit: 8000000,
-    monthlyRent: 800000,
-    desc: '헌터 구역 인근 소형 원룸. 방 1개, 화장실 1개. 게이트 반경 2km 이내. 방음 처리 완료. 헌터 등록증 필수.',
-    features: ['게이트 반경 2km', '방음 처리', '헌터 등록 필요'],
-  },
-  {
-    id: 'home_apt_c',
-    name: 'C랭크 아파트',
-    area: '33평',
-    type: 'rent',
-    deposit: 30000000,
-    monthlyRent: 1500000,
-    desc: '중급 헌터용 아파트. 방 2개, 화장실 2개, 드레스룸. 헌터 전용 동선(무기 반입 가능), 지하 보관 창고 포함.',
-    features: ['무기 반입 허가 건물', '지하 보관 창고', 'C랭크 이상 입주 가능'],
-  },
-  {
-    id: 'home_villa_b',
-    name: 'B구역 고급 빌라',
-    area: '55평',
-    type: 'purchase',
-    deposit: 0,
-    monthlyRent: 0,
-    purchasePrice: 1800000000,
-    desc: '중상급 헌터 전용 고급 빌라. 방 3개, 화장실 3개, 훈련실, 회의실. 24시간 보안, 마법 보호막 기본 설치.',
-    features: ['마법 보호막 기본', '24시간 보안', '훈련실 포함', 'B랭크 이상'],
-  },
-  {
-    id: 'home_penthouse_a',
-    name: 'A클래스 펜트하우스',
-    area: '120평',
-    type: 'purchase',
-    deposit: 0,
-    monthlyRent: 0,
-    purchasePrice: 8500000000,
-    desc: '최상급 헌터 전용 펜트하우스. 최상층 복층 구조. 개인 작전실, 장비 보관고, 훈련 구역 완비. 마법 결계 최고 등급.',
-    features: ['최고급 마법 결계', '개인 작전실', '장비 보관고', '복층 구조', 'A랭크 이상'],
-  },
-  {
-    id: 'home_mansion_s',
-    name: 'S등급 헌터 저택',
-    area: '300평+',
-    type: 'purchase',
-    deposit: 0,
-    monthlyRent: 0,
-    purchasePrice: 50000000000,
-    desc: '국가 공인 S랭크 헌터 전용 저택. 독립 부지. 전용 게이트 감지 시스템, 길드원 숙소, 훈련장, 수영장, 작전 지휘실 포함. 보안 1등급.',
-    features: ['게이트 감지 시스템', '길드원 숙소 가능', '전용 훈련장', '보안 1등급', 'S랭크 전용'],
-  },
-];
 function renderHomeView() {
   const db = model.db;
-  const ownedId = db.ownedHomeId || '';
-  const listings = HOME_LISTINGS.map(h => {
-    const isOwned = ownedId === h.id;
-    const priceInfo = h.type === 'rent'
-      ? `보증금 ₩${Number(h.deposit).toLocaleString('en-US')} / 월세 ₩${Number(h.monthlyRent).toLocaleString('en-US')}`
-      : `매매가 ₩${Number(h.purchasePrice || 0).toLocaleString('en-US')}`;
-    const featureHtml = h.features && h.features.length ? `<div class="gb-sub" style="margin-top:4px;">${h.features.map(f => `<span class="gb-badge">${escapeHtml(f)}</span>`).join(' ')}</div>` : '';
-    return `
-      <div class="gb-panel${isOwned ? '" style="border-color:#2563eb;' : ''}">
-        <div class="gb-unit-top">
-          <div>
-            <strong>${escapeHtml(h.name)}</strong>
-            <span class="gb-badge">${escapeHtml(h.area)}</span>
-            <span class="gb-badge">${h.type === 'rent' ? '임대' : '매매'}</span>
-            ${isOwned ? '<span class="gb-badge" style="background:#16a34a;color:#dcfce7;">현재 거주 중</span>' : ''}
+  if (!Array.isArray(db.homeRegions)) db.homeRegions = [];
+  const homeSub = model.state.homeSub || '';
+  const owned = db.ownedHome || null;
+
+  // ── Interior view (inside a home) ────────────────────────────────────
+  if (homeSub === 'interior' && owned) {
+    const region = db.homeRegions.find(r => r.id === owned.regionId);
+    const home = region ? (region.homes || []).find(h => h.id === owned.homeId) : null;
+    if (!home) { model.state.homeSub = ''; return renderHomeView(); }
+    if (!Array.isArray(home.storages)) home.storages = [];
+    const storageList = home.storages.map((s, idx) => {
+      const itemCount = Array.isArray(s.items) ? s.items.length : 0;
+      return `
+        <div class="gb-panel">
+          <div class="gb-unit-top">
+            <div><strong>${escapeHtml(s.name)}</strong> <span class="gb-badge">${escapeHtml(s.type || '기타')}</span> <span class="gb-sub">(${itemCount}개 보관중)</span></div>
+            <div>
+              <button class="gb-btn tiny" data-home-storage-view="${idx}">열기</button>
+              <button class="gb-btn tiny danger" data-home-storage-del="${idx}">삭제</button>
+            </div>
           </div>
-          <div>
-            ${!isOwned ? `<button class="gb-btn tiny primary" data-home-move="${escapeHtml(h.id)}">입주</button>` : `<button class="gb-btn tiny danger" data-home-move="">퇴거</button>`}
+        </div>`;
+    }).join('') || '<div class="gb-sub">보관함이 없다. 아래에서 추가하라.</div>';
+    return `
+      <div class="gb-panel" style="border-color:#2563eb;">
+        <div class="gb-section-title">🏠 ${escapeHtml(home.name)} — 내부</div>
+        <div class="gb-sub">${escapeHtml(region.name)} · ${escapeHtml(home.area)} · ${home.houseType === 'rent' ? '임대' : home.houseType === 'purchase' ? '매매' : escapeHtml(home.houseType || '임대')}</div>
+        ${home.desc ? `<div class="gb-sub" style="margin-top:4px;">${escapeHtml(home.desc)}</div>` : ''}
+      </div>
+      <div class="gb-panel">
+        <div class="gb-section-title">📦 보관함 목록</div>
+        ${storageList}
+      </div>
+      <div class="gb-panel">
+        <div class="gb-section-title">➕ 보관함 추가</div>
+        <form id="gb-home-storage-add" style="display:flex;flex-wrap:wrap;gap:6px;align-items:flex-end;">
+          <label>이름<input id="gb-storage-name" class="gb-input" type="text" placeholder="예: 장비보관고" style="margin-left:4px;width:120px;"></label>
+          <label>종류<select id="gb-storage-type" class="gb-input" style="margin-left:4px;">
+            <option value="재료">재료</option><option value="장비">장비</option><option value="식량">식량</option><option value="기타">기타</option>
+          </select></label>
+          <button type="submit" class="gb-btn tiny primary">추가</button>
+        </form>
+      </div>
+      <div class="gb-btn-row">
+        <button class="gb-btn" data-home-sub="">← 매물 목록</button>
+        <button class="gb-btn" data-go="hub">← 허브로</button>
+      </div>`;
+  }
+
+  // ── Storage detail view ────────────────────────────────────────────────
+  if (homeSub.startsWith('storage:') && owned) {
+    const sIdx = parseInt(homeSub.split(':')[1], 10);
+    const region = db.homeRegions.find(r => r.id === owned.regionId);
+    const home = region ? (region.homes || []).find(h => h.id === owned.homeId) : null;
+    if (!home || !home.storages || !home.storages[sIdx]) { model.state.homeSub = 'interior'; return renderHomeView(); }
+    const storage = home.storages[sIdx];
+    if (!Array.isArray(storage.items)) storage.items = [];
+    const itemRows = storage.items.map((it, iIdx) => `
+      <div class="gb-unit-top" style="border-bottom:1px solid rgba(148,163,184,0.1);padding:4px 0;">
+        <div><span class="gb-badge">${escapeHtml(it.category || '기타')}</span> <strong>${escapeHtml(it.name || '아이템')}</strong> ${it.rank ? `<span class="gb-badge">${escapeHtml(it.rank)}</span>` : ''} x${Number(it.count || 1)}</div>
+        <button class="gb-btn tiny" data-home-storage-item-take="${sIdx}:${iIdx}">꺼내기</button>
+      </div>`).join('') || '<div class="gb-sub">보관함이 비어있다.</div>';
+    return `
+      <div class="gb-panel" style="border-color:#2563eb;">
+        <div class="gb-section-title">📦 ${escapeHtml(storage.name)} <span class="gb-badge">${escapeHtml(storage.type || '기타')}</span></div>
+        <div class="gb-sub">${storage.items.length}개 보관중</div>
+      </div>
+      <div class="gb-panel">${itemRows}</div>
+      <div class="gb-panel">
+        <div class="gb-section-title">➕ 아이템 넣기</div>
+        <div class="gb-sub">현재 인벤토리에서 보관함으로 옮길 아이템을 선택하라.</div>
+        <form id="gb-home-storage-item-store" style="display:flex;flex-wrap:wrap;gap:6px;align-items:flex-end;margin-top:6px;">
+          <select id="gb-storage-store-item" class="gb-input" style="min-width:200px;">
+            ${(getActiveInventory().items || []).map((it, i) => `<option value="${i}">${escapeHtml(it.name || '아이템')} ${it.rank ? `[${it.rank}]` : ''} x${Number(it.count || 1)}</option>`).join('')}
+          </select>
+          <input id="gb-storage-store-count" class="gb-input" type="number" min="1" value="1" style="width:60px;" placeholder="수량">
+          <button type="submit" class="gb-btn tiny primary">넣기</button>
+        </form>
+      </div>
+      <div class="gb-btn-row">
+        <button class="gb-btn" data-home-sub="interior">← 집 내부로</button>
+        <button class="gb-btn" data-go="hub">← 허브로</button>
+      </div>`;
+  }
+
+  // ── Add region form ────────────────────────────────────────────────────
+  if (homeSub === 'addRegion') {
+    return `
+      <div class="gb-panel">
+        <div class="gb-section-title">🗺️ 새 지역 추가</div>
+        <form id="gb-home-region-add" style="display:flex;gap:6px;align-items:flex-end;">
+          <label>지역 이름<input id="gb-region-name" class="gb-input" type="text" placeholder="예: 종로, 헌터구역" style="margin-left:4px;width:200px;"></label>
+          <button type="submit" class="gb-btn tiny primary">추가</button>
+        </form>
+      </div>
+      <div class="gb-btn-row"><button class="gb-btn" data-home-sub="">← 취소</button></div>`;
+  }
+
+  // ── Add home form ──────────────────────────────────────────────────────
+  if (homeSub.startsWith('addHome:')) {
+    const regionId = homeSub.split(':')[1];
+    const region = db.homeRegions.find(r => r.id === regionId);
+    if (!region) { model.state.homeSub = ''; return renderHomeView(); }
+    return `
+      <div class="gb-panel">
+        <div class="gb-section-title">🏠 새 집 추가 — ${escapeHtml(region.name)}</div>
+        <form id="gb-home-add" style="display:flex;flex-direction:column;gap:8px;">
+          <input type="hidden" id="gb-home-add-region" value="${escapeHtml(regionId)}">
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            <label>집 이름<input id="gb-home-name" class="gb-input" type="text" placeholder="예: 원룸 A동" style="margin-left:4px;width:160px;"></label>
+            <label>평수<input id="gb-home-area" class="gb-input" type="text" placeholder="예: 20평" style="margin-left:4px;width:80px;"></label>
+            <label>주거종류<select id="gb-home-type" class="gb-input" style="margin-left:4px;">
+              <option value="rent">임대</option><option value="purchase">매매</option>
+            </select></label>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            <label>보증금<input id="gb-home-deposit" class="gb-input" type="number" min="0" value="0" style="margin-left:4px;width:130px;"></label>
+            <label>월세<input id="gb-home-rent" class="gb-input" type="number" min="0" value="0" style="margin-left:4px;width:130px;"></label>
+            <label>매매가<input id="gb-home-purchase" class="gb-input" type="number" min="0" value="0" style="margin-left:4px;width:130px;"></label>
+            <label>복비<input id="gb-home-broker" class="gb-input" type="number" min="0" value="0" style="margin-left:4px;width:130px;"></label>
+          </div>
+          <label>설명<input id="gb-home-desc" class="gb-input" type="text" placeholder="집 설명 (선택)" style="margin-left:4px;width:100%;"></label>
+          <label>특징 (쉼표 구분)<input id="gb-home-features" class="gb-input" type="text" placeholder="예: 방음처리,에어컨,복층" style="margin-left:4px;width:100%;"></label>
+          <div class="gb-btn-row" style="margin-top:4px;">
+            <button type="submit" class="gb-btn primary">🏠 집 추가</button>
+            <button type="button" class="gb-btn" data-home-sub="">← 취소</button>
+          </div>
+        </form>
+      </div>`;
+  }
+
+  // ── Main listing view ──────────────────────────────────────────────────
+  const ownedInfo = owned ? (() => {
+    const r = db.homeRegions.find(x => x.id === owned.regionId);
+    const h = r ? (r.homes || []).find(x => x.id === owned.homeId) : null;
+    return h ? `<div class="gb-sub">현재 거주: <strong>${escapeHtml(h.name)}</strong> (${escapeHtml(r.name)} / ${escapeHtml(h.area)} / ${h.houseType === 'rent' ? `월세 ₩${Number(h.monthlyRent||0).toLocaleString('en-US')}` : '자가'})</div>` : '<div class="gb-sub">현재 거주 중인 집이 없다.</div>';
+  })() : '<div class="gb-sub">현재 거주 중인 집이 없다.</div>';
+
+  const regionPanels = db.homeRegions.map(region => {
+    const homes = (region.homes || []).map(h => {
+      const isOwned = owned && owned.regionId === region.id && owned.homeId === h.id;
+      const priceInfo = h.houseType === 'purchase'
+        ? `매매가 ₩${Number(h.purchasePrice||0).toLocaleString('en-US')}`
+        : `보증금 ₩${Number(h.deposit||0).toLocaleString('en-US')} / 월세 ₩${Number(h.monthlyRent||0).toLocaleString('en-US')}`;
+      const brokerInfo = h.brokerFee ? ` / 복비 ₩${Number(h.brokerFee).toLocaleString('en-US')}` : '';
+      const featureHtml = h.features && h.features.length ? `<div class="gb-sub" style="margin-top:4px;">${h.features.map(f => `<span class="gb-badge">${escapeHtml(f)}</span>`).join(' ')}</div>` : '';
+      return `
+        <div class="gb-panel${isOwned ? '" style="border-color:#2563eb;' : ''}">
+          <div class="gb-unit-top">
+            <div>
+              <strong>${escapeHtml(h.name)}</strong>
+              <span class="gb-badge">${escapeHtml(h.area || '')}</span>
+              <span class="gb-badge">${h.houseType === 'rent' ? '임대' : h.houseType === 'purchase' ? '매매' : escapeHtml(h.houseType||'')}</span>
+              ${isOwned ? '<span class="gb-badge" style="background:#16a34a;color:#dcfce7;">현재 거주 중</span>' : ''}
+            </div>
+            <div style="display:flex;gap:4px;">
+              ${isOwned ? `<button class="gb-btn tiny primary" data-home-sub="interior">들어가기</button><button class="gb-btn tiny danger" data-home-moveout="">퇴거</button>` : `<button class="gb-btn tiny primary" data-home-movein="${escapeHtml(region.id)}:${escapeHtml(h.id)}">입주</button>`}
+              <button class="gb-btn tiny danger" data-home-del="${escapeHtml(region.id)}:${escapeHtml(h.id)}">삭제</button>
+            </div>
+          </div>
+          ${h.desc ? `<div class="gb-sub" style="margin-top:6px;">${escapeHtml(h.desc)}</div>` : ''}
+          ${featureHtml}
+          <div class="gb-sub" style="margin-top:6px;color:#fbbf24;">💰 ${escapeHtml(priceInfo)}${escapeHtml(brokerInfo)}</div>
+        </div>`;
+    }).join('');
+    return `
+      <div class="gb-panel">
+        <div class="gb-unit-top">
+          <div><div class="gb-section-title">🗺️ ${escapeHtml(region.name)}</div></div>
+          <div style="display:flex;gap:4px;">
+            <button class="gb-btn tiny primary" data-home-sub="addHome:${escapeHtml(region.id)}">🏠 집 추가</button>
+            <button class="gb-btn tiny danger" data-home-region-del="${escapeHtml(region.id)}">지역 삭제</button>
           </div>
         </div>
-        <div class="gb-sub" style="margin-top:6px;">${escapeHtml(h.desc)}</div>
-        ${featureHtml}
-        <div class="gb-sub" style="margin-top:6px;color:#fbbf24;">💰 ${escapeHtml(priceInfo)}</div>
+        ${homes || '<div class="gb-sub">이 지역에 등록된 집이 없다.</div>'}
       </div>`;
-  }).join('');
-  const ownedHome = ownedId ? HOME_LISTINGS.find(h => h.id === ownedId) : null;
-  const statusLine = ownedHome
-    ? `<div class="gb-sub">현재 거주: <strong>${escapeHtml(ownedHome.name)}</strong> (${escapeHtml(ownedHome.area)} / ${ownedHome.type === 'rent' ? `월세 ₩${Number(ownedHome.monthlyRent).toLocaleString('en-US')}` : '자가'})</div>`
-    : '<div class="gb-sub">현재 거주 중인 집이 없다.</div>';
+  }).join('') || '<div class="gb-sub" style="padding:12px;">등록된 지역이 없다. 아래에서 지역을 추가하라.</div>';
+
   return `
     <div class="gb-panel">
-      <div class="gb-section-title">🏠 주거 매물</div>
-      <div class="gb-sub">구입 또는 임대 가능한 매물 목록. 입주 버튼으로 현재 거주지를 변경할 수 있다.</div>
-      ${statusLine}
+      <div class="gb-section-title">🏠 주거</div>
+      <div class="gb-sub">지역을 만들고 그 안에 집을 추가할 수 있다. 입주 시 보증금+복비가 차감된다.</div>
+      ${ownedInfo}
     </div>
-    ${listings}
-    <div class="gb-btn-row"><button class="gb-btn" data-go="hub">← 허브로</button></div>`;
+    ${regionPanels}
+    <div class="gb-btn-row">
+      <button class="gb-btn primary" data-home-sub="addRegion">🗺️ 새 지역 추가</button>
+      <button class="gb-btn" data-go="hub">← 허브로</button>
+    </div>`;
 }
 
 // ── 길드 (Guild) ─────────────────────────────────────────────────────────────
 const PRESET_GUILDS = [
-  { id:'baeknyeon', name:'백련길드', emoji:'🌸', color:'#818cf8',
-    desc:'정화와 재건을 추구하는 고매한 헌터들의 결사체. 빛·치유 속성 특화. 사회적 영향력 최상위.',
-    rankReq:'C', specialty:'빛/치유' },
-  { id:'eunrang',   name:'은랑길드', emoji:'🐺', color:'#94a3b8',
-    desc:'빠른 기동력과 팀워크로 유명한 중견 길드. 균형 잡힌 올라운더 집단. 신입 수용 적극적.',
-    rankReq:'D', specialty:'기동/범용' },
-  { id:'jeokho',    name:'적호길드', emoji:'🔥', color:'#f97316',
-    desc:'불꽃 같은 공격 일변도의 엘리트 전투 집단. 화염·물리 속성 다수. 게이트 공략 최다 기록.',
-    rankReq:'C', specialty:'화염/물리' },
-  { id:'heuksa',    name:'흑사길드', emoji:'🕷️', color:'#a78bfa',
-    desc:'어둠의 게이트 전문 집단. 어둠 속성 특화. 의문의 배후가 있다는 소문이 끊이지 않는다.',
-    rankReq:'B', specialty:'어둠/독' },
+  { id:'baeknyeon', name:'백련길드', emoji:'🌸', color:'#818cf8' },
+  { id:'eunrang',   name:'은랑길드', emoji:'🐺', color:'#94a3b8' },
+  { id:'jeokho',    name:'적호길드', emoji:'🔥', color:'#f97316' },
+  { id:'heuksa',    name:'흑사길드', emoji:'🕷️', color:'#a78bfa' },
 ];
 
 function renderGuildView() {
@@ -7129,39 +7220,16 @@ function renderGuildView() {
   const isCustom   = guildId === 'custom';
   const presetGuild = PRESET_GUILDS.find(g => g.id === guildId) || null;
   const currentGuild = isCustom
-    ? { name: db.customGuildName || '내 길드', emoji: '⚜️', desc: db.customGuildDesc || '' }
+    ? { name: db.customGuildName || '내 길드', emoji: '⚜️' }
     : presetGuild;
 
-  // ── Current guild header ──────────────────────────────────────────────────
-  const guildHeader = currentGuild ? `
-    <div class="gb-panel" style="border-color:${presetGuild ? presetGuild.color : '#2563eb'};">
-      <div class="gb-section-title">${escapeHtml(currentGuild.emoji)} ${escapeHtml(currentGuild.name)}</div>
-      ${presetGuild ? `<span class="gb-badge">${escapeHtml(presetGuild.specialty)}</span> <span class="gb-badge">가입 요건: ${escapeHtml(presetGuild.rankReq)}등급 이상</span>` : '<span class="gb-badge">사용자 정의 길드</span>'}
-      <div class="gb-sub" style="margin-top:6px;">${escapeHtml(currentGuild.desc || '')}</div>
-    </div>` : '';
-
-  // ── Tax info panel ────────────────────────────────────────────────────────
-  const taxPanel = `
-    <div class="gb-panel">
-      <div class="gb-section-title">🧾 길드 법인세</div>
-      <div class="gb-sub">길드원 정산 시 소득세(3.3%) 길드가 대납. 협회 수수료(1.7%)는 면제.</div>
-      <div class="gb-sub" style="margin-top:4px;">정산 방법: 협회 → 정산 → <strong>길드 정산</strong> 선택</div>
-      <div class="gb-sub">길드 지분 %를 별도 설정해 길드 공금 적립 가능.</div>
-    </div>`;
-
-  // ── Members panel ─────────────────────────────────────────────────────────
-  const chars = db.characters || [];
-  const members = chars.length
-    ? chars.map(c => `<div class="gb-sub">• <strong>${escapeHtml(c.name)}</strong> [${escapeHtml(c.job || '직업 미정')}] <span class="gb-badge">${escapeHtml(c.rank || 'E')}</span></div>`).join('')
-    : '<div class="gb-sub">등록된 헌터가 없다.</div>';
-
-  // ── If NOT in a guild ─────────────────────────────────────────────────────
+  // ── If NOT in a guild ─────────────────────────────────────────────────
   if (!guildId) {
     if (sub === 'create') {
       return `
         <div class="gb-panel">
           <div class="gb-section-title">⚜️ 길드 생성</div>
-          <div class="gb-sub">자신만의 길드를 만든다. 이름과 소개를 입력하라.</div>
+          <div class="gb-sub">자신만의 길드를 만든다. 이름을 입력하라.</div>
         </div>
         <div class="gb-panel">
           <form id="gb-guild-create-form" style="display:flex;flex-direction:column;gap:8px;">
@@ -7175,19 +7243,16 @@ function renderGuildView() {
         </div>
         <div class="gb-btn-row"><button class="gb-btn" data-go="hub">← 허브로</button></div>`;
     }
-    // Show guild list
+    // Show guild list — name + emoji + join button only
     const guildCards = PRESET_GUILDS.map(g => `
       <div class="gb-panel" style="border-color:${g.color}20;">
         <div class="gb-unit-top">
           <div>
             <span style="font-size:18px;">${escapeHtml(g.emoji)}</span>
             <strong style="margin-left:6px;">${escapeHtml(g.name)}</strong>
-            <span class="gb-badge">${escapeHtml(g.rankReq)}급 이상</span>
-            <span class="gb-badge">${escapeHtml(g.specialty)}</span>
           </div>
           <button class="gb-btn tiny primary" data-guild-join="${escapeHtml(g.id)}">가입</button>
         </div>
-        <div class="gb-sub" style="margin-top:6px;">${escapeHtml(g.desc)}</div>
       </div>`).join('');
     return `
       <div class="gb-panel">
@@ -7197,82 +7262,18 @@ function renderGuildView() {
       ${guildCards}
       <div class="gb-panel" style="border-color:#2563eb20;">
         <div class="gb-unit-top">
-          <div><span style="font-size:18px;">⚜️</span> <strong style="margin-left:6px;">사용자 정의 길드</strong> <span class="gb-badge">직접 만들기</span></div>
+          <div><span style="font-size:18px;">⚜️</span> <strong style="margin-left:6px;">사용자 정의 길드</strong></div>
           <button class="gb-btn tiny" data-guild-sub="create">길드 창설</button>
         </div>
-        <div class="gb-sub" style="margin-top:6px;">자신만의 이름과 소개로 길드를 창설할 수 있다.</div>
       </div>
       <div class="gb-btn-row"><button class="gb-btn" data-go="hub">← 허브로</button></div>`;
   }
 
-  // ── Edit panel ────────────────────────────────────────────────────────────
-  if (sub === 'edit') {
-    const eg = presetGuild || {};
-    const curName = isCustom ? (db.customGuildName || '') : eg.name || '';
-    const curDesc = isCustom ? (db.customGuildDesc || '') : eg.desc || '';
-    const curEmoji = isCustom ? '⚜️' : eg.emoji || '⚜️';
-    return `
-      <div class="gb-panel">
-        <div class="gb-section-title">✏️ 길드 정보 수정</div>
-        <div class="gb-sub">아래 정보를 수정하면 즉시 반영된다.</div>
-      </div>
-      <div class="gb-panel">
-        <form id="gb-guild-edit-form" style="display:flex;flex-direction:column;gap:8px;">
-          <label>길드 이름 <input id="gb-guild-edit-name" class="gb-input" type="text" maxlength="20" value="${escapeHtml(curName)}" style="margin-left:8px;width:200px;"></label>
-          <label>길드 소개 <input id="gb-guild-edit-desc" class="gb-input" type="text" value="${escapeHtml(curDesc)}" style="margin-left:8px;width:100%;flex:1;"></label>
-          ${!isCustom ? `
-          <label>가입 요건 등급 <input id="gb-guild-edit-rank" class="gb-input" type="text" maxlength="1" value="${escapeHtml(eg.rankReq||'')}" style="margin-left:8px;width:50px;"></label>
-          <label>특화 분야 <input id="gb-guild-edit-spec" class="gb-input" type="text" value="${escapeHtml(eg.specialty||'')}" style="margin-left:8px;width:150px;"></label>
-          ` : ''}
-          <div class="gb-btn-row" style="margin-top:4px;">
-            <button type="submit" class="gb-btn primary">✅ 저장</button>
-            <button type="button" class="gb-btn" data-guild-sub="">← 취소</button>
-          </div>
-        </form>
-      </div>
-      <div class="gb-btn-row"><button class="gb-btn" data-go="hub">← 허브로</button></div>`;
-  }
-
-  // ── Guild tax log ─────────────────────────────────────────────────────────
-  const guildTaxLog = Array.isArray(db.guildTaxLog) ? db.guildTaxLog : [];
-  const guildTaxLogHtml = guildTaxLog.length
-    ? guildTaxLog.slice().reverse().map((r, idx) => `
-        <div style="border-bottom:1px solid rgba(148,163,184,0.1);padding-bottom:6px;margin-bottom:6px;">
-          <div class="gb-unit-top">
-            <div>
-              <strong>${escapeHtml(r.date || '날짜 미입력')}</strong>
-              <span class="gb-sub"> — ${escapeHtml(r.runTitle || '?')} (${r.members || 1}인)</span>
-            </div>
-            <button class="gb-btn tiny danger" data-guild-tax-log-del="${guildTaxLog.length - 1 - idx}">삭제</button>
-          </div>
-          <div class="gb-sub">총합 ₩${formatWon(r.gross)} / 법인세(3.3%) ₩${formatWon(r.corpTax||0)} / 개인 정산 ₩${formatWon(r.net||0)}</div>
-          ${r.guildShare ? `<div class="gb-sub">길드 공금 ₩${formatWon(r.guildShare)}</div>` : ''}
-        </div>`)
-      .join('')
-    : '<div class="gb-sub">— 기록된 법인세 내역이 없다. 길드 정산 시 날짜를 입력하면 자동 기록됨. —</div>';
-
-  // ── Already in a guild ────────────────────────────────────────────────────
+  // ── Already in a guild: show name + emoji + leave ─────────────────────
   return `
-    ${guildHeader}
-    <div class="gb-btn-row">
-      <button class="gb-btn tiny" data-guild-sub="edit">✏️ 길드 정보 수정</button>
-    </div>
-    <div class="gb-grid two">
-      <div class="gb-panel">
-        <div class="gb-section-title">소속 헌터</div>
-        ${members}
-      </div>
-      <div class="gb-panel">
-        <div class="gb-section-title">임무 보드</div>
-        <div class="gb-sub">— 현재 등록된 임무가 없다. —</div>
-        <div class="gb-sub" style="margin-top:8px;">게이트 공략, 경호, 조사 등 다양한 임무가 여기에 표시될 예정이다.</div>
-      </div>
-    </div>
-    ${taxPanel}
-    <div class="gb-panel">
-      <div class="gb-section-title">📜 법인세 납부 기록</div>
-      <div class="gb-sub" style="margin-bottom:6px;">길드 정산 이력. 법인세(소득세 3.3%) 신고 참고용.</div>
-      ${guildTaxLogHtml}
+    <div class="gb-panel" style="border-color:${presetGuild ? presetGuild.color : '#2563eb'};">
+      <div class="gb-section-title">${escapeHtml(currentGuild.emoji)} ${escapeHtml(currentGuild.name)}</div>
+      ${isCustom ? '<span class="gb-badge">사용자 정의 길드</span>' : ''}
     </div>
     <div class="gb-btn-row">
       <button class="gb-btn danger" data-guild-leave="">탈퇴</button>
@@ -10290,46 +10291,191 @@ async function saveMaterialTraitFromForm() {
         toast(`'${name}' 길드를 창설했다.`);
       } catch (e) { toast(e.message || String(e), true); }
     });
-    on('#gb-guild-edit-form', 'submit', async (ev) => {
+    // ── Home handlers ─────────────────────────────────────────────────────────
+    on('[data-home-sub]', 'click', async (ev) => {
+      model.state.homeSub = ev.currentTarget.getAttribute('data-home-sub') || '';
+      await saveState(); renderApp();
+    });
+    on('#gb-home-region-add', 'submit', async (ev) => {
       try {
         ev.preventDefault();
-        const name = (fieldValue('#gb-guild-edit-name') || '').trim().slice(0, 20);
-        const desc = (fieldValue('#gb-guild-edit-desc') || '').trim();
-        if (!name) throw new Error('길드 이름을 입력하라.');
-        const guildId = String(model.db.guildId || '');
-        if (guildId === 'custom') {
-          model.db.customGuildName = name;
-          model.db.customGuildDesc = desc;
-        } else {
-          const pg = PRESET_GUILDS.find(g => g.id === guildId);
-          if (pg) {
-            pg.name     = name;
-            pg.desc     = desc;
-            pg.rankReq  = (fieldValue('#gb-guild-edit-rank') || pg.rankReq).toUpperCase().slice(0,1) || pg.rankReq;
-            pg.specialty = fieldValue('#gb-guild-edit-spec') || pg.specialty;
-          }
-        }
-        model.state.guildSub = '';
+        const name = (fieldValue('#gb-region-name') || '').trim();
+        if (!name) throw new Error('지역 이름을 입력하라.');
+        if (!Array.isArray(model.db.homeRegions)) model.db.homeRegions = [];
+        model.db.homeRegions.push({ id: `region_${Date.now().toString(36)}`, name, homes: [] });
+        model.state.homeSub = '';
         await saveDb(); await saveState(); renderApp();
-        toast('길드 정보가 수정됐다.');
+        toast(`'${name}' 지역이 추가되었다.`);
       } catch (e) { toast(e.message || String(e), true); }
     });
-    on('[data-guild-tax-log-del]', 'click', async (ev) => {
+    on('[data-home-region-del]', 'click', async (ev) => {
       try {
-        const idx = parseInt(ev.currentTarget.getAttribute('data-guild-tax-log-del') || '-1', 10);
+        const regionId = ev.currentTarget.getAttribute('data-home-region-del') || '';
+        if (!Array.isArray(model.db.homeRegions)) return;
+        const idx = model.db.homeRegions.findIndex(r => r.id === regionId);
         if (idx < 0) return;
-        if (!Array.isArray(model.db.guildTaxLog)) return;
-        model.db.guildTaxLog.splice(idx, 1);
+        // If currently living in this region, move out
+        const owned = model.db.ownedHome;
+        if (owned && owned.regionId === regionId) model.db.ownedHome = null;
+        model.db.homeRegions.splice(idx, 1);
         await saveDb(); renderApp();
-        toast('법인세 기록 삭제 완료');
+        toast('지역이 삭제되었다.');
       } catch (e) { toast(e.message || String(e), true); }
     });
-    on('[data-home-move]', 'click', async (ev) => {
+    on('#gb-home-add', 'submit', async (ev) => {
       try {
-        const homeId = ev.currentTarget.getAttribute('data-home-move') || '';
-        model.db.ownedHomeId = homeId;
+        ev.preventDefault();
+        const regionId = fieldValue('#gb-home-add-region') || '';
+        const name = (fieldValue('#gb-home-name') || '').trim();
+        if (!name) throw new Error('집 이름을 입력하라.');
+        if (!Array.isArray(model.db.homeRegions)) model.db.homeRegions = [];
+        const region = model.db.homeRegions.find(r => r.id === regionId);
+        if (!region) throw new Error('지역을 찾을 수 없다.');
+        if (!Array.isArray(region.homes)) region.homes = [];
+        region.homes.push({
+          id: `home_${Date.now().toString(36)}`,
+          name,
+          area: (fieldValue('#gb-home-area') || '').trim(),
+          houseType: fieldValue('#gb-home-type') || 'rent',
+          deposit: Math.max(0, Number(fieldValue('#gb-home-deposit')) || 0),
+          monthlyRent: Math.max(0, Number(fieldValue('#gb-home-rent')) || 0),
+          purchasePrice: Math.max(0, Number(fieldValue('#gb-home-purchase')) || 0),
+          brokerFee: Math.max(0, Number(fieldValue('#gb-home-broker')) || 0),
+          desc: (fieldValue('#gb-home-desc') || '').trim(),
+          features: (fieldValue('#gb-home-features') || '').split(',').map(s => s.trim()).filter(Boolean),
+          storages: []
+        });
+        model.state.homeSub = '';
         await saveDb(); await saveState(); renderApp();
-        toast(homeId ? `입주 완료` : '퇴거 처리 완료');
+        toast(`'${name}' 집이 추가되었다.`);
+      } catch (e) { toast(e.message || String(e), true); }
+    });
+    on('[data-home-del]', 'click', async (ev) => {
+      try {
+        const parts = (ev.currentTarget.getAttribute('data-home-del') || '').split(':');
+        const regionId = parts[0], homeId = parts[1];
+        if (!regionId || !homeId || !Array.isArray(model.db.homeRegions)) return;
+        const region = model.db.homeRegions.find(r => r.id === regionId);
+        if (!region || !Array.isArray(region.homes)) return;
+        const idx = region.homes.findIndex(h => h.id === homeId);
+        if (idx < 0) return;
+        const owned = model.db.ownedHome;
+        if (owned && owned.regionId === regionId && owned.homeId === homeId) model.db.ownedHome = null;
+        region.homes.splice(idx, 1);
+        await saveDb(); renderApp();
+        toast('집이 삭제되었다.');
+      } catch (e) { toast(e.message || String(e), true); }
+    });
+    on('[data-home-movein]', 'click', async (ev) => {
+      try {
+        const parts = (ev.currentTarget.getAttribute('data-home-movein') || '').split(':');
+        const regionId = parts[0], homeId = parts[1];
+        if (!regionId || !homeId) return;
+        const region = (model.db.homeRegions || []).find(r => r.id === regionId);
+        const home = region ? (region.homes || []).find(h => h.id === homeId) : null;
+        if (!home) throw new Error('집을 찾을 수 없다.');
+        // Calculate move-in cost: deposit (or purchasePrice) + broker fee
+        const cost = (home.houseType === 'purchase' ? Number(home.purchasePrice || 0) : Number(home.deposit || 0)) + Number(home.brokerFee || 0);
+        const inv = getActiveInventory();
+        const currentGold = Number(inv.gold || 0);
+        if (cost > 0 && currentGold < cost) throw new Error(`입주 비용이 부족하다. 필요: ₩${cost.toLocaleString('en-US')} / 보유: ₩${currentGold.toLocaleString('en-US')}`);
+        if (cost > 0) inv.gold = currentGold - cost;
+        model.db.ownedHome = { regionId, homeId };
+        await saveDb(); await saveState(); renderApp();
+        toast(cost > 0 ? `입주 완료! (₩${cost.toLocaleString('en-US')} 차감)` : '입주 완료!');
+      } catch (e) { toast(e.message || String(e), true); }
+    });
+    on('[data-home-moveout]', 'click', async (ev) => {
+      try {
+        model.db.ownedHome = null;
+        model.state.homeSub = '';
+        await saveDb(); await saveState(); renderApp();
+        toast('퇴거 처리 완료.');
+      } catch (e) { toast(e.message || String(e), true); }
+    });
+    // ── Storage handlers ──────────────────────────────────────────────────────
+    on('#gb-home-storage-add', 'submit', async (ev) => {
+      try {
+        ev.preventDefault();
+        const name = (fieldValue('#gb-storage-name') || '').trim();
+        const type = fieldValue('#gb-storage-type') || '기타';
+        if (!name) throw new Error('보관함 이름을 입력하라.');
+        const owned = model.db.ownedHome;
+        if (!owned) return;
+        const region = (model.db.homeRegions || []).find(r => r.id === owned.regionId);
+        const home = region ? (region.homes || []).find(h => h.id === owned.homeId) : null;
+        if (!home) return;
+        if (!Array.isArray(home.storages)) home.storages = [];
+        home.storages.push({ id: `storage_${Date.now().toString(36)}`, name, type, items: [] });
+        await saveDb(); renderApp();
+        toast(`'${name}' 보관함이 추가되었다.`);
+      } catch (e) { toast(e.message || String(e), true); }
+    });
+    on('[data-home-storage-del]', 'click', async (ev) => {
+      try {
+        const idx = parseInt(ev.currentTarget.getAttribute('data-home-storage-del'), 10);
+        const owned = model.db.ownedHome;
+        if (!owned) return;
+        const region = (model.db.homeRegions || []).find(r => r.id === owned.regionId);
+        const home = region ? (region.homes || []).find(h => h.id === owned.homeId) : null;
+        if (!home || !Array.isArray(home.storages) || !home.storages[idx]) return;
+        const sName = home.storages[idx].name;
+        home.storages.splice(idx, 1);
+        await saveDb(); renderApp();
+        toast(`'${sName}' 보관함이 삭제되었다.`);
+      } catch (e) { toast(e.message || String(e), true); }
+    });
+    on('[data-home-storage-view]', 'click', async (ev) => {
+      const idx = ev.currentTarget.getAttribute('data-home-storage-view') || '0';
+      model.state.homeSub = `storage:${idx}`;
+      await saveState(); renderApp();
+    });
+    on('#gb-home-storage-item-store', 'submit', async (ev) => {
+      try {
+        ev.preventDefault();
+        const itemIdx = parseInt(fieldValue('#gb-storage-store-item'), 10);
+        const count = Math.max(1, Number(fieldValue('#gb-storage-store-count')) || 1);
+        const owned = model.db.ownedHome;
+        if (!owned) return;
+        const sIdxStr = (model.state.homeSub || '').split(':')[1];
+        const sIdx = parseInt(sIdxStr, 10);
+        const region = (model.db.homeRegions || []).find(r => r.id === owned.regionId);
+        const home = region ? (region.homes || []).find(h => h.id === owned.homeId) : null;
+        if (!home || !home.storages || !home.storages[sIdx]) throw new Error('보관함을 찾을 수 없다.');
+        const inv = getActiveInventory();
+        if (!inv.items || !inv.items[itemIdx]) throw new Error('아이템을 찾을 수 없다.');
+        const srcItem = inv.items[itemIdx];
+        const available = Math.max(1, Number(srcItem.count || 1));
+        const toStore = Math.min(count, available);
+        const storedItem = deepClone(srcItem);
+        storedItem.count = toStore;
+        home.storages[sIdx].items.push(storedItem);
+        if (toStore >= available) {
+          inv.items.splice(itemIdx, 1);
+        } else {
+          srcItem.count = available - toStore;
+        }
+        await saveDb(); await saveState(); renderApp();
+        toast(`${storedItem.name} x${toStore} 보관 완료.`);
+      } catch (e) { toast(e.message || String(e), true); }
+    });
+    on('[data-home-storage-item-take]', 'click', async (ev) => {
+      try {
+        const parts = (ev.currentTarget.getAttribute('data-home-storage-item-take') || '').split(':');
+        const sIdx = parseInt(parts[0], 10);
+        const iIdx = parseInt(parts[1], 10);
+        const owned = model.db.ownedHome;
+        if (!owned) return;
+        const region = (model.db.homeRegions || []).find(r => r.id === owned.regionId);
+        const home = region ? (region.homes || []).find(h => h.id === owned.homeId) : null;
+        if (!home || !home.storages || !home.storages[sIdx]) return;
+        const storage = home.storages[sIdx];
+        if (!Array.isArray(storage.items) || !storage.items[iIdx]) return;
+        const item = storage.items[iIdx];
+        grantActiveInventoryItem(item);
+        storage.items.splice(iIdx, 1);
+        await saveDb(); await saveState(); renderApp();
+        toast(`${item.name} x${Number(item.count||1)} 꺼냄.`);
       } catch (e) { toast(e.message || String(e), true); }
     });
     on('#gb-inv-save', 'click', async () => {
