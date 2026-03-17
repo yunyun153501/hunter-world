@@ -14,10 +14,9 @@
 5. [크리티컬 공식](#5-크리티컬-공식)
 6. [명중/회피 공식](#6-명중회피-공식)
 7. [회복 공식](#7-회복-공식)
-8. [보호막(Shield) 시스템](#8-보호막shield-시스템)
-9. [속성 상성 시스템](#9-속성-상성-시스템)
-10. [상태이상 시스템](#10-상태이상-시스템)
-11. [종족(Species) 시스템](#11-종족species-시스템)
+8. [속성 상성 시스템](#9-속성-상성-시스템)
+9. [상태이상 시스템](#10-상태이상-시스템)
+10. [종족(Species) 시스템](#11-종족species-시스템)
 12. [위협(Threat) 시스템](#12-위협threat-시스템)
 13. [전열(Row) 시스템](#13-전열row-시스템)
 14. [스킬 시스템](#14-스킬-시스템)
@@ -66,16 +65,16 @@ Hunter World는 **턴제 RPG 전투 시뮬레이터**입니다.
 
 ### 2.2 파생 스탯 공식
 
-| 파생 스탯 | 공식 | 스탯=10일 때 |
+| 파생 스탯 | 공식 | 스탯=10, 레벨=1일 때 |
 |-----------|------|:---:|
-| **HP** | `100 + (CON - 10) × 10 + (STR - 10) × 3` | 100 |
-| **MP** | `100 + (INT - 10) × 10 + (SENSE - 10) × 3` | 100 |
-| **SP** | `100 + (AGI - 10) × 10 + (SENSE - 10) × 3` | 100 |
+| **HP** | `100 + (CON - 10) × 10 + (STR - 10) × 3 + (레벨 - 1) × 2` | 100 |
+| **MP** | `100 + (INT - 10) × 10 + (SENSE - 10) × 3 + (레벨 - 1) × 2` | 100 |
+| **SP** | `100 + (AGI - 10) × 10 + (SENSE - 10) × 3 + (레벨 - 1) × 2` | 100 |
 | **ATK** | 기본 **0** (장비·스킬로만 증가) | 0 |
 | **물리방어(PDEF)** | 기본 **0** (장비·스킬로만 증가) | 0 |
 | **마법방어(MDEF)** | 기본 **0** (장비·스킬로만 증가) | 0 |
 
-> 레벨업 시 HP/MP/SP 보너스 없음 (스탯 포인트로 간접 증가)  
+> 레벨업 시 HP/MP/SP에 **+(레벨 - 1) × 2** 보너스 적용 (레벨 15 → +28, 레벨 120 → +238)  
 > ATK/PDEF/MDEF는 스탯과 무관 — **장비와 스킬 효과로만 변동**
 
 ### 2.3 등급별 기준표
@@ -242,30 +241,17 @@ CritChance = clamp(0.25 × (AGI + SENSE) + buffBonus, 3, 35) / 100
 ## 7. 회복 공식
 
 ```
-Heal = (2 × MainStat + 3 × ATK) × 스킬계수
+Heal = (2 × MainStat + 3 × ATK) × 스킬계수 × (1 + 치유량증가%)
+실제회복 = Heal × (1 + 받는치유량증가%)
 ```
 
 | 상태 | 효과 |
 |------|------|
 | **출혈 대상** | 회복량 **50% 감소** (3턴) |
-| **저주 시전자** | *현재 코드에서 curseMul 미적용 (heal 공식에 없음)* |
+| **장비 특성: healing_done** | 시전자의 치유량 +N% 증가 |
+| **장비 특성: healing_received** | 대상의 받는 치유량 +N% 증가 |
 
-> 과다 회복 시 초과분은 **보호막**으로 변환 (최대 maxHP의 20%)
-
----
-
-## 8. 보호막(Shield) 시스템
-
-```
-보호막 상한 = maxHP × 20%
-```
-
-| 규칙 | 설명 |
-|------|------|
-| 흡수 순서 | 보호막 → HP (보호막 먼저 소모) |
-| 초과 회복 | HP 만땅 시 초과 회복량 → 보호막으로 전환 |
-| 보호막 상한 | maxHP의 **20%** |
-| 보호막 중첩 | 기존 보호막 + 새 보호막 (상한 이내) |
+> 초과 회복량은 그냥 소멸됨 (보호막 변환 없음)
 
 ---
 
@@ -304,7 +290,7 @@ dark → light → ice → fire → water → earth → wind → electric → da
 | **독(poison)** | 28% | 3턴 | 스택형 (최대 3중첩) |
 | **출혈(bleed)** | 28% | 3턴 | 즉시 추가피해 + 회복 감소 |
 | **화상(burn)** | 28% | 5턴 | 스택형 (최대 5중첩) + 피격 증가 |
-| **저주(curse)** | 24% | 3턴 | 공격↓ + 피격↑ + 회복↓ |
+| **저주(curse)** | 24% | 3턴 | 공격↓ + 피격↑ |
 | **기절(stun)** | 40% | 1턴 | 행동 불가, 5턴 면역 |
 | **수면(sleep)** | 35% | 2턴 | 행동 불가, 피격 시 해제, 5턴 면역 |
 | **속박(bind)** | 35% | 2턴 | SENSE -50%, 명중률 -50% |
@@ -348,7 +334,6 @@ dark → light → ice → fire → water → earth → wind → electric → da
 저주 효과:
 - 공격 데미지 **-N%** (outgoingMul)
 - 피격 데미지 **+N%** (incomingMul)
-- 회복량 **-N%** (curseMul)
 
 ### 10.4 CC 면역 시스템
 
@@ -686,21 +671,21 @@ passiveMods: {
 
 ## 20. 특성 효과 수치 (등급별 %)
 
-### percentSmall (물리/마법 피해감소, 물리/마법 피해 증가, 치유/보호막)
+### percentSmall (물리/마법 피해감소, 물리/마법 피해 증가, 치유)
 
 | 등급 | E | D | C | B | A | S |
 |------|:---:|:---:|:---:|:---:|:---:|:---:|
 | **효과(%)** | 1 | 2 | 3 | 5 | 7 | 10 |
 
-**적용 특성**: physical_damage, magic_damage, physical_defense, magic_defense, healing_done, healing_received, shield_effect
+**적용 특성**: physical_damage, magic_damage, physical_defense, magic_defense, healing_done, healing_received
 
-### statusPercent (상태이상 확률/저항, 속성 피해 증가, 속성 저항)
+### statusPercent (상태이상 확률/저항, 속성 피해 증가, 속성 저항, 보호막)
 
 | 등급 | E | D | C | B | A | S |
 |------|:---:|:---:|:---:|:---:|:---:|:---:|
 | **효과(%)** | 2 | 4 | 6 | 8 | 10 | 12 |
 
-**적용 특성**: 8종 속성 피해(fire/water/ice/earth/wind/lightning/light/dark_damage), 8종 속성 저항(fire/water/ice/earth/wind/lightning/light/dark_resist), 4종 상태이상 부여(poison/bleed/burn/curse_apply), 4종 상태이상 저항(poison/bleed/burn/curse_resist)
+**적용 특성**: 8종 속성 피해(fire/water/ice/earth/wind/lightning/light/dark_damage), 8종 속성 저항(fire/water/ice/earth/wind/lightning/light/dark_resist), 4종 상태이상 부여(poison/bleed/burn/curse_apply), 4종 상태이상 저항(poison/bleed/burn/curse_resist), shield_effect
 
 ### critChance (크리티컬 확률)
 
@@ -952,17 +937,33 @@ passiveMods: {
 
 ### A.2 장비 특성 전투 적용 현황
 
-> ⚠️ 현재 장비 특성 % 효과는 **UI에 표시**되지만 **전투 중 자동 적용되지 않음**  
-> 전투 시 적용되는 것: 장비 기본 스탯(ATK/PDEF/MDEF) + 패시브 스킬 보너스  
-> 특성 효과는 향후 전투 시스템에 통합 예정
+> ✅ **v7.7.0부터 장비 특성 % 효과가 전투에 자동 적용됨**  
+> `buildUnit()` 시 `calcEquipTraitBonuses(entry)`로 장착 장비의 특성 보너스를 산출 → `unit.traitBonuses`에 저장
+
+| 적용 위치 | 특성 | 효과 |
+|-----------|------|------|
+| `computeDamage` | physical_damage, magic_damage | 공격자 물리/마법 피해 +N% |
+| `computeDamage` | fire/water/ice/earth/wind/lightning/light/dark_damage | 공격자 속성 피해 +N% |
+| `computeDamage` | crit_damage | 크리티컬 피해 배율 +N% (1.5→1.5+N%) |
+| `computeDamage` | physical_defense, magic_defense | 대상 물리/마법 피해감소 N% |
+| `computeDamage` | 8종 속성 저항 | 대상 속성 피해감소 N% |
+| `getEffectiveDefense` | pdef_flat, mdef_flat | DEF 고정값 +N |
+| `critChance` | crit_chance | 크리티컬 확률 +N% |
+| `computeHeal` | healing_done | 시전자 치유량 +N% |
+| `applyHeal` | healing_received | 대상 받는 치유량 +N% |
+| `applyStatus` | poison/bleed/burn/curse_apply | 상태이상 부여 확률 +N% |
+| `applyStatus` | poison/bleed/burn/curse_resist | 상태이상 저항 -N% |
+| 타겟팅 | threat_up, threat_down | 위협 가중치 ±N% |
 
 ### A.3 피해 계산 순서 요약
 
 ```
 1. rawBase 계산 (2×MainStat + 3×ATK) 또는 monsterBaseDamage
-2. rawDamage = rawBase × coef × critMult × resistMult × elementMul × typeMul × incomingMul × outgoingMul × terrainMul
-3. DEF 감소 적용: afterDef = rawDamage × (1 - DEF/(DEF + 1.5×rawDamage))
-4. 패시브 물리피해감소 적용: afterPassive = afterDef × (1 - physicalDmgReduce)
-5. 보너스 배율 적용: final = afterPassive × bonusMul
-6. 최종피해 = max(1, round(final))
+2. 장비 특성 공격 보너스: traitOutMul = 1 + (물리/마법피해%) + (속성피해%)
+3. rawDamage = rawBase × coef × critMult × resistMult × elementMul × typeMul × incomingMul × outgoingMul × traitOutMul × terrainMul
+4. DEF 감소 적용: afterDef = rawDamage × (1 - DEF/(DEF + 1.5×rawDamage))
+5. 장비 특성 방어 보너스: afterTrait = afterDef × traitDefMul (1 - 물리/마법피해감소% - 속성저항%)
+6. 패시브 물리피해감소 적용: afterPassive = afterTrait × (1 - physicalDmgReduce)
+7. 보너스 배율 적용: final = afterPassive × bonusMul
+8. 최종피해 = max(1, round(final))
 ```
