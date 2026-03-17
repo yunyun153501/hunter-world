@@ -1,6 +1,6 @@
 # Hunter World — 장비 / 인벤토리 시스템
 
-> 코드 기준: `GateBattle_v4_8 복사본.js`
+> 코드 기준: `GateBattle_v6_4.js`
 
 ---
 
