@@ -144,9 +144,8 @@ E등급 Boss 근거리물리(front열) 몬스터:
 ## 3. 회복 공식
 
 ```
-Heal = (2 × MainStat + 3 × ATK) × 스킬계수 × curseMul
+Heal = (2 × MainStat + 3 × ATK) × 스킬계수
 ```
-- **curseMul** = 저주 상태면 `(1 - cursePenalty)`, 아니면 1.0
 - 출혈 상태인 대상은 회복량 **50% 감소** (`bleedHealReduction`)
 
 ---
@@ -224,7 +223,7 @@ dark → light → ice → fire → water → earth → wind → electric → da
 | **독(poison)** | 28% | 3턴 | 스택형 (최대 3중첩) |
 | **출혈(bleed)** | 28% | 3턴 | 발동 시 30% 추가피해(1회) + 회복량 50% 감소 3턴 |
 | **화상(burn)** | 28% | 5턴 | 스택형 (최대 5중첩) |
-| **저주(curse)** | 24% | 3턴 | 공격/회복 감소 |
+| **저주(curse)** | 24% | 3턴 | 공격력 감소 + 받는 피해 증가 |
 | **속박(bind)** | 18% | 2턴 | 감각/명중 감소 |
 | **수면(sleep)** | 16% | 2턴 | 행동불가, 피격 시 해제 |
 | **기절(stun)** | 16% | 1턴 | 행동불가 |
@@ -278,7 +277,6 @@ dark → light → ice → fire → water → earth → wind → electric → da
 
 - 공격 데미지 **감소** (outgoingMul)
 - 피격 데미지 **증가** (incomingMul)
-- 회복량 **감소** (curseMul)
 
 ---
 
