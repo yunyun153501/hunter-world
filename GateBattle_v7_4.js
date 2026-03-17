@@ -1,7 +1,7 @@
-//@name Gate Battle Prototype v7.6
-//@display-name ⚔️ 게이트 전투 프로토타입 v7.6
+//@name Gate Battle Prototype v7.7
+//@display-name ⚔️ 게이트 전투 프로토타입 v7.7
 //@api 3.0
-//@version 7.6.0
+//@version 7.7.0
 //@author OpenAI
 //@arg gate_v21_db string "" "v2.1 DB 저장"
 //@arg gate_v21_state string "" "v2.1 UI/전투 상태 저장"
@@ -749,7 +749,7 @@ function buildConvFoodItem(foodDef, count=1) {
 
 const DEFAULT_RARE_MATERIAL_PACK = {
   "version": 2,
-  "note": "GateBattle v7.6 — defenseFlat scale added, elemental damage/resist moved to statusPercent.",
+  "note": "GateBattle v7.7 — defenseFlat scale added, elemental damage/resist moved to statusPercent, shield_effect moved to statusPercent, trait combat integration.",
   "valueScales": {
     "percentSmall": {
       "E": 1,
@@ -1033,7 +1033,7 @@ const DEFAULT_RARE_MATERIAL_PACK = {
       "id": "shield_effect",
       "name": "보호막 효과 증가",
       "category": "support",
-      "scale": "percentSmall"
+      "scale": "statusPercent"
     },
     {
       "id": "threat_up",
@@ -1731,6 +1731,29 @@ function buildDefaultState() {
       }
     });
   }
+  // 장비 특성 전투 보너스 계산 (장착 장비의 traits 배열 기반)
+  function calcEquipTraitBonuses(entry) {
+    const bonuses = {};
+    if (!entry || !entry.inventory || !entry.inventory.equipped) return bonuses;
+    const equipped = entry.inventory.equipped;
+    const pack = DEFAULT_RARE_MATERIAL_PACK;
+    const valueScales = pack.valueScales || {};
+    const traitDefs = pack.traits || [];
+    EQUIP_PARTS.forEach(part => {
+      const eq = equipped[part];
+      if (!eq || !Array.isArray(eq.traits)) return;
+      const eqRank = String(eq.rank || entry.rank || 'E').toUpperCase();
+      eq.traits.forEach(traitId => {
+        const def = traitDefs.find(t => t.id === traitId);
+        if (!def || !def.scale) return;
+        const scaleTable = valueScales[def.scale];
+        if (!scaleTable) return;
+        const val = Number(scaleTable[eqRank] || 0);
+        bonuses[traitId] = (bonuses[traitId] || 0) + val;
+      });
+    });
+    return bonuses;
+  }
   function buildUnit(entry, side, slotIndex) {
     const rank = String(entry.rank || 'E').toUpperCase();
     const row = normRow(entry.row) || inferRow(entry.position, entry.job);
@@ -1739,9 +1762,10 @@ function buildDefaultState() {
     const monsterProfile = isMonster ? monsterProfileForEntry(entry) : null;
     // 몬스터: 개별 스탯 없음, HP/ATK만 프로필 테이블에서 가져옴
     const stats = isMonster ? { str:0, con:0, int:0, agi:0, sense:0 } : normaliseStats(entry.stats);
-    const baseHp = Number(isMonster ? monsterProfile.hp : (entry.hp || (100 + (stats.con - 10) * 10 + (stats.str - 10) * 3)));
-    const defaultMp = isMonster ? monsterProfile.mp : (100 + (stats.int - 10) * 10 + (stats.sense - 10) * 3);
-    const defaultSp = isMonster ? monsterProfile.sp : (100 + (stats.agi - 10) * 10 + (stats.sense - 10) * 3);
+    const lvlBonus = isMonster ? 0 : (Math.max(1, Number(entry.level || 1)) - 1) * 2;
+    const baseHp = Number(isMonster ? monsterProfile.hp : (entry.hp || (100 + (stats.con - 10) * 10 + (stats.str - 10) * 3 + lvlBonus)));
+    const defaultMp = isMonster ? monsterProfile.mp : (100 + (stats.int - 10) * 10 + (stats.sense - 10) * 3 + lvlBonus);
+    const defaultSp = isMonster ? monsterProfile.sp : (100 + (stats.agi - 10) * 10 + (stats.sense - 10) * 3 + lvlBonus);
     const allSkillMap = getAllSkillMap();
     const hasMagicSkill = Array.isArray(entry.skills) && entry.skills.some(id => {
       const sk = allSkillMap[String(id || '').trim()];
@@ -1800,6 +1824,8 @@ function buildDefaultState() {
       onHitTurns: Number(meta.onHitTurns || 0)
     };
     applyPassiveInitialization(unit);
+    // 장비 특성 전투 적용: 장착 장비 traits → 전투 보너스
+    unit.traitBonuses = isMonster ? {} : calcEquipTraitBonuses(entry);
     return unit;
   }
 
@@ -4344,7 +4370,9 @@ function getBuffedStat(unit, statKey) {
   function getEffectiveDefense(unit, kind) {
     const base = Number(kind === 'magic' ? unit.mdef : unit.pdef);
     const passive = Number((unit.passiveBonuses && unit.passiveBonuses[kind === 'magic' ? 'mdef' : 'pdef']) || 0);
-    return Math.max(0, base + passive);
+    // 장비 특성: 물리방어력/마법방어력 고정값 보너스
+    const traitFlat = Number((unit.traitBonuses && unit.traitBonuses[kind === 'magic' ? 'mdef_flat' : 'pdef_flat']) || 0);
+    return Math.max(0, base + passive + traitFlat);
   }
   function getStatPower(unit, skill) {
     const types = (skill && skill.statTypes && skill.statTypes.length > 0) ? skill.statTypes : [unit.attackStat || 'str'];
@@ -4406,6 +4434,8 @@ function getBuffedStat(unit, statKey) {
   function critChance(unit) {
     let bonus = 0;
     (unit.buffs || []).forEach(b => { if (b.critChanceBonus) bonus += Number(b.critChanceBonus); });
+    // 장비 특성: 치명타 확률 증가
+    bonus += Number((unit.traitBonuses && unit.traitBonuses.crit_chance) || 0);
     let sense = getBuffedStat(unit, 'sense');
     // Bind: 속박된헌터 감각 -50%
     if (!unit.isMonster && Number(unit.statuses.bind || 0) > 0) sense = Math.floor(sense * 0.5);
@@ -4476,7 +4506,9 @@ function getBuffedStat(unit, statKey) {
     const coef = Number(skill && skill.coef != null ? skill.coef : 1.0);
     const damageType = (skill && skill.damageType) || attacker.damageType || 'physical';
     const def = getEffectiveDefense(target, damageType === 'magic' ? 'magic' : 'physical');
-    const critMult = crit ? 1.5 : 1.0;
+    // 장비 특성: 치명타 피해 증가
+    const critDmgTraitBonus = Number((attacker.traitBonuses && attacker.traitBonuses.crit_damage) || 0) / 100;
+    const critMult = crit ? (1.5 + critDmgTraitBonus) : 1.0;
     const element = normElement((skill && skill.element && skill.element !== 'none') ? skill.element : (attacker.baseElement || 'none'));
     const resistMult = element !== 'none' ? Number((target.resists || {})[element] || 1) : 1;
     const elementMul = getElementAdvantageMult(element, target.baseElement || 'none');
@@ -4491,6 +4523,25 @@ function getBuffedStat(unit, statKey) {
       const mainStat = getStatPower(attacker, skill);
       rawBase = (2 * mainStat) + (3 * Number(attacker.atk || 0));
     }
+    // 장비 특성: 물리/마법 피해 증가 + 속성 피해 증가
+    let traitOutMul = 1;
+    if (attacker.traitBonuses) {
+      const dmgKey = damageType === 'magic' ? 'magic_damage' : 'physical_damage';
+      traitOutMul += Number(attacker.traitBonuses[dmgKey] || 0) / 100;
+      if (element !== 'none') {
+        traitOutMul += Number(attacker.traitBonuses[`${element}_damage`] || 0) / 100;
+      }
+    }
+    // 장비 특성: 물리/마법 피해감소 + 속성 저항 (대상)
+    let traitDefMul = 1;
+    if (target.traitBonuses) {
+      const defKey = damageType === 'magic' ? 'magic_defense' : 'physical_defense';
+      traitDefMul -= Number(target.traitBonuses[defKey] || 0) / 100;
+      if (element !== 'none') {
+        traitDefMul -= Number(target.traitBonuses[`${element}_resist`] || 0) / 100;
+      }
+      traitDefMul = Math.max(0, traitDefMul);
+    }
     // 방어 전 피해량 (rawDamage)
     let terrainMul = 1;
     // 지형 전환 효과: 식물(earth) +15%, 화염(fire) -10%
@@ -4499,10 +4550,10 @@ function getBuffedStat(unit, statKey) {
       if (element === 'fire') terrainMul *= 0.90;
       if (attacker.species === 'plant') terrainMul *= 1.15;
     }
-    const rawDamage = rawBase * coef * critMult * resistMult * elementMul * typeMul * incomingMul * outgoingMul * terrainMul;
+    const rawDamage = rawBase * coef * critMult * resistMult * elementMul * typeMul * incomingMul * outgoingMul * traitOutMul * terrainMul;
     // 물리/마법 피해감소 공식: 피해감소율 = DEF / (DEF + 1.5 × rawDamage)
     const defReduction = (def > 0 && rawDamage > 0) ? def / (def + 1.5 * rawDamage) : 0;
-    let afterStatDef = rawDamage * (1 - defReduction);
+    let afterStatDef = rawDamage * (1 - defReduction) * traitDefMul;
     // 패시브: 물리 피해 감소 (충격 감소 등)
     if (damageType === 'physical' && target.passiveMods && Number(target.passiveMods.physicalDmgReduce || 0) > 0) {
       afterStatDef *= (1 - target.passiveMods.physicalDmgReduce);
@@ -4522,7 +4573,9 @@ function getBuffedStat(unit, statKey) {
     const mainStat = getStatPower(caster, skill);
     const ss = (2 * mainStat) + (3 * Number(caster.atk || 0));
     const coef = Number(skill && skill.coef != null ? skill.coef : 1.0);
-    return Math.max(1, Math.round(ss * coef));
+    // 장비 특성: 치유량 증가
+    const healDoneBonus = 1 + Number((caster.traitBonuses && caster.traitBonuses.healing_done) || 0) / 100;
+    return Math.max(1, Math.round(ss * coef * healDoneBonus));
   }
   function getAlive(units) { return units.filter(u => !u.dead && u.hp > 0); }
   function findUnitByUid(runtime, uid) {
@@ -4588,7 +4641,13 @@ function getBuffedStat(unit, statKey) {
     const pickedRow = weightedPick(rowChoices);
     const rowUnits = (buckets[pickedRow] || []);
     if (!rowUnits.length) return choosePriorityTarget(attacker, foes, skill);
-    const unitChoices = rowUnits.map(u => ({ value:u, weight:Math.max(1, Number(u.threatBase || 1) + Number(u.threatBonus || 0)) }));
+    const unitChoices = rowUnits.map(u => {
+      const baseThreat = Math.max(1, Number(u.threatBase || 1) + Number(u.threatBonus || 0));
+      let threatMul = 1;
+      if (u.traitBonuses && u.traitBonuses.threat_up) threatMul += Number(u.traitBonuses.threat_up) / 100;
+      if (u.traitBonuses && u.traitBonuses.threat_down) threatMul -= Number(u.traitBonuses.threat_down) / 100;
+      return { value:u, weight:Math.max(1, Math.round(baseThreat * Math.max(0.1, threatMul))) };
+    });
     return weightedPick(unitChoices) || choosePriorityTarget(attacker, foes, skill);
   }
   function chooseHealTarget(allies) {
@@ -4609,12 +4668,6 @@ function getBuffedStat(unit, statKey) {
   }
   function applyDamage(target, dmg) {
     let remaining = dmg;
-    // 보호막 우선 흡수
-    if (Number(target.shieldHp || 0) > 0) {
-      const absorbed = Math.min(target.shieldHp, remaining);
-      target.shieldHp -= absorbed;
-      remaining -= absorbed;
-    }
     if (remaining > 0) {
       target.hp = Math.max(0, target.hp - remaining);
     }
@@ -4625,6 +4678,11 @@ function getBuffedStat(unit, statKey) {
     let effectiveHeal = heal;
     if (Number(target.statuses.bleedHealReduction || 0) > 0) {
       effectiveHeal = Math.max(1, Math.round(heal * 0.5));
+    }
+    // 장비 특성: 받는 치유량 증가
+    const healRecvBonus = Number((target.traitBonuses && target.traitBonuses.healing_received) || 0) / 100;
+    if (healRecvBonus > 0) {
+      effectiveHeal = Math.max(1, Math.round(effectiveHeal * (1 + healRecvBonus)));
     }
     const before = target.hp;
     target.hp = Math.min(target.maxHp, target.hp + effectiveHeal);
@@ -4758,7 +4816,16 @@ function getBuffedStat(unit, statKey) {
       return false;
     }
     const profile = getStatusDefaultProfile(type);
-    const chance = srcStatus.chance == null ? profile.chance : Number(srcStatus.chance);
+    let chance = srcStatus.chance == null ? profile.chance : Number(srcStatus.chance);
+    // 장비 특성: 상태이상 부여 확률 증가 (공격자)
+    if (sourceUnit && sourceUnit.traitBonuses) {
+      chance += Number(sourceUnit.traitBonuses[`${type}_apply`] || 0) / 100;
+    }
+    // 장비 특성: 상태이상 저항 (대상)
+    if (target.traitBonuses) {
+      chance -= Number(target.traitBonuses[`${type}_resist`] || 0) / 100;
+    }
+    chance = Math.max(0, Math.min(1, chance));
     if (Math.random() > chance) return false;
     const turns = Number(srcStatus.turns || profile.turns);
 
@@ -5065,16 +5132,6 @@ function getBuffedStat(unit, statKey) {
       const heal = computeHeal(actor, skill);
       const hpBefore = Number(target.hp || 0);
       const actual = applyHeal(target, heal);
-      // 신의 보호: 만HP 시 보호막 전환 (최대 HP 20%)
-      if (skill.id === 'divineProtection' && target.hp >= target.maxHp) {
-        const shieldMax = Math.round(target.maxHp * 0.20);
-        const overflow = Math.min(heal - actual, shieldMax);
-        if (overflow > 0) {
-          target.shieldHp = Math.min(shieldMax, (target.shieldHp || 0) + overflow);
-          addRoundHighlight(summary, `${target.name} 보호막 +${overflow}`);
-          pushBattleLog(runtime, `${actor.name}의 ${skill.name} → ${target.name} 보호막 ${target.shieldHp}`);
-        }
-      }
       if (actor.side === 'party') summary.partyHealing += actual; else summary.enemyHealing += actual;
       addRoundHighlight(summary, `${actor.name}의 ${skill.name} → ${target.name} 회복 ${actual}`);
       pushHealEventLog(runtime, actor, target, skill.name, actual, hpBefore);
