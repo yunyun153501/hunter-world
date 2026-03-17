@@ -1,6 +1,6 @@
 # 📖 Hunter World — 플러그인 종합 가이드
 
-> **Gate Battle Prototype v7.5.0** | RisuAI 기반 게이트 전투 시뮬레이터 RPG 플러그인  
+> **Gate Battle Prototype v7.6.0** | RisuAI 기반 게이트 전투 시뮬레이터 RPG 플러그인  
 > 12,000줄 이상의 대규모 JavaScript 시스템 — 게이트 탐색, 전투, 장비, 경제, 주거까지 올인원
 
 ---
@@ -21,7 +21,7 @@
   - [3.5 스킬 계수 (등급별)](#35-스킬-계수-등급별)
 - [4. 몬스터 & 종족 시스템](#4--몬스터--종족-시스템)
 - [5. 장비 시스템](#5--장비-시스템)
-  - [5.1 특성 (Trait) 시스템 — 35종](#51-특성-trait-시스템--35종)
+  - [5.1 특성 (Trait) 시스템 — 37종](#51-특성-trait-시스템--37종)
   - [5.2 강화 시스템](#52-강화-시스템)
   - [5.3 특성주입 시스템](#53-특성주입-시스템)
   - [5.4 내구도 시스템](#54-내구도-시스템)
@@ -385,9 +385,9 @@ dark → light → ice → fire → water → earth → wind → electric → da
 
 ---
 
-### 5.1 특성 (Trait) 시스템 — 35종
+### 5.1 특성 (Trait) 시스템 — 37종
 
-장비에 부여할 수 있는 특성은 총 **35종**이며, **4개 티어**로 구분됩니다.
+장비에 부여할 수 있는 특성은 총 **37종**이며, **4개 티어**로 구분됩니다.
 
 #### 🗡️ 공격 특성 (12종)
 
@@ -406,12 +406,14 @@ dark → light → ice → fire → water → earth → wind → electric → da
 | `light_damage` | 빛 피해 증가 | 2 |
 | `dark_damage` | 암흑 피해 증가 | 2 |
 
-#### 🛡️ 방어 특성 (10종)
+#### 🛡️ 방어 특성 (12종)
 
 | ID | 이름 | 티어 |
 |----|------|:----:|
-| `physical_defense` | 물리 방어 증가 | 3 |
-| `magic_defense` | 마법 방어 증가 | 3 |
+| `physical_defense` | 물리피해감소 증가 | 3 |
+| `magic_defense` | 마법피해감소 증가 | 3 |
+| `pdef_flat` | 물리방어력 증가 | 3 |
+| `mdef_flat` | 마법방어력 증가 | 3 |
 | `fire_resist` | 화염 저항 | 4 |
 | `water_resist` | 수속성 저항 | 4 |
 | `ice_resist` | 빙결 저항 | 4 |
@@ -455,18 +457,24 @@ dark → light → ice → fire → water → earth → wind → electric → da
 |:----:|------|-----------|
 | **Tier 1** | 🔴 희귀 | crit_chance, crit_damage, physical_damage, magic_damage |
 | **Tier 2** | 🟠 희귀 | 속성 피해 증가, 상태이상 적용 |
-| **Tier 3** | 🟢 일반 | physical_defense, magic_defense, healing_done, shield_effect |
-| **Tier 4** | ⬜ 일반 | 저항류, 위협, healing_received |
+| **Tier 3** | 🟢 일반 | physical_defense, magic_defense, pdef_flat, mdef_flat, healing_done, shield_effect |
+| **Tier 4** | ⬜ 일반 | 속성 저항류, 상태이상 저항류, 위협, healing_received |
 
 #### 📊 특성 효과 수치 (등급별 %)
 
 | 카테고리 | E | D | C | B | A | S |
 |----------|:-:|:-:|:-:|:-:|:-:|:-:|
-| **percentSmall** (물리/마법/속성 피해 증감) | 1% | 2% | 3% | 5% | 7% | 10% |
-| **statusPercent** (상태이상 확률/저항) | 2% | 4% | 6% | 8% | 10% | 12% |
+| **percentSmall** (물리/마법 피해 증감, 치유/보호막) | 1% | 2% | 3% | 5% | 7% | 10% |
+| **statusPercent** (속성 피해/저항, 상태이상 확률/저항) | 2% | 4% | 6% | 8% | 10% | 12% |
 | **critChance** (크리티컬 확률) | 1% | 2% | 3% | 4% | 5% | 7% |
 | **critDamage** (크리티컬 피해) | 5% | 10% | 15% | 20% | 25% | 35% |
 | **threatPercent** (위협 수치) | 10% | 20% | 30% | 40% | 50% | 60% |
+| **defenseFlat** (물리/마법 방어력, 고정값) | +3 | +8 | +20 | +35 | +50 | +70 |
+
+> **v7.6 변경사항**:
+> - 속성 피해 8종 + 속성 저항 8종이 `percentSmall` → `statusPercent`로 이동
+> - 새 스케일 `defenseFlat` 추가 (물리방어력/마법방어력 고정값)
+> - 새 특성 `pdef_flat`(물리방어력), `mdef_flat`(마법방어력) 추가
 
 ---
 
@@ -1145,7 +1153,7 @@ dark → light → ice → fire → water → earth → wind → electric → da
 | 기본 스탯 수 | 5종 (STR, CON, INT, AGI, SENSE) |
 | 속성 수 | 8종 (순환 상성) |
 | 종족 수 | 10종 |
-| 장비 특성 수 | 35종 (4티어) |
+| 장비 특성 수 | 37종 (4티어) |
 | 물약 종류 수 | 42종 (7타입 × 6등급) |
 | 물약 일일 한도 | 5회 (6회째 효율 20%) |
 | 특수재료효과 수 | 21종 (버프 14 + 디버프 겸용 7) |
@@ -1162,5 +1170,15 @@ dark → light → ice → fire → water → earth → wind → electric → da
 
 ---
 
-> 📝 이 가이드는 `GateBattle_v7_4.js` (v7.5.0) 기준으로 작성되었습니다.  
-> 플러그인 업데이트에 따라 수치나 시스템이 변경될 수 있습니다.
+> 📝 이 가이드는 `GateBattle_v7_4.js` (v7.6.0) 기준으로 작성되었습니다.  
+> 플러그인 업데이트에 따라 수치나 시스템이 변경될 수 있습니다.  
+> 전투 밸런스 공식의 상세 정리는 [`BALANCE_FORMULAS.md`](BALANCE_FORMULAS.md)를 참조하세요.
+
+### 📋 v7.6.0 변경 이력
+
+- 속성 피해 8종 + 속성 저항 8종: `percentSmall`(1~10%) → `statusPercent`(2~12%)로 이동
+  - 범용 물리/마법 피해 증가와 속성 피해 증가의 밸런스 차별화
+- 새 스케일 `defenseFlat` 추가: E+3, D+8, C+20, B+35, A+50, S+70
+- 새 특성 `pdef_flat`(물리방어력 증가), `mdef_flat`(마법방어력 증가) 추가 (티어3)
+- `BALANCE_FORMULAS.md` 생성: 전투 공식, 밸런스, 스킬 메커니즘 종합 문서
+- 특성 종류 35종 → 37종 확장

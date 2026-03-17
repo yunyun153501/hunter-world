@@ -1,6 +1,6 @@
 # Hunter World — 전투 공식 정리
 
-> 코드 기준: `GateBattle_v7_3.js`
+> 코드 기준: `GateBattle_v7_4.js` (v7.6.0)
 
 ---
 
