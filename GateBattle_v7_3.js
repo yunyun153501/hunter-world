@@ -1,14 +1,14 @@
-//@name Gate Battle Prototype v7.3
-//@display-name ⚔️ 게이트 전투 프로토타입 v7.3
+//@name Gate Battle Prototype v7.4
+//@display-name ⚔️ 게이트 전투 프로토타입 v7.4
 //@api 3.0
-//@version 7.3.0
+//@version 7.4.0
 //@author OpenAI
 //@arg gate_v21_db string "" "v2.1 DB 저장"
 //@arg gate_v21_state string "" "v2.1 UI/전투 상태 저장"
 
 (async () => {
 try {
-  const PLUGIN_NAME = '[Gate Battle Prototype v7.3.0]';
+  const PLUGIN_NAME = '[Gate Battle Prototype v7.4.0]';
   const UI_ID = 'gate-battle-v22-root';
   const STYLE_ID = 'gate-battle-v22-style';
   const KEY_DB = 'GateBattleV21::db';
@@ -30,6 +30,14 @@ try {
   const RARITY_LABELS = { Normal:'Normal', Rare:'Rare', Unique:'Unique', Legendary:'Legendary' };
   function rarityColor(rarity) { return RARITY_COLORS[rarity] || RARITY_COLORS.Normal; }
   function rarityStyle(rarity) { const c = rarityColor(rarity); return rarity && rarity !== 'Normal' ? `color:${c};font-weight:600;` : ''; }
+  // 장비 희귀도 자동 판정: weapon/armor → 특성 유무, subweapon/accessory → 내장 특성 티어
+  function assignEquipRarity(part, hasTrait) {
+    if (part === 'subweapon' || part === 'accessory') {
+      const tier = Math.floor(Math.random() * 4) + 1; // 1~4
+      return { rarity: tier <= 2 ? 'Rare' : 'Normal', traitTier: tier };
+    }
+    return { rarity: hasTrait ? 'Rare' : 'Normal', traitTier: 0 };
+  }
 
   // ── 특수효과 (Special Effects) ──
   const SPECIAL_MATERIAL_EFFECTS = [
@@ -3748,12 +3756,16 @@ function buildDropEquipment(rank, forcePart) {
   const nameSuffixes = { weapon:['검','창','활','완드','도끼'], armor:['갑옷','로브','체인메일','플레이트'], subweapon:['방패'], accessory:['반지','목걸이','팔찌'] };
   const suffArr = nameSuffixes[part] || [partLabel];
   const suff = suffArr[Math.floor(Math.random() * suffArr.length)];
+  // 희귀도 자동 판정
+  const { rarity: autoRarity, traitTier: autoTier } = assignEquipRarity(part, hasTrait);
   const name = `${r}급 드랍 ${suff}${hasTrait ? ` [${traitName}]` : ''}`;
   return {
     id: `drop_equip_${r.toLowerCase()}_${part}_${uid}`,
     name,
     part,
     rank: r,
+    rarity: autoRarity,
+    traitTier: autoTier,
     enhance: 0,
     infuse: traits.length,
     maxInfuse,
@@ -5874,10 +5886,12 @@ function seedNpcAuctionListings() {
       const nameSuffixes = { weapon:['검','창','활','완드','도끼'], armor:['갑옷','로브','체인메일','플레이트'], subweapon:['방패'], accessory:['반지','목걸이','팔찌'] };
       const suffArr = nameSuffixes[part] || [EQUIP_PART_LABELS[part]||part];
       const suff = suffArr[Math.floor(Math.random() * suffArr.length)];
+      // 희귀도 자동 판정: NPC 경매 장비는 항상 특성 보유 → weapon/armor=Rare, sub/acc=티어 판정
+      const { rarity: npcRarity, traitTier: npcTier } = assignEquipRarity(part, true);
       const item = {
         id: `npc_drop_equip_${rank.toLowerCase()}_${part}_${uid}`,
         name: `${rank}급 드랍 ${suff} [${traitName}]`,
-        part, rank,
+        part, rank, rarity: npcRarity, traitTier: npcTier,
         enhance: 0, infuse: 1, maxInfuse, traits: [traitId],
         durability: 100, maxDurability: 100, price: marketPrice,
         category: 'equipment', isDropped: true, stackable: false,
@@ -6036,7 +6050,9 @@ function renderAuctionHouseHtml() {
         const searchOk = !searchQ || (it.name||it.id||'').toLowerCase().includes(searchQ) ||
           (it.note||'').toLowerCase().includes(searchQ) ||
           ((it.traits||[]).some(t => (EQUIP_TRAIT_LABELS[t]||t).includes(searchQ)));
-        return rankOk && searchOk;
+        // 유니크/전설 아이템은 경매장에 표시하지 않음
+        const rarityOk = !it.rarity || (it.rarity !== 'Unique' && it.rarity !== 'Legendary');
+        return rankOk && searchOk && rarityOk;
       });
 
       const rankBtns = ['','E','D','C','B','A','S'].map(r =>
@@ -6054,9 +6070,10 @@ function renderAuctionHouseHtml() {
             return `<div class="gb-unit" style="margin-bottom:6px;padding:8px;border:1px solid rgba(148,163,184,0.15);border-radius:6px;">
               <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
                 <div>
-                  <strong>${escapeHtml(it.name||it.id)}</strong>
+                  <strong style="${rarityStyle(it.rarity)}">${escapeHtml(it.name||it.id)}</strong>
                   <span class="gb-badge">${escapeHtml(it.rank||'E')}</span>
                   ${isEquip ? `<span class="gb-badge">${escapeHtml(EQUIP_PART_LABELS[it.part]||it.part||'')}</span>` : '<span class="gb-badge">희귀재료</span>'}
+                  ${isEquip && it.rarity && it.rarity !== 'Normal' ? `<span class="gb-badge" style="background:${rarityColor(it.rarity)};color:#000;">${escapeHtml(it.rarity)}</span>` : ''}
                   ${npcBadge} ${traitTxt}
                   ${isEquip ? `<div class="gb-sub">주입 최대 ${it.maxInfuse||1}회 | 내구 ${it.durability||100}/${it.maxDurability||100}</div>` : ''}
                   <div class="gb-sub">시장가: ${fmt(mktPrice)}</div>
@@ -6567,7 +6584,8 @@ function renderEquipShopHtml() {
   ).join('');
 
   const filtered = eqs.filter(e =>
-    (!selRank || e.rank === selRank) && (!selPart || e.part === selPart) && !e.statusType
+    (!selRank || e.rank === selRank) && (!selPart || e.part === selPart) && !e.statusType &&
+    (!e.rarity || (e.rarity !== 'Unique' && e.rarity !== 'Legendary'))
   );
 
   const itemsHtml = filtered.length === 0
@@ -6655,10 +6673,12 @@ function seedNpcUsedListings() {
     const suff = suffArr[Math.floor(Math.random() * suffArr.length)];
     const enhLabel = enhance > 0 ? ` +${enhance}` : '';
     const traitLabel = hasTrait ? ` [${traitName}]` : '';
+    // 희귀도 자동 판정
+    const { rarity: usedRarity, traitTier: usedTier } = assignEquipRarity(part, hasTrait);
     const item = {
       id: `npc_used_${rank.toLowerCase()}_${part}_${uid}`,
       name: `${rank}급 ${suff}${enhLabel}${traitLabel}`,
-      part, rank, enhance, infuse: traits.length, maxInfuse, traits,
+      part, rank, rarity: usedRarity, traitTier: usedTier, enhance, infuse: traits.length, maxInfuse, traits,
       durability: dur, maxDurability: maxDur, price: marketPrice,
       category: 'equipment', isDropped: true, stackable: false,
       unitWeightG: EQUIP_WEIGHT_G[part] || 1000,
@@ -6761,7 +6781,9 @@ function renderHunterMarketHtml() {
     const it = l.item;
     const maxDur = Number(it.maxDurability ?? 100);
     // 헌터마켓에는 최대내구도 100 (새 장비)는 등록 불가 — 80~99만 허용
-    return maxDur >= 80 && maxDur < 100 && (!selRank || (it.rank||'E') === selRank) && (!selPart || it.part === selPart);
+    // 유니크/전설 아이템은 헌터마켓에 표시하지 않음
+    const rarityOk = !it.rarity || (it.rarity !== 'Unique' && it.rarity !== 'Legendary');
+    return maxDur >= 80 && maxDur < 100 && (!selRank || (it.rank||'E') === selRank) && (!selPart || it.part === selPart) && rarityOk;
   });
   const fmt = n => n >= 1e8 ? `${(n/1e8).toFixed(2)}억` : n >= 10000 ? `${Math.round(n/10000)}만` : n.toLocaleString('en-US');
   // 장비 상세 툴팁 헬퍼
@@ -9248,7 +9270,7 @@ function renderApp() {
     <div class="gb-shell ${model.state.visible ? '' : 'hidden'}">
       <div class="gb-header">
         <div>
-          <div class="gb-title">⚔️ Gate Battle Prototype v7.2</div>
+          <div class="gb-title">⚔️ Gate Battle Prototype v7.4</div>
           <div class="gb-sub">허브 · 게이트 · 전투 · 파티 · 캐릭터 · 공용인벤 · DB</div>
         </div>
         <div style="display:flex; gap:8px; align-items:flex-start; flex-wrap:wrap;">
@@ -9945,7 +9967,11 @@ async function saveMaterialTraitFromForm() {
     // 검색박스 입력
     on('#gb-auction-search', 'input', async (ev) => {
       model.state.auctionSearchQ = ev.currentTarget.value || '';
+      const cursorPos = ev.currentTarget.selectionStart;
       await saveState(); renderApp();
+      // 포커스 복원: renderApp() 후 검색 인풋에 포커스 + 커서 위치 복원
+      const searchEl = root.querySelector('#gb-auction-search');
+      if (searchEl) { searchEl.focus(); searchEl.setSelectionRange(cursorPos, cursorPos); }
     });
     // 구매 경매 참여 — 단계별 인터랙티브 입찰 시작
     on('[data-auction-bid]', 'click', async (ev) => {
