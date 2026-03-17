@@ -3889,7 +3889,7 @@ function addEliteLoot(bundle, rank, sourceRef) {
   if (equipPart) {
     const eq = buildDropEquipment(rank, equipPart);
     grantInventoryItem(eq);
-    bundle.notes.push(`⚔️ 장비 드랍: ${eq.name}${eq.traits.length ? ` [특성: ${eq.traits.map(t=>EQUIP_TRAIT_LABELS[t]||t).join(', ')}]` : ''} (롤: ${equipRoll})`);
+    bundle.notes.push(`⚔️ 장비 드랍: ${eq.name}${eq.traits.length ? ` [특성: ${eq.traits.map(t=>equipTraitDisplay(t, eq.rank)).join(', ')}]` : ''} (롤: ${equipRoll})`);
   }
 }
 function addBossLoot(bundle, rank, sourceRef) {
@@ -3910,7 +3910,7 @@ function addBossLoot(bundle, rank, sourceRef) {
   if (equipPart) {
     const eq = buildDropEquipment(rank, equipPart);
     grantInventoryItem(eq);
-    bundle.notes.push(`⚔️ 장비 드랍: ${eq.name}${eq.traits.length ? ` [특성: ${eq.traits.map(t=>EQUIP_TRAIT_LABELS[t]||t).join(', ')}]` : ''} (롤: ${equipRoll})`);
+    bundle.notes.push(`⚔️ 장비 드랍: ${eq.name}${eq.traits.length ? ` [특성: ${eq.traits.map(t=>equipTraitDisplay(t, eq.rank)).join(', ')}]` : ''} (롤: ${equipRoll})`);
   }
   // 보스 스킬북 드랍 (독립 롤: 98=치유/버프, 99=단일공격/CC, 100=광역공격/CC)
   const sbRoll = randInt(1, 100);
@@ -5961,13 +5961,14 @@ function seedNpcAuctionListings() {
       // 희귀재료 (NPC) — 티어별 가격 적용
       const traitId = EQUIP_TRAIT_TYPES[Math.floor(Math.random() * EQUIP_TRAIT_TYPES.length)];
       const traitName = EQUIP_TRAIT_LABELS[traitId] || traitId;
+      const traitLabel = equipTraitDisplay(traitId, rank);
       const marketPrice = getRareMatTierPrice(rank, traitId);
       const ratio = randomAuctionRatio();
       const askPrice = Math.round(marketPrice * ratio);
       const uid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + '_r' + i;
       const item = {
         id: `npc_rare_${rank.toLowerCase()}_${uid}`,
-        name: `${rank}급 희귀재료 [${traitName}]`,
+        name: `${rank}급 희귀재료 [${traitLabel}]`,
         category: 'rareMaterial', rank, count: 1, traitId, traitName,
         suggestedPrice: marketPrice, stackable: true, stackKey: `rareMaterial:${rank}:${traitId}`,
         note: traitName, unitWeightG: 100
@@ -6118,7 +6119,7 @@ function renderAuctionHouseHtml() {
             const it = l.item;
             const mktPrice = l.marketPrice || it.price || it.suggestedPrice || 0;
             const isEquip = it.category === 'equipment';
-            const traitTxt = isEquip && (it.traits||[]).length ? `<span class="gb-badge" style="background:#7c3aed;">${(it.traits||[]).map(t=>EQUIP_TRAIT_LABELS[t]||t).join(', ')}</span>` : '';
+            const traitTxt = isEquip && (it.traits||[]).length ? `<span class="gb-badge" style="background:#7c3aed;">${(it.traits||[]).map(t=>equipTraitDisplay(t, it.rank)).join(', ')}</span>` : (!isEquip && it.traitId ? `<span class="gb-badge" style="background:#7c3aed;">${escapeHtml(equipTraitDisplay(it.traitId, it.rank))}</span>` : '');
             const npcBadge = l.isNpc ? '<span class="gb-badge">NPC</span>' : '<span class="gb-badge" style="background:#0284c7;">플레이어</span>';
             return `<div class="gb-unit" style="margin-bottom:6px;padding:8px;border:1px solid rgba(148,163,184,0.15);border-radius:6px;">
               <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
@@ -6179,7 +6180,7 @@ function renderAuctionHouseHtml() {
             const ikey = inventoryItemKey(it);
             const isEq = it.category === 'equipment';
             const mktPrice = isEq ? Number(it.price || calcEquipBasePrice(it.rank||'E', it.part||'weapon')) : Number(it.suggestedPrice||0);
-            const traitTxt = isEq && (it.traits||[]).length ? ` [${(it.traits||[]).map(t=>EQUIP_TRAIT_LABELS[t]||t).join(', ')}]` : '';
+            const traitTxt = isEq && (it.traits||[]).length ? ` [${(it.traits||[]).map(t=>equipTraitDisplay(t, it.rank)).join(', ')}]` : '';
             return `<button class="gb-list-item ${ikey===selKey?'is-active':''}" data-auction-sell-sel="${escapeHtml(ikey)}">
               <strong>${escapeHtml(it.name||it.id)}</strong>${escapeHtml(traitTxt)}
               <span class="gb-badge">${escapeHtml(it.rank||'E')}</span>
@@ -6808,7 +6809,7 @@ function renderHunterMarketHtml() {
       if (Number(it.pdef||0) > 0) statParts.push(`🛡️ 물리방어 +${it.pdef}`);
       if (Number(it.mdef||0) > 0) statParts.push(`✨ 마법방어 +${it.mdef}`);
       if (it.mainStat)             statParts.push(`주스탯: ${it.mainStat.toUpperCase()}`);
-      if ((it.traits||[]).length)  statParts.push(`특성: ${(it.traits||[]).map(t=>EQUIP_TRAIT_LABELS[t]||t).join(', ')}`);
+      if ((it.traits||[]).length)  statParts.push(`특성: ${(it.traits||[]).map(t=>equipTraitDisplay(t, it.rank)).join(', ')}`);
       const statsLine = statParts.length
         ? `<div class="gb-sub" style="color:#93c5fd;margin-top:2px;">${escapeHtml(statParts.join('  ·  '))}</div>`
         : '';
@@ -6857,7 +6858,7 @@ function renderHunterMarketHtml() {
     if (Number(e.pdef||0) > 0) lines.push(`물리방어: +${e.pdef}`);
     if (Number(e.mdef||0) > 0) lines.push(`마법방어: +${e.mdef}`);
     if (e.mainStat) lines.push(`주 스탯: ${e.mainStat.toUpperCase()}`);
-    if (Array.isArray(e.traits) && e.traits.length) lines.push(`특성: ${e.traits.map(t=>EQUIP_TRAIT_LABELS[t]||t).join(', ')}`);
+    if (Array.isArray(e.traits) && e.traits.length) lines.push(`특성: ${e.traits.map(t=>equipTraitDisplay(t, e.rank)).join(', ')}`);
     if (e.resistType && e.resistPct) lines.push(`${EQUIP_TRAIT_LABELS[e.resistType]||e.resistType} 저항 ${e.resistPct}%`);
     if (e.maxInfuse) lines.push(`주입 최대 ${e.maxInfuse}회 (현재 ${e.infuse||0}회)`);
     if (e.note) lines.push(`메모: ${e.note}`);
@@ -6873,7 +6874,7 @@ function renderHunterMarketHtml() {
         const durColor = dur < 30 ? '#ef4444' : dur < 60 ? '#f97316' : '#22c55e';
         const canAfford = gold >= usedPrice;
         const npcBadge = l.isNpc ? '<span class="gb-badge">NPC</span>' : '<span class="gb-badge" style="background:#0284c7;">플레이어</span>';
-        const traitTxt = (e.traits||[]).length ? `<span class="gb-badge" style="background:#7c3aed;">${(e.traits||[]).map(t=>EQUIP_TRAIT_LABELS[t]||t).join(', ')}</span>` : '';
+        const traitTxt = (e.traits||[]).length ? `<span class="gb-badge" style="background:#7c3aed;">${(e.traits||[]).map(t=>equipTraitDisplay(t, e.rank)).join(', ')}</span>` : '';
         // 스탯 항상 표시
         const statParts = [];
         if (Number(e.atk||0) > 0)  statParts.push(`⚔️ ATK +${e.atk}`);
@@ -7212,7 +7213,7 @@ function renderForgeShopHtml() {
         if (curInfuse >= maxInfuse) {
           detailHtml = `
             <div class="gb-section-title">💎 ${escapeHtml(it.name||it.id)} 특성주입</div>
-            <div class="gb-sub">현재 특성: ${existingTraits.map(t => escapeHtml(EQUIP_TRAIT_LABELS[t]||t)).join(', ') || '없음'}</div>
+            <div class="gb-sub">현재 특성: ${existingTraits.map(t => escapeHtml(equipTraitDisplay(t, it.rank))).join(', ') || '없음'}</div>
             <div class="gb-sub" style="color:#f97316;">최대 특성 수(${maxInfuse})에 도달했다. 더 이상 주입 불가.</div>`;
         } else {
           const rareMats = (inv.items||[]).filter(mi =>
@@ -7230,7 +7231,7 @@ function renderForgeShopHtml() {
                 const sp = Number(mi.suggestedPrice || 0);
                 const fee = Math.round(sp * 0.25);
                 const total = sp + fee;
-                const traitLabel = EQUIP_TRAIT_LABELS[mi.traitId] || mi.traitName || mi.traitId || '?';
+                const traitLabel = equipTraitDisplay(mi.traitId, mi.rank);
                 return `<button class="gb-list-item ${mkey===selMat?'is-active':''}" data-forge-infuse-mat="${escapeHtml(mkey)}">
                   <strong>${escapeHtml(mi.name||mi.id)}</strong>
                   <span class="gb-badge">${escapeHtml(mi.rank||'E')}</span> ×${mi.count||1}
@@ -7245,7 +7246,7 @@ function renderForgeShopHtml() {
             const fee = Math.round(sp * 0.25);
             const total = sp + fee;
             const canAfford = gold >= total;
-            const traitLabel = EQUIP_TRAIT_LABELS[mi.traitId] || mi.traitName || mi.traitId || '?';
+            const traitLabel = equipTraitDisplay(mi.traitId, mi.rank);
             infuseAction = `
               <div style="margin-top:12px;padding-top:8px;border-top:1px solid rgba(148,163,184,0.15);">
                 <div class="gb-sub">💎 특성 주입: <strong>${escapeHtml(traitLabel)}</strong></div>
@@ -7268,7 +7269,7 @@ function renderForgeShopHtml() {
           detailHtml = `
             <div class="gb-section-title">💎 ${escapeHtml(it.name||it.id)} 특성주입</div>
             <div class="gb-sub">등급: <strong>${escapeHtml(rank)}</strong> | 부위: <strong>${escapeHtml(EQUIP_PART_LABELS[part]||part)}</strong> | 특성 ${curInfuse}/${maxInfuse}</div>
-            <div class="gb-sub">현재 특성: ${existingTraits.length ? existingTraits.map(t => `<span class="gb-badge">${escapeHtml(EQUIP_TRAIT_LABELS[t]||t)}</span>`).join(' ') : '없음'}</div>
+            <div class="gb-sub">현재 특성: ${existingTraits.length ? existingTraits.map(t => `<span class="gb-badge">${escapeHtml(equipTraitDisplay(t, it.rank))}</span>`).join(' ') : '없음'}</div>
             <div class="gb-sub" style="margin-top:4px;color:#a78bfa;">재료: 희귀재료(traitId 있는 것) 1개 소멸 | 수수료: 재료가 ×25% | 100% 성공</div>
             <div style="margin-top:8px;">
               <div class="gb-sub">보유 희귀재료 (주입 가능한 것):</div>
@@ -7955,7 +7956,7 @@ function renderInventoryView() {
       if (it.part === 'weapon') combatLines.push(`ATK: +${atkVal}`);
       if (it.part === 'subweapon') { combatLines.push(`물리방어: +${pdefVal}`); combatLines.push(`ATK: ${-Math.ceil(pdefVal/2)}`); }
       if (it.part === 'armor') { combatLines.push(`물리방어: +${pdefVal}`); combatLines.push(`마법방어: +${mdefVal}`); }
-      if (it.part === 'accessory') combatLines.push(it.traits && it.traits.length ? `특성: ${it.traits.map(t=>EQUIP_TRAIT_LABELS[t]||t).join(', ')}` : '특성 없음');
+      if (it.part === 'accessory') combatLines.push(it.traits && it.traits.length ? `특성: ${it.traits.map(t=>equipTraitDisplay(t, it.rank)).join(', ')}` : '특성 없음');
       if (combatLines.length) lines.push(combatLines.join(' / '));
       if (it.mainStat) lines.push(`주 스탯: ${it.mainStat.toUpperCase()}`);
       if (it.resistType && it.resistPct) lines.push(`${EQUIP_TRAIT_LABELS[it.resistType]||it.resistType} 저항 ${it.resistPct}%`);
@@ -8596,7 +8597,7 @@ function renderCommandPanel(runtime) {
         if (eq) {
           const dur = Number(eq.durability ?? 100);
           const maxDur = Number(eq.maxDurability ?? 100);
-          const traitTxt = (eq.traits||[]).length ? ` [${(eq.traits||[]).map(t=>EQUIP_TRAIT_LABELS[t]||t).join(',')}]` : '';
+          const traitTxt = (eq.traits||[]).length ? ` [${(eq.traits||[]).map(t=>equipTraitDisplay(t, eq.rank)).join(',')}]` : '';
           const enhTxt = eq.enhance > 0 ? ` +${eq.enhance}` : '';
           return `<div class="gb-unit"><div class="gb-unit-top">
             <div>
@@ -8627,7 +8628,7 @@ function renderCommandPanel(runtime) {
       // 인벤에서 장착 가능한 장비 목록 (장비 + 가방)
       const equippableHtml = (inv.items||[]).filter(it => it.category === 'equipment' || it.category === 'bag').map(it => {
         const ikey = inventoryItemKey(it);
-        const traitTxt = (it.traits||[]).length ? ` [${(it.traits||[]).map(t=>EQUIP_TRAIT_LABELS[t]||t).join(',')}]` : '';
+        const traitTxt = (it.traits||[]).length ? ` [${(it.traits||[]).map(t=>equipTraitDisplay(t, it.rank)).join(',')}]` : '';
         const isBag = it.category === 'bag';
         return `<div class="gb-unit"><div class="gb-unit-top">
           <div>
@@ -8659,7 +8660,7 @@ function renderCommandPanel(runtime) {
           const ikey = inventoryItemKey(it);
           const isEq = it.category === 'equipment';
           const isBag = it.category === 'bag';
-          const traitTxt = isEq && (it.traits||[]).length ? ` [${(it.traits||[]).map(t=>EQUIP_TRAIT_LABELS[t]||t).join(',')}]` : '';
+          const traitTxt = isEq && (it.traits||[]).length ? ` [${(it.traits||[]).map(t=>equipTraitDisplay(t, it.rank)).join(',')}]` : '';
           return `<div class="gb-unit"><div class="gb-unit-top">
             <div>
               <strong>${escapeHtml(it.name||it.id)}</strong>
