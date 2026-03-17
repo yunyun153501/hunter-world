@@ -1,6 +1,6 @@
 # Hunter World — 경제 시스템
 
-> 코드 기준: `GateBattle_v4_8 복사본.js`
+> 코드 기준: `GateBattle_v7_3.js`
 
 ---
 

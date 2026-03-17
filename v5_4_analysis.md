@@ -1,5 +1,7 @@
 # GateBattle v5_4 — TXT 기반 구현 상태 & 밸런스 분석
 
+> ⚠️ **이 문서는 v5.4 시점의 역사적 기록입니다. 현재 최신 버전은 v7.3 (`GateBattle_v7_3.js`)입니다.**
+
 > 분석 대상: `GateBattle_v5_4.js`, `skill_system.txt`, `CCC.txt`, `combat_formulas.txt`, `equipment_inventory_system.txt`
 
 ---

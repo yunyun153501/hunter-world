@@ -1,6 +1,6 @@
 # Hunter World — 캐릭터 / 파티 시스템
 
-> 코드 기준: `GateBattle_v4_8 복사본.js`
+> 코드 기준: `GateBattle_v7_3.js`
 
 ---
 
@@ -129,6 +129,7 @@
 ### 파티 규모
 - **최대 파티원**: 8명 (`MAX_PARTY = 8`)
 - 파티 슬롯은 `battleSetup.partySlots[8]`에 저장
+- **페르소나(Persona)**: v7.3부터 캐릭터뿐만 아니라 페르소나도 파티 슬롯에 편성 가능
 
 ### 전열 배치
 - **front** (전열): 탱커, 근거리 딜러
