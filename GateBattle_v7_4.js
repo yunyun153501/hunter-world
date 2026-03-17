@@ -1,14 +1,14 @@
-//@name Gate Battle Prototype v7.5
-//@display-name ⚔️ 게이트 전투 프로토타입 v7.5
+//@name Gate Battle Prototype v7.6
+//@display-name ⚔️ 게이트 전투 프로토타입 v7.6
 //@api 3.0
-//@version 7.5.0
+//@version 7.6.0
 //@author OpenAI
 //@arg gate_v21_db string "" "v2.1 DB 저장"
 //@arg gate_v21_state string "" "v2.1 UI/전투 상태 저장"
 
 (async () => {
 try {
-  const PLUGIN_NAME = '[Gate Battle Prototype v7.5.0]';
+  const PLUGIN_NAME = '[Gate Battle Prototype v7.6.0]';
   const UI_ID = 'gate-battle-v22-root';
   const STYLE_ID = 'gate-battle-v22-style';
   const KEY_DB = 'GateBattleV21::db';
@@ -37,6 +37,7 @@ try {
     fire_damage:2, water_damage:2, ice_damage:2, earth_damage:2,
     wind_damage:2, lightning_damage:2, light_damage:2, dark_damage:2,
     healing_done:3, magic_defense:3, physical_defense:3, shield_effect:3,
+    pdef_flat:3, mdef_flat:3,
     healing_received:4, bleed_resist:4, burn_resist:4, curse_resist:4,
     fire_resist:4, water_resist:4, ice_resist:4, earth_resist:4,
     wind_resist:4, lightning_resist:4, light_resist:4, dark_resist:4,
@@ -400,7 +401,7 @@ function calcForgeEnhancedUsedPrice(basePrice, enhance, part, rank) {
   return Math.round(enhanced * calcUsedEquipConditionMul(99, 99));
 }
 
-// Trait types for equipment (all 35 rare material trait IDs, snake_case)
+// Trait types for equipment (all 37 rare material trait IDs, snake_case)
 const EQUIP_TRAIT_TYPES = [
   // 공격
   'physical_damage','magic_damage',
@@ -409,6 +410,7 @@ const EQUIP_TRAIT_TYPES = [
   'crit_chance','crit_damage',
   // 방어
   'physical_defense','magic_defense',
+  'pdef_flat','mdef_flat',
   'fire_resist','water_resist','ice_resist','earth_resist',
   'wind_resist','lightning_resist','light_resist','dark_resist',
   // 상태이상 부여
@@ -422,7 +424,7 @@ const EQUIP_TRAIT_TYPES = [
 const RARE_TRAIT_POOL = EQUIP_TRAIT_TYPES.filter(t => (TRAIT_TIER_MAP[t] || 3) <= 2);
 const NORMAL_TRAIT_POOL = EQUIP_TRAIT_TYPES.filter(t => (TRAIT_TIER_MAP[t] || 3) > 2);
 const EQUIP_TRAIT_LABELS = {
-  // snake_case (35개 전체)
+  // snake_case (37개 전체)
   physical_damage:'물리 피해 증가', magic_damage:'마법 피해 증가',
   fire_damage:'불 속성 피해 증가', water_damage:'물 속성 피해 증가',
   ice_damage:'얼음 속성 피해 증가', earth_damage:'대지 속성 피해 증가',
@@ -430,6 +432,7 @@ const EQUIP_TRAIT_LABELS = {
   light_damage:'빛 속성 피해 증가', dark_damage:'어둠 속성 피해 증가',
   crit_chance:'치명타 확률 증가', crit_damage:'치명타 피해 증가',
   physical_defense:'물리피해감소 증가', magic_defense:'마법피해감소 증가',
+  pdef_flat:'물리방어력 증가', mdef_flat:'마법방어력 증가',
   fire_resist:'불 속성 저항', water_resist:'물 속성 저항',
   ice_resist:'얼음 속성 저항', earth_resist:'대지 속성 저항',
   wind_resist:'바람 속성 저항', lightning_resist:'전기 속성 저항',
@@ -460,7 +463,11 @@ function equipTraitDisplay(traitId, rank) {
   if (traitDef && traitDef.scale) {
     const scaleTable = (DEFAULT_RARE_MATERIAL_PACK.valueScales || {})[traitDef.scale];
     const val = scaleTable && scaleTable[String(rank || 'E').toUpperCase()];
-    if (val != null) return `${label} +${val}%`;
+    if (val != null) {
+      // defenseFlat은 고정값이므로 % 대신 + 표시
+      if (traitDef.scale === 'defenseFlat') return `${label} +${val}`;
+      return `${label} +${val}%`;
+    }
   }
   // Fallback for camelCase legacy traits
   const pct = EQUIP_TRAIT_EFFECT_PCT[rank] || 0;
@@ -741,8 +748,8 @@ function buildConvFoodItem(foodDef, count=1) {
 }
 
 const DEFAULT_RARE_MATERIAL_PACK = {
-  "version": 1,
-  "note": "GateBattle v1.5 has no dedicated rare-material DB tab yet. This file is a future-ready trait pack.",
+  "version": 2,
+  "note": "GateBattle v7.6 — defenseFlat scale added, elemental damage/resist moved to statusPercent.",
   "valueScales": {
     "percentSmall": {
       "E": 1,
@@ -783,6 +790,14 @@ const DEFAULT_RARE_MATERIAL_PACK = {
       "B": 40,
       "A": 50,
       "S": 60
+    },
+    "defenseFlat": {
+      "E": 3,
+      "D": 8,
+      "C": 20,
+      "B": 35,
+      "A": 50,
+      "S": 70
     }
   },
   "traits": [
@@ -802,56 +817,56 @@ const DEFAULT_RARE_MATERIAL_PACK = {
       "id": "fire_damage",
       "name": "불 속성 피해 증가",
       "category": "offense",
-      "scale": "percentSmall",
+      "scale": "statusPercent",
       "element": "fire"
     },
     {
       "id": "water_damage",
       "name": "물 속성 피해 증가",
       "category": "offense",
-      "scale": "percentSmall",
+      "scale": "statusPercent",
       "element": "water"
     },
     {
       "id": "ice_damage",
       "name": "얼음 속성 피해 증가",
       "category": "offense",
-      "scale": "percentSmall",
+      "scale": "statusPercent",
       "element": "ice"
     },
     {
       "id": "earth_damage",
       "name": "대지 속성 피해 증가",
       "category": "offense",
-      "scale": "percentSmall",
+      "scale": "statusPercent",
       "element": "earth"
     },
     {
       "id": "wind_damage",
       "name": "바람 속성 피해 증가",
       "category": "offense",
-      "scale": "percentSmall",
+      "scale": "statusPercent",
       "element": "wind"
     },
     {
       "id": "lightning_damage",
       "name": "전기 속성 피해 증가",
       "category": "offense",
-      "scale": "percentSmall",
+      "scale": "statusPercent",
       "element": "lightning"
     },
     {
       "id": "light_damage",
       "name": "빛 속성 피해 증가",
       "category": "offense",
-      "scale": "percentSmall",
+      "scale": "statusPercent",
       "element": "light"
     },
     {
       "id": "dark_damage",
       "name": "어둠 속성 피해 증가",
       "category": "offense",
-      "scale": "percentSmall",
+      "scale": "statusPercent",
       "element": "dark"
     },
     {
@@ -879,59 +894,71 @@ const DEFAULT_RARE_MATERIAL_PACK = {
       "scale": "percentSmall"
     },
     {
+      "id": "pdef_flat",
+      "name": "물리방어력 증가",
+      "category": "defense",
+      "scale": "defenseFlat"
+    },
+    {
+      "id": "mdef_flat",
+      "name": "마법방어력 증가",
+      "category": "defense",
+      "scale": "defenseFlat"
+    },
+    {
       "id": "fire_resist",
       "name": "불 속성 저항",
       "category": "defense",
-      "scale": "percentSmall",
+      "scale": "statusPercent",
       "element": "fire"
     },
     {
       "id": "water_resist",
       "name": "물 속성 저항",
       "category": "defense",
-      "scale": "percentSmall",
+      "scale": "statusPercent",
       "element": "water"
     },
     {
       "id": "ice_resist",
       "name": "얼음 속성 저항",
       "category": "defense",
-      "scale": "percentSmall",
+      "scale": "statusPercent",
       "element": "ice"
     },
     {
       "id": "earth_resist",
       "name": "대지 속성 저항",
       "category": "defense",
-      "scale": "percentSmall",
+      "scale": "statusPercent",
       "element": "earth"
     },
     {
       "id": "wind_resist",
       "name": "바람 속성 저항",
       "category": "defense",
-      "scale": "percentSmall",
+      "scale": "statusPercent",
       "element": "wind"
     },
     {
       "id": "lightning_resist",
       "name": "전기 속성 저항",
       "category": "defense",
-      "scale": "percentSmall",
+      "scale": "statusPercent",
       "element": "lightning"
     },
     {
       "id": "light_resist",
       "name": "빛 속성 저항",
       "category": "defense",
-      "scale": "percentSmall",
+      "scale": "statusPercent",
       "element": "light"
     },
     {
       "id": "dark_resist",
       "name": "어둠 속성 저항",
       "category": "defense",
-      "scale": "percentSmall",
+      "scale": "statusPercent",
       "element": "dark"
     },
     {
@@ -1027,6 +1054,8 @@ const RARE_TRAIT_LEGACY_ALIASES = {
   '마법피해':'magic_damage',
   '물리방어':'physical_defense',
   '마법방어':'magic_defense',
+  '물리방어력':'pdef_flat',
+  '마법방어력':'mdef_flat',
   '치유증가':'healing_done'
 };
 const RARE_FAMILY_PRESETS = {
@@ -9090,7 +9119,7 @@ function renderCommandPanel(runtime) {
 
           ${part === 'accessory' ? `
           <div class="gb-sub" style="margin-top:6px;">💍 악세서리: 총 스탯합 ${accessoryStat.totalStatSum||0} | 특성 슬롯 ${accessoryStat.traits||1}개 | 강화당 주스탯 +${accessoryStat.enhanceStat||0}</div>
-          <div class="gb-sub" style="color:#a78bfa;">✨ ${rank}등급 특성 효과 예시: 물리/마법 피해 +${(DEFAULT_RARE_MATERIAL_PACK.valueScales.percentSmall||{})[rank]||0}%, 치확 +${(DEFAULT_RARE_MATERIAL_PACK.valueScales.critChance||{})[rank]||0}%, 치피 +${(DEFAULT_RARE_MATERIAL_PACK.valueScales.critDamage||{})[rank]||0}%, 상태이상부여/저항 +${(DEFAULT_RARE_MATERIAL_PACK.valueScales.statusPercent||{})[rank]||0}%</div>
+          <div class="gb-sub" style="color:#a78bfa;">✨ ${rank}등급 특성 효과 예시: 물리/마법 피해 +${(DEFAULT_RARE_MATERIAL_PACK.valueScales.percentSmall||{})[rank]||0}%, 속성/상태이상 +${(DEFAULT_RARE_MATERIAL_PACK.valueScales.statusPercent||{})[rank]||0}%, 치확 +${(DEFAULT_RARE_MATERIAL_PACK.valueScales.critChance||{})[rank]||0}%, 치피 +${(DEFAULT_RARE_MATERIAL_PACK.valueScales.critDamage||{})[rank]||0}%, 방어력 +${(DEFAULT_RARE_MATERIAL_PACK.valueScales.defenseFlat||{})[rank]||0}</div>
           <div class="gb-grid two">
             <label>총 스탯합 적용 주스탯<select class="gb-input" id="gb-eq-main-stat">
               ${['str','con','int','agi','sense'].map(s => `<option value="${s}" ${item.mainStat===s?'selected':''}>${s}</option>`).join('')}
