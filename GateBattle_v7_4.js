@@ -9515,7 +9515,6 @@ function renderCommandPanel(runtime) {
         statusChance: (sk.status && sk.status.chance != null) ? sk.status.chance : '',
         cooldown: sk.cooldown || 0,
         desc: sk.desc || '',
-        specialEffect: sk.specialEffect || null
       };
     } else {
       item = {
