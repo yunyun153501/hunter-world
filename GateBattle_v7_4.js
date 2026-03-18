@@ -1397,9 +1397,9 @@ const RARE_FAMILY_PRESETS = {
     if (prefixMatch) {
       const st = normStatus(prefixMatch[1]);
       if (st) {
-        const ccTypes = ['stun','bind','sleep','freeze','paralyze','blind'];
-        const defaultChance = ccTypes.includes(st) ? 0.18 : 0.28;
-        const defaultTurns = ccTypes.includes(st) ? 1 : 2;
+        const hardCcTypes = ['stun','bind','sleep','freeze','paralyze'];
+        const defaultChance = hardCcTypes.includes(st) ? 0.18 : 0.28;
+        const defaultTurns = hardCcTypes.includes(st) ? 1 : 2;
         // 정령은 30% 확률로만 상태이상 부여 능력 보유
         const isElemental = meta.species === 'elemental';
         if (!isElemental || Math.random() < 0.3) {
@@ -1412,10 +1412,10 @@ const RARE_FAMILY_PRESETS = {
     if (!meta.onHitStatus && (kind === 'boss' || kind === 'elite') && meta.baseElement && meta.baseElement !== 'none') {
       const elSt = ELEMENT_STATUS_MAP[meta.baseElement];
       if (elSt && normStatus(elSt)) {
-        const ccTypes = ['stun','bind','sleep','freeze','paralyze','blind'];
+        const hardCcTypes = ['stun','bind','sleep','freeze','paralyze'];
         meta.onHitStatus = elSt;
-        meta.onHitChance = ccTypes.includes(elSt) ? 0.18 : 0.28;
-        meta.onHitTurns = ccTypes.includes(elSt) ? 1 : 2;
+        meta.onHitChance = hardCcTypes.includes(elSt) ? 0.18 : 0.28;
+        meta.onHitTurns = hardCcTypes.includes(elSt) ? 1 : 2;
       }
     }
     if (Array.isArray(item.immunities)) meta = mergeMeta(meta, { immunities:item.immunities });
