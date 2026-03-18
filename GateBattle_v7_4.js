@@ -2300,6 +2300,7 @@ function buildDefaultState() {
     auctionSell: null,
     charInvTab: 'equip',   // 'equip' | 'items'
     personaInvTab: 'equip', // 'equip' | 'items'
+    gatePartyDetailId: '',  // 게이트 파티탭 상세보기 선택 유닛 uid
     teamView: 'members',   // 'members' | 'settle'
     settleItemSel: {},     // { key: true/false } 판매할 아이템 선택
     settleDistMode: 'equal' // 'equal' | 'ratio'
@@ -3927,9 +3928,18 @@ function stageTemplateForSize(size) {
 function buildPartyEntriesFromSetup() {
   return (model.db.battleSetup.partySlots || []).map(id => getCharById(id) || getPersonaById(id)).filter(Boolean).map(base => {
     const e = deepClone(base);
-    e.currentHp = Number(e.hp || 0);
-    e.currentMp = Number(e.mp || 0);
-    e.currentSp = Number(e.sp || 0);
+    // 장비 보너스를 반영하여 ATK 등 재계산
+    recalcCharDerivedStats(e);
+    // 현재 HP/MP/SP: 영구 저장된 값이 있으면 사용, 없으면 최대치
+    const maxHp = Number(e.hp || 0);
+    const maxMp = Number(e.mp || 0);
+    const maxSp = Number(e.sp || 0);
+    const savedCurHp = Number(base.currentHp);
+    const savedCurMp = Number(base.currentMp);
+    const savedCurSp = Number(base.currentSp);
+    e.currentHp = (savedCurHp > 0 && savedCurHp <= maxHp) ? savedCurHp : maxHp;
+    e.currentMp = (savedCurMp > 0 && savedCurMp <= maxMp) ? savedCurMp : maxMp;
+    e.currentSp = (savedCurSp > 0 && savedCurSp <= maxSp) ? savedCurSp : maxSp;
     e.buffs = [];
     e.statuses = { stun:0, bind:0, sleep:0, poison:0, bleed:0, burn:0, curse:0, poisonPower:0, bleedPower:0, burnPower:0 };
     return e;
@@ -4208,11 +4218,19 @@ function advanceGateRunAfterMainRoom(run, stageIndex, room) {
   run.currentStage = Math.min(run.stages.length, stageIndex + 1);
   if (run.currentStage >= run.stages.length) {
     run.completed = true;
+    // 게이트 완료 시에도 현재 HP 상태를 캐릭터 DB에 저장
+    syncPartyHpToDb(run);
     pushGateLog(run, '게이트의 마지막 방을 넘었다.');
   }
 }
 function beginGateRunFromSelectedGate() {
   if (activeGateRun()) return false;
+  // 전멸 상태 확인: 같은 날이면 게이트 진입 불가
+  const gd = model.db.gameDate || { year:2026, month:1, day:1 };
+  const wd = model.db.lastWipeDate;
+  if (wd && wd.year === gd.year && wd.month === gd.month && wd.day === gd.day) {
+    throw new Error('오늘 전멸한 상태입니다. 집에서 하루 휴식 후 다시 도전할 수 있습니다.');
+  }
   const gate = getSelectedGeneratedGate();
   if (!gate) throw new Error('선택된 게이트가 없다.');
   const party = buildPartyEntriesFromSetup();
@@ -4690,6 +4708,10 @@ function resolveGateBattleAftermath(victory) {
   const rt = model.state.runtime;
   if (!rt.started || !rt.finished) throw new Error('전투가 아직 끝나지 않았다.');
   if (!victory) {
+    // 전멸 시 HP 상태를 캐릭터 DB에 저장 + 전멸 날짜 기록
+    syncPartyHpToDb(run);
+    const gd = model.db.gameDate || { year:2026, month:1, day:1 };
+    model.db.lastWipeDate = { year: gd.year, month: gd.month, day: gd.day };
     run.failed = true;
     run.postBattle = null;
     run.pendingBattleRoomId = '';
@@ -4855,6 +4877,8 @@ function skipCampRoom(run) {
 }
 function retreatFromGateRun(run) {
   if (!run) return;
+  // 후퇴 시 현재 HP/MP/SP를 캐릭터 DB에 저장 (풀피 복구 안함)
+  syncPartyHpToDb(run);
   run.failed = true;
   run.postBattle = null;
   run.pendingBattleRoomId = '';
@@ -4864,6 +4888,22 @@ function retreatFromGateRun(run) {
   gs.run = null;
   model.state.view = 'gate';
   model.state.runtime = buildDefaultRuntime();
+}
+
+// 게이트 파티 상태의 현재 HP/MP/SP를 캐릭터 DB에 저장
+function syncPartyHpToDb(run) {
+  if (!run || !run.partyState) return;
+  const chars = model.db.characters || [];
+  const personas = model.db.personas || [];
+  (run.partyState || []).forEach(u => {
+    const id = u.baseId || u.id;
+    if (!id) return;
+    const dbChar = chars.find(c => c.id === id) || personas.find(p => p.id === id);
+    if (!dbChar) return;
+    dbChar.currentHp = Math.max(0, Math.floor(Number(u.currentHp || 0)));
+    dbChar.currentMp = Math.max(0, Math.floor(Number(u.currentMp || 0)));
+    dbChar.currentSp = Math.max(0, Math.floor(Number(u.currentSp || 0)));
+  });
 }
 
 function migrateLegacyCampSupplies(run) {
@@ -5046,10 +5086,13 @@ function renderGateRunPanel(run) {
   // ── Tab content ──
   let tabContent = '';
   if (gateTab === 'party') {
-    // 파티 관리 탭: 상세 스탯, 스킬, 인벤 빠른 보기
+    // 파티 관리 탭: 클릭 시 장비/스킬/인벤 상세 보기
+    const detailId = model.state.gatePartyDetailId || '';
+    const skillMap = getAllSkillMap();
+    const catLabel = { singleAttack:'단일공격', aoeAttack:'광역공격', singleCC:'단일CC', aoeCC:'광역CC', buff:'버프', singleHeal:'힐', aoeHeal:'광역힐', passive:'패시브', utility:'유틸' };
     tabContent = `
       <div class="gb-panel">
-        <div class="gb-section-title">👥 파티원 상세</div>
+        <div class="gb-section-title">👥 파티원 상세 <span class="gb-sub" style="font-size:11px;">(클릭하면 상세정보)</span></div>
         ${(run.partyState || []).map(u => {
           const hp = Number(u.currentHp || u.hp || 0);
           const maxHp = Number(u.hp || 1);
@@ -5059,16 +5102,74 @@ function renderGateRunPanel(run) {
           const maxSp = Number(u.sp || 1);
           const isDead = hp <= 0;
           const stats = u.stats || {};
-          return `<div class="gb-unit${isDead ? ' is-dead' : ''}">
+          const uid = u.uid || u.id || u.baseId || '';
+          const isOpen = (detailId === uid);
+          // 장비 정보
+          let equipHtml = '';
+          let invHtml = '';
+          if (isOpen) {
+            const dbId = u.baseId || u.id;
+            const dbChar = (model.db.characters || []).find(c => c.id === dbId) || (model.db.personas || []).find(p => p.id === dbId);
+            if (dbChar) {
+              const inv = getPersonalInv(
+                (model.db.characters || []).find(c => c.id === dbId) ? 'character' : 'persona',
+                dbId
+              );
+              if (inv) {
+                const eqParts = EQUIP_PARTS.map(p => {
+                  const eq = inv.equipped[p];
+                  if (!eq) return `<div class="gb-sub" style="padding:2px 0;">${EQUIP_PART_LABELS[p]}: <span style="color:#64748b;">없음</span></div>`;
+                  const traitStr = (eq.traits || []).map(t => escapeHtml(t.label || t.id)).join(', ');
+                  const enhStr = eq.enhance > 0 ? ` +${eq.enhance}` : '';
+                  const rarStr = eq.rarity && eq.rarity !== 'Normal' ? ` <span class="gb-badge" style="background:${rarityColor(eq.rarity)};color:#000;font-size:9px;">${escapeHtml(eq.rarity)}</span>` : '';
+                  const statStr = [];
+                  if (eq.atk) statStr.push('ATK:' + eq.atk);
+                  if (eq.pdef) statStr.push('물방:' + eq.pdef);
+                  if (eq.mdef) statStr.push('마방:' + eq.mdef);
+                  return `<div class="gb-sub" style="padding:2px 0;">${EQUIP_PART_LABELS[p]}: <strong style="${rarityStyle(eq.rarity)}">${escapeHtml(eq.name||eq.id)}${enhStr}</strong>${rarStr}${statStr.length ? ' <span style="font-size:10px;color:#94a3b8;">[' + statStr.join('/') + ']</span>' : ''}${traitStr ? ' <span style="font-size:10px;color:#a78bfa;">(' + escapeHtml(traitStr) + ')</span>' : ''}</div>`;
+                });
+                equipHtml = `<div style="margin-top:6px;"><div style="font-weight:600;font-size:12px;margin-bottom:4px;">🛡️ 장착 장비</div>${eqParts.join('')}</div>`;
+                // 개인 인벤토리 아이템 수
+                const itemCount = Array.isArray(inv.items) ? inv.items.length : 0;
+                if (itemCount > 0) {
+                  const itemLines = inv.items.slice(0, 8).map(it => `<span class="gb-badge" style="font-size:9px;margin:1px;">${escapeHtml(it.name||it.id)}</span>`).join('');
+                  const moreStr = itemCount > 8 ? ` <span class="gb-sub" style="font-size:10px;">외 ${itemCount - 8}개</span>` : '';
+                  invHtml = `<div style="margin-top:6px;"><div style="font-weight:600;font-size:12px;margin-bottom:4px;">🎒 개인 인벤토리 (${itemCount}개)</div><div style="display:flex;flex-wrap:wrap;gap:2px;">${itemLines}${moreStr}</div></div>`;
+                }
+              }
+            }
+            // 스킬 상세
+            const skillDetails = (u.skills || []).map(sId => {
+              const sk = skillMap[sId];
+              if (!sk) return `<div class="gb-sub" style="padding:1px 0;font-size:11px;">• ${escapeHtml(sId)}</div>`;
+              const costStr = sk.costs ? [sk.costs.mp ? 'MP:'+sk.costs.mp : '', sk.costs.sp ? 'SP:'+sk.costs.sp : ''].filter(Boolean).join('/') : '';
+              const coefStr = sk.coef != null ? '계수:' + sk.coef : '';
+              const cat = catLabel[sk.category] || sk.category;
+              return `<div class="gb-sub" style="padding:1px 0;font-size:11px;">• <strong>${escapeHtml(sk.name)}</strong> <span class="gb-badge" style="font-size:9px;">${cat}</span>${coefStr ? ' <span class="gb-badge" style="font-size:9px;">'+coefStr+'</span>' : ''}${costStr ? ' <span style="font-size:10px;color:#94a3b8;">['+costStr+']</span>' : ''}${sk.desc ? ' — '+escapeHtml(sk.desc) : ''}</div>`;
+            }).join('') || '<div class="gb-sub" style="font-size:11px;">스킬 없음</div>';
+          }
+          return `<div class="gb-unit${isDead ? ' is-dead' : ''}" data-gate-party-detail="${escapeHtml(uid)}" style="cursor:pointer;">
             <div class="gb-unit-top">
-              <div><strong>${escapeHtml(u.name)}</strong> <span class="gb-badge">${escapeHtml(u.rank||'')}</span> <span class="gb-badge">${escapeHtml(u.row || '')}</span></div>
+              <div><strong>${escapeHtml(u.name)}</strong> <span class="gb-badge">${escapeHtml(u.rank||'')}</span> <span class="gb-badge">${escapeHtml(u.row || '')}</span> ${isOpen ? '▲' : '▼'}</div>
               <div class="gb-sub">${escapeHtml(u.job || '')} / ${escapeHtml(u.position || '')} / ${escapeHtml(u.damageType || '')}</div>
             </div>
             <div class="gb-bar-wrap"><span>HP ${Math.floor(hp)}/${Math.floor(maxHp)}</span><div class="gb-bar"><div class="gb-bar-fill hp" style="width:${maxHp>0?Math.round(hp/maxHp*100):0}%"></div></div></div>
             <div class="gb-bar-wrap"><span>MP ${Math.floor(mp)}/${Math.floor(maxMp)}</span><div class="gb-bar"><div class="gb-bar-fill mp" style="width:${maxMp>0?Math.round(mp/maxMp*100):0}%"></div></div></div>
             <div class="gb-bar-wrap"><span>SP ${Math.floor(sp)}/${Math.floor(maxSp)}</span><div class="gb-bar"><div class="gb-bar-fill sp" style="width:${maxSp>0?Math.round(sp/maxSp*100):0}%"></div></div></div>
             <div class="gb-sub" style="margin-top:4px;">STR ${stats.str||0} CON ${stats.con||0} INT ${stats.int||0} AGI ${stats.agi||0} SEN ${stats.sense||0} | ATK ${u.atk||0} PDEF ${u.pdef||0} MDEF ${u.mdef||0}</div>
-            <div class="gb-sub">스킬: ${(u.skills||[]).length ? (u.skills||[]).map(s => escapeHtml(s)).join(', ') : '없음'}</div>
+            ${isOpen ? `<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(148,163,184,0.2);">
+              <div style="font-weight:600;font-size:12px;margin-bottom:4px;">📜 스킬 상세</div>
+              ${(u.skills || []).map(sId => {
+                const sk = skillMap[sId];
+                if (!sk) return '<div class="gb-sub" style="padding:1px 0;font-size:11px;">• ' + escapeHtml(sId) + '</div>';
+                const costStr = sk.costs ? [sk.costs.mp ? 'MP:'+sk.costs.mp : '', sk.costs.sp ? 'SP:'+sk.costs.sp : ''].filter(Boolean).join('/') : '';
+                const coefStr = sk.coef != null ? '계수:' + sk.coef : '';
+                const cat = catLabel[sk.category] || sk.category;
+                return '<div class="gb-sub" style="padding:1px 0;font-size:11px;">• <strong>' + escapeHtml(sk.name) + '</strong> <span class="gb-badge" style="font-size:9px;">' + cat + '</span>' + (coefStr ? ' <span class="gb-badge" style="font-size:9px;">'+coefStr+'</span>' : '') + (costStr ? ' <span style="font-size:10px;color:#94a3b8;">['+costStr+']</span>' : '') + (sk.desc ? ' — '+escapeHtml(sk.desc) : '') + '</div>';
+              }).join('') || '<div class="gb-sub" style="font-size:11px;">스킬 없음</div>'}
+              ${equipHtml}
+              ${invHtml}
+            </div>` : `<div class="gb-sub">스킬: ${(u.skills||[]).length ? (u.skills||[]).map(s => { const sk = skillMap[s]; return sk ? escapeHtml(sk.name) : escapeHtml(s); }).join(', ') : '없음'}</div>`}
           </div>`;
         }).join('')}
       </div>`;
@@ -8595,6 +8696,13 @@ function renderHomeView() {
         ${home.desc ? `<div class="gb-sub" style="margin-top:4px;">${escapeHtml(home.desc)}</div>` : ''}
       </div>
       ${feeSection}
+      <div class="gb-panel" style="border-color:#34d399;">
+        <div class="gb-section-title">🛏️ 휴식</div>
+        <div class="gb-sub">하루 휴식을 취하면 다음 날로 넘어가며 모든 파티원의 HP/MP/SP가 완전히 회복됩니다.</div>
+        <div style="margin-top:6px;">
+          <button class="gb-btn primary" id="gb-home-rest">🛏️ 하루 휴식 (다음 날로)</button>
+        </div>
+      </div>
       <div class="gb-panel">
         <div class="gb-section-title">📦 보관함 목록</div>
         ${storageList}
@@ -9204,7 +9312,7 @@ function renderPartyView() {
           <div style="width:${expPct}%;height:100%;background:#3b82f6;border-radius:3px;"></div>
         </div>
       </div>
-      <div class="gb-sub" style="margin:4px 0;">HP:${Number(u.hp||0)} MP:${Number(u.mp||0)} SP:${Number(u.sp||0)} ATK:${Number(u.atk||0)}</div>
+      <div class="gb-sub" style="margin:4px 0;">HP:${Number(u.currentHp ?? u.hp ?? 0)}/${Number(u.hp||0)} MP:${Number(u.currentMp ?? u.mp ?? 0)}/${Number(u.mp||0)} SP:${Number(u.currentSp ?? u.sp ?? 0)}/${Number(u.sp||0)} ATK:${Number(u.atk||0)}</div>
       <div class="gb-sub" style="margin:2px 0;">💰 소지금: ${fmtG(personalGold)}원</div>
       ${freePoints > 0 ? `<div style="color:#34d399;font-weight:600;font-size:13px;margin:4px 0;">🌟 배분 가능 스탯포인트: ${freePoints}</div>` : ''}
       <div class="gb-sub" style="font-size:11px;margin:2px 0;">스탯 상한: ${statCap} (${u.rank || 'E'}등급)</div>
@@ -9367,9 +9475,9 @@ function renderCharacterView() {
         </div>
       </div>
       <div class="gb-grid two" style="margin:8px 0;">
-        <div class="gb-sub">❤️ HP: <strong>${Number(u.hp||0)}</strong></div>
-        <div class="gb-sub">💧 MP: <strong>${Number(u.mp||0)}</strong></div>
-        <div class="gb-sub">⚡ SP: <strong>${Number(u.sp||0)}</strong></div>
+        <div class="gb-sub">❤️ HP: <strong>${Number(u.currentHp ?? u.hp ?? 0)}</strong> / ${Number(u.hp||0)}</div>
+        <div class="gb-sub">💧 MP: <strong>${Number(u.currentMp ?? u.mp ?? 0)}</strong> / ${Number(u.mp||0)}</div>
+        <div class="gb-sub">⚡ SP: <strong>${Number(u.currentSp ?? u.sp ?? 0)}</strong> / ${Number(u.sp||0)}</div>
         <div class="gb-sub">⚔️ ATK: <strong>${Number(u.atk||0)}</strong></div>
         <div class="gb-sub">🛡️ 물리방어: <strong>${Number(u.pdef||0)}</strong></div>
         <div class="gb-sub">🔮 마법방어: <strong>${Number(u.mdef||0)}</strong></div>
@@ -9614,6 +9722,25 @@ function renderCommandPanel(runtime) {
     if (!entity.inventory.equipped) entity.inventory.equipped = { weapon: null, armor: null, subweapon: null, accessory: null, bag: null };
     if (entity.inventory.equipped.bag === undefined) entity.inventory.equipped.bag = null;
     return entity.inventory;
+  }
+
+  // 캐릭터/페르소나의 장착 무기 ATK를 포함하여 파생 스탯(HP/MP/SP/ATK/PDEF/MDEF) 재계산
+  function recalcCharDerivedStats(entity) {
+    if (!entity || !entity.stats) return;
+    const s = entity.stats;
+    const lvBonus = Math.max(0, (Number(entity.level) || 1) - 1) * 2;
+    entity.hp = 100 + (Number(s.con)||0) * 10 + (Number(s.str)||0) * 3 + lvBonus;
+    entity.mp = 100 + (Number(s.int)||0) * 10 + (Number(s.sense)||0) * 3 + lvBonus;
+    entity.sp = 100 + (Number(s.agi)||0) * 10 + (Number(s.sense)||0) * 3 + lvBonus;
+    // 장착 무기 ATK 반영
+    let weaponAtk = 0;
+    const inv = entity.inventory;
+    if (inv && inv.equipped && inv.equipped.weapon) {
+      weaponAtk = Number(inv.equipped.weapon.atk || 0);
+    }
+    entity.atk = Math.round(weaponAtk + (Number(s.str)||0) * 0.2 + (Number(s.agi)||0) * 0.2 + (Number(s.int)||0) * 0.3);
+    entity.pdef = Math.round((Number(s.con)||0) * 0.4);
+    entity.mdef = Math.round(((Number(s.int)||0) + (Number(s.sense)||0)) * 0.25);
   }
 
   // 장착 장비 스탯 합산 반환 { atk, pdef, mdef, str, con, int, agi, sense }
@@ -12495,6 +12622,39 @@ async function saveMaterialTraitFromForm() {
         toast(`${payLabel} ₩${rentInfo.totalDebt.toLocaleString('en-US')} 납부 완료.`);
       } catch (e) { toast(e.message || String(e), true); }
     });
+    // ── 하루 휴식 핸들러 ──────────────────────────────────────────────────────
+    on('#gb-home-rest', 'click', async () => {
+      try {
+        if (!model.db.gameDate) model.db.gameDate = { year:2026, month:1, day:1 };
+        const gd = model.db.gameDate;
+        // 날짜 하루 진행
+        const d = new Date(gd.year, gd.month - 1, gd.day);
+        d.setDate(d.getDate() + 1);
+        gd.year = d.getFullYear();
+        gd.month = d.getMonth() + 1;
+        gd.day = d.getDate();
+        // 임대료/관리비 처리
+        const evictMsgs = processRentOnDateAdvance(gd);
+        // 모든 캐릭터/페르소나 HP/MP/SP 완전 회복
+        (model.db.characters || []).forEach(c => {
+          if (c.stats) recalcCharDerivedStats(c);
+          c.currentHp = Number(c.hp || 0);
+          c.currentMp = Number(c.mp || 0);
+          c.currentSp = Number(c.sp || 0);
+        });
+        (model.db.personas || []).forEach(p => {
+          if (p.stats) recalcCharDerivedStats(p);
+          p.currentHp = Number(p.hp || 0);
+          p.currentMp = Number(p.mp || 0);
+          p.currentSp = Number(p.sp || 0);
+        });
+        // 전멸 상태 해제
+        model.db.lastWipeDate = null;
+        await saveDb(); await saveState(); renderApp();
+        for (const msg of evictMsgs) toast(msg, true);
+        toast(`🛏️ 하루 휴식 완료! ${gd.year}년 ${gd.month}월 ${gd.day}일 — 모든 파티원 HP/MP/SP 완전 회복.`);
+      } catch (e) { toast(e.message || String(e), true); }
+    });
     // ── Storage handlers ──────────────────────────────────────────────────────
     on('#gb-home-storage-add-btn', 'click', async (ev) => {
       try {
@@ -12752,17 +12912,8 @@ async function saveMaterialTraitFromForm() {
       if ((unit.stats[statKey] || 0) >= cap) { toast(`${statKey} 스탯이 상한(${cap})에 도달했습니다.`, true); return; }
       unit.stats[statKey] = (unit.stats[statKey] || 0) + 1;
       unit.freeStatPoints -= 1;
-      // 스탯 효과 자동 반영
-      const s = unit.stats;
-      unit.hp = 100 + s.con * 10 + s.str * 3;
-      unit.mp = 100 + s.int * 10 + (s.sense || 0) * 3;
-      unit.sp = 100 + s.agi * 10 + (s.sense || 0) * 3;
-      unit.atk = Math.round((Number(unit.weaponAtk) || 0) + s.str * 0.2 + s.agi * 0.2 + s.int * 0.3);
-      // 레벨업 보너스 HP/MP/SP (+2 per level)
-      const lvBonus = Math.max(0, (Number(unit.level) || 1) - 1) * 2;
-      unit.hp += lvBonus;
-      unit.mp += lvBonus;
-      unit.sp += lvBonus;
+      // 스탯 효과 자동 반영 (장착 무기 ATK 포함)
+      recalcCharDerivedStats(unit);
       await saveDb(); renderApp();
       toast(`${unit.name}: ${statKey} +1 (잔여 ${unit.freeStatPoints}포인트)`);
     });
@@ -12796,16 +12947,8 @@ async function saveMaterialTraitFromForm() {
       if ((unit.stats[statKey] || 0) >= cap) { toast(`${statKey} 스탯이 상한(${cap})에 도달했습니다.`, true); return; }
       unit.stats[statKey] = (unit.stats[statKey] || 0) + 1;
       unit.freeStatPoints -= 1;
-      // 스탯 효과 자동 반영
-      const s = unit.stats;
-      unit.hp = 100 + s.con * 10 + s.str * 3;
-      unit.mp = 100 + s.int * 10 + (s.sense || 0) * 3;
-      unit.sp = 100 + s.agi * 10 + (s.sense || 0) * 3;
-      unit.atk = Math.round((Number(unit.weaponAtk) || 0) + s.str * 0.2 + s.agi * 0.2 + s.int * 0.3);
-      const lvBonus = Math.max(0, (Number(unit.level) || 1) - 1) * 2;
-      unit.hp += lvBonus;
-      unit.mp += lvBonus;
-      unit.sp += lvBonus;
+      // 스탯 효과 자동 반영 (장착 무기 ATK 포함)
+      recalcCharDerivedStats(unit);
       await saveDb(); renderApp();
       toast(`${unit.name}: ${statKey} +1 (잔여 ${unit.freeStatPoints}포인트)`);
     });
@@ -12876,6 +13019,13 @@ async function saveMaterialTraitFromForm() {
     // Gate run tab switching
     on('[data-gate-run-tab]', 'click', (ev) => {
       model.state.gateRunTab = ev.currentTarget.getAttribute('data-gate-run-tab') || 'main';
+      model.state.gatePartyDetailId = '';
+      renderApp();
+    });
+    // 게이트 파티탭 파티원 클릭 → 상세 펼침/접기
+    on('[data-gate-party-detail]', 'click', (ev) => {
+      const uid = ev.currentTarget.getAttribute('data-gate-party-detail') || '';
+      model.state.gatePartyDetailId = (model.state.gatePartyDetailId === uid) ? '' : uid;
       renderApp();
     });
     // Gate fullscreen close → return to hub view
@@ -13236,11 +13386,13 @@ async function saveMaterialTraitFromForm() {
         inv.equipped[slot] = it;
         inv.items.splice(idx, 1);
         // 가방 장착 시 캐릭터 bagId 동기화
+        const arr = type === 'persona' ? (model.db.personas || []) : (model.db.characters || []);
+        const entity = arr.find(x => x.id === entityId);
         if (isBag) {
-          const arr = type === 'persona' ? (model.db.personas || []) : (model.db.characters || []);
-          const entity = arr.find(x => x.id === entityId);
           if (entity) entity.bagId = it.bagId || it.id;
         }
+        // 장비 장착 후 캐릭터 파생 스탯 재계산 (ATK/HP/MP/SP 등)
+        if (entity && entity.stats) recalcCharDerivedStats(entity);
         await saveDb(); await saveState(); renderApp();
         const msg = isBag ? `🎒 ${it.name} 가방 장착 완료` : `⚔️ ${it.name} 장착 완료 (${EQUIP_PART_LABELS[slot]||slot}) — 내구도 ${it.durability}/${it.maxDurability}`;
         toast(msg);
@@ -13258,11 +13410,13 @@ async function saveMaterialTraitFromForm() {
         if (!Array.isArray(inv.items)) inv.items = [];
         inv.items.push(it);
         // 가방 해제 시 캐릭터 bagId 초기화
+        const arr = type === 'persona' ? (model.db.personas || []) : (model.db.characters || []);
+        const entity = arr.find(x => x.id === entityId);
         if (slot === 'bag') {
-          const arr = type === 'persona' ? (model.db.personas || []) : (model.db.characters || []);
-          const entity = arr.find(x => x.id === entityId);
           if (entity) entity.bagId = 'none';
         }
+        // 장비 해제 후 캐릭터 파생 스탯 재계산
+        if (entity && entity.stats) recalcCharDerivedStats(entity);
         await saveDb(); await saveState(); renderApp();
         toast(`↩️ ${it.name} 해제 완료`);
       } catch(e) { toast(e.message||String(e), true); }
