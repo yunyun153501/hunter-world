@@ -4992,29 +4992,172 @@ function renderGateRunPanel(run) {
   const stashLines = rewardBucketDropLines(run.stash);
   const sup = campSupplyStock();
   const used = !!(run.campSupplies && run.campSupplies.used);
+  const gateTab = model.state.gateRunTab || 'main';
+
+  // ── Party status cards (compact) ──
+  const alive = (run.partyState || []).filter(u => Number(u.currentHp || u.hp || 0) > 0);
+  const dead = (run.partyState || []).filter(u => Number(u.currentHp || u.hp || 0) <= 0);
+  function gatePartyCard(u) {
+    const hp = Number(u.currentHp || u.hp || 0);
+    const maxHp = Number(u.hp || 1);
+    const mp = Number(u.currentMp || u.mp || 0);
+    const maxMp = Number(u.mp || 1);
+    const sp = Number(u.currentSp || u.sp || 0);
+    const maxSp = Number(u.sp || 1);
+    const hpPct = maxHp > 0 ? Math.round(hp / maxHp * 100) : 0;
+    const mpPct = maxMp > 0 ? Math.round(mp / maxMp * 100) : 0;
+    const spPct = maxSp > 0 ? Math.round(sp / maxSp * 100) : 0;
+    const isDead = hp <= 0;
+    const statusTags = [];
+    const st = u.statuses || {};
+    if (st.poison > 0) statusTags.push('<span style="color:#22c55e;font-size:10px;">독</span>');
+    if (st.bleed > 0) statusTags.push('<span style="color:#ef4444;font-size:10px;">출혈</span>');
+    if (st.burn > 0) statusTags.push('<span style="color:#f97316;font-size:10px;">화상</span>');
+    if (st.curse > 0) statusTags.push('<span style="color:#a855f7;font-size:10px;">저주</span>');
+    if (st.stun > 0) statusTags.push('<span style="color:#fbbf24;font-size:10px;">기절</span>');
+    return `<div class="gb-unit${isDead ? ' is-dead' : ''}" style="padding:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div><strong style="font-size:13px;">${escapeHtml(u.name)}</strong> <span class="gb-badge">${escapeHtml(u.rank||'')}</span></div>
+        <div style="font-size:10px;color:#94a3b8;">${escapeHtml(u.job || '')} / ${escapeHtml(u.row || '')}</div>
+      </div>
+      ${statusTags.length ? `<div style="margin-top:2px;">${statusTags.join(' ')}</div>` : ''}
+      <div class="gb-bar-wrap" style="margin-top:4px;"><span style="font-size:10px;">HP ${Math.floor(hp)}/${Math.floor(maxHp)}</span><div class="gb-bar"><div class="gb-bar-fill hp" style="width:${hpPct}%"></div></div></div>
+      <div class="gb-bar-wrap"><span style="font-size:10px;">MP ${Math.floor(mp)}/${Math.floor(maxMp)}</span><div class="gb-bar"><div class="gb-bar-fill mp" style="width:${mpPct}%"></div></div></div>
+      <div class="gb-bar-wrap"><span style="font-size:10px;">SP ${Math.floor(sp)}/${Math.floor(maxSp)}</span><div class="gb-bar"><div class="gb-bar-fill sp" style="width:${spPct}%"></div></div></div>
+    </div>`;
+  }
+
+  // ── Current room encounter enemies ──
+  const room = getActiveRoom(run);
+  const encounter = room && room.encounter ? room.encounter : null;
+  const enemyCards = encounter && Array.isArray(encounter.enemies)
+    ? encounter.enemies.map(e => {
+        const hp = Number(e.currentHp || e.hp || 0);
+        const maxHp = Number(e.hp || 1);
+        const hpPct = maxHp > 0 ? Math.round(hp / maxHp * 100) : 0;
+        const isDead = hp <= 0;
+        return `<div class="gb-unit${isDead ? ' is-dead' : ''}" style="padding:8px;">
+          <div><strong style="font-size:13px;">${escapeHtml(e.name || e.id || '???')}</strong> <span class="gb-badge">${escapeHtml(e.rank || '')}</span> <span class="gb-badge" style="background:rgba(239,68,68,0.18);color:#fca5a5;">${escapeHtml(e.kind || '')}</span></div>
+          <div class="gb-bar-wrap" style="margin-top:4px;"><span style="font-size:10px;">HP ${Math.floor(hp)}/${Math.floor(maxHp)}</span><div class="gb-bar"><div class="gb-bar-fill hp" style="width:${hpPct}%"></div></div></div>
+        </div>`;
+      }).join('')
+    : '<div class="gb-sub">현재 조우한 적이 없다.</div>';
+
+  // ── Tab content ──
+  let tabContent = '';
+  if (gateTab === 'party') {
+    // 파티 관리 탭: 상세 스탯, 스킬, 인벤 빠른 보기
+    tabContent = `
+      <div class="gb-panel">
+        <div class="gb-section-title">👥 파티원 상세</div>
+        ${(run.partyState || []).map(u => {
+          const hp = Number(u.currentHp || u.hp || 0);
+          const maxHp = Number(u.hp || 1);
+          const mp = Number(u.currentMp || u.mp || 0);
+          const maxMp = Number(u.mp || 1);
+          const sp = Number(u.currentSp || u.sp || 0);
+          const maxSp = Number(u.sp || 1);
+          const isDead = hp <= 0;
+          const stats = u.stats || {};
+          return `<div class="gb-unit${isDead ? ' is-dead' : ''}">
+            <div class="gb-unit-top">
+              <div><strong>${escapeHtml(u.name)}</strong> <span class="gb-badge">${escapeHtml(u.rank||'')}</span> <span class="gb-badge">${escapeHtml(u.row || '')}</span></div>
+              <div class="gb-sub">${escapeHtml(u.job || '')} / ${escapeHtml(u.position || '')} / ${escapeHtml(u.damageType || '')}</div>
+            </div>
+            <div class="gb-bar-wrap"><span>HP ${Math.floor(hp)}/${Math.floor(maxHp)}</span><div class="gb-bar"><div class="gb-bar-fill hp" style="width:${maxHp>0?Math.round(hp/maxHp*100):0}%"></div></div></div>
+            <div class="gb-bar-wrap"><span>MP ${Math.floor(mp)}/${Math.floor(maxMp)}</span><div class="gb-bar"><div class="gb-bar-fill mp" style="width:${maxMp>0?Math.round(mp/maxMp*100):0}%"></div></div></div>
+            <div class="gb-bar-wrap"><span>SP ${Math.floor(sp)}/${Math.floor(maxSp)}</span><div class="gb-bar"><div class="gb-bar-fill sp" style="width:${maxSp>0?Math.round(sp/maxSp*100):0}%"></div></div></div>
+            <div class="gb-sub" style="margin-top:4px;">STR ${stats.str||0} CON ${stats.con||0} INT ${stats.int||0} AGI ${stats.agi||0} SEN ${stats.sense||0} | ATK ${u.atk||0} PDEF ${u.pdef||0} MDEF ${u.mdef||0}</div>
+            <div class="gb-sub">스킬: ${(u.skills||[]).length ? (u.skills||[]).map(s => escapeHtml(s)).join(', ') : '없음'}</div>
+          </div>`;
+        }).join('')}
+      </div>`;
+  } else if (gateTab === 'inventory') {
+    // 공용 인벤토리 빠른 보기
+    const inv = getInventory();
+    const cap = inventoryCapacity();
+    const usedSlots = inventoryUsedSlots(inv);
+    const usedWeight = inventoryUsedWeightG(inv);
+    const invItems = (inv.items || []);
+    tabContent = `
+      <div class="gb-panel">
+        <div class="gb-section-title">📦 공용 인벤토리</div>
+        <div class="gb-sub">슬롯 <strong>${usedSlots}/${cap.slots}</strong> / 무게 ${formatWeightG(usedWeight)} / ${formatWeightG(cap.maxWeightG)}</div>
+        <div style="max-height:300px;overflow:auto;margin-top:8px;">
+          ${invItems.length ? invItems.map(it => {
+            const isEq = it.category === 'equipment';
+            return `<div style="font-size:12px;padding:3px 0;border-bottom:1px solid rgba(148,163,184,0.08);">
+              ${escapeHtml(it.name||it.id)}${it.rank ? ` <span class="gb-badge">${it.rank}</span>` : ''}${isEq && it.part ? ` <span class="gb-badge">${EQUIP_PART_LABELS[it.part]||it.part}</span>` : ''}${it.count > 1 ? ` ×${it.count}` : ''}
+            </div>`;
+          }).join('') : '<div class="gb-sub">인벤토리가 비어있다.</div>'}
+        </div>
+      </div>`;
+  } else if (gateTab === 'logs') {
+    tabContent = `
+      <div class="gb-panel">
+        <div class="gb-section-title">📜 게이트 전체 로그</div>
+        <textarea class="gb-textarea" readonly>${escapeHtml(((run.fullLogs || []).slice(-1200)).join('\n'))}</textarea>
+      </div>`;
+  } else {
+    // main tab: prompt + rewards + recent logs
+    tabContent = `
+      ${currentGatePrompt(run)}
+      <div class="gb-grid two">
+        <div class="gb-panel">
+          <div class="gb-section-title">최근 로그</div>
+          <div class="gb-log" style="max-height:240px;">${(run.logs || []).slice(0, 80).map(t => `<div>• ${escapeHtml(t)}</div>`).join('') || '<div>아직 로그가 없다.</div>'}</div>
+        </div>
+        <div class="gb-panel">
+          <div class="gb-section-title">현재 정산</div>
+          <div class="gb-log" style="max-height:240px;">${stashLines.length ? stashLines.map(t => `<div>• ${escapeHtml(t)}</div>`).join('') : '<div>아직 획득한 보상이 없다.</div>'}</div>
+        </div>
+      </div>`;
+  }
+
+  // ── Full immersive layout ──
   return `
-    <div class="gb-panel">
-      <div class="gb-section-title">진행 중인 게이트</div>
-      <div><strong>${escapeHtml(run.title)}</strong> <span class="gb-badge">${escapeHtml(run.rank)}</span> <span class="gb-badge">${escapeHtml(run.sizeLabel)}</span></div>
-      <div class="gb-sub">${escapeHtml(run.primarySpeciesLabel)} + ${escapeHtml(run.secondarySpeciesLabel)} / 내부 배치 정보 비공개</div>
-      <div class="gb-log"><div>${tokens}</div></div>
-      <div class="gb-sub">생존 파티 ${run.partyState.length}명 / 현재 단계 ${Math.min(run.currentStage + 1, run.stages.length)}/${run.stages.length} / 경과 ${Math.floor((run.elapsedMinutes || 0)/60)}h ${(run.elapsedMinutes || 0)%60}m</div>
-      <div class="gb-sub">야영 보급(인벤 기준): 텐트 ${sup.tent || 0} / 식량 ${sup.ration || 0} / 물 ${sup.water || 0}${used ? ' / 야영 사용 완료' : ''}</div>
-    </div>
-    ${currentGatePrompt(run)}
-    <div class="gb-grid two">
-      <div class="gb-panel">
-        <div class="gb-section-title">최근 로그</div>
-        <div class="gb-log">${(run.logs || []).slice(0, 150).map(t => `<div>• ${escapeHtml(t)}</div>`).join('') || '<div>아직 로그가 없다.</div>'}</div>
+    <div style="border:2px solid rgba(37,99,235,0.4);border-radius:16px;padding:14px;background:linear-gradient(180deg,#0d1020 0%,#0f1117 100%);">
+      <!-- Header bar -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div>
+          <strong style="font-size:16px;">⚔️ ${escapeHtml(run.title)}</strong>
+          <span class="gb-badge">${escapeHtml(run.rank)}</span>
+          <span class="gb-badge">${escapeHtml(run.sizeLabel)}</span>
+          <span class="gb-sub" style="margin-left:8px;">${escapeHtml(run.primarySpeciesLabel)} + ${escapeHtml(run.secondarySpeciesLabel)}</span>
+        </div>
+        <button class="gb-btn tiny" id="gb-gate-fullscreen-close" style="font-size:12px;">✕ 게이트 선택으로</button>
       </div>
-      <div class="gb-panel">
-        <div class="gb-section-title">현재 정산</div>
-        <div class="gb-log">${stashLines.length ? stashLines.map(t => `<div>• ${escapeHtml(t)}</div>`).join('') : '<div>아직 획득한 보상이 없다.</div>'}</div>
+
+      <!-- Stage progress -->
+      <div class="gb-panel" style="padding:8px 12px;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:12px;font-weight:700;color:#60a5fa;">노드 진행:</span>
+          ${tokens}
+        </div>
+        <div class="gb-sub" style="margin-top:4px;">생존 ${alive.length}명${dead.length ? ` / 사망 ${dead.length}명` : ''} / 단계 ${Math.min(run.currentStage + 1, run.stages.length)}/${run.stages.length} / 경과 ${Math.floor((run.elapsedMinutes || 0)/60)}h ${(run.elapsedMinutes || 0)%60}m / 보급: 텐트${sup.tent||0} 식량${sup.ration||0} 물${sup.water||0}${used ? ' (야영완료)' : ''}</div>
       </div>
-    </div>
-    <div class="gb-panel">
-      <div class="gb-section-title">게이트 전체 로그</div>
-      <textarea class="gb-textarea" readonly>${escapeHtml(((run.fullLogs || []).slice(-1200)).join('\n'))}</textarea>
+
+      <!-- Main 2-column: Party (left) vs Enemies (right) -->
+      <div class="gb-grid two" style="align-items:start;margin-bottom:10px;">
+        <div class="gb-panel" style="max-height:420px;overflow:auto;">
+          <div class="gb-section-title" style="color:#60a5fa;">👥 파티 (${alive.length}/${run.partyState.length})</div>
+          ${(run.partyState || []).map(u => gatePartyCard(u)).join('')}
+        </div>
+        <div class="gb-panel" style="max-height:420px;overflow:auto;">
+          <div class="gb-section-title" style="color:#fca5a5;">👹 적</div>
+          ${enemyCards}
+        </div>
+      </div>
+
+      <!-- Tab navigation -->
+      <div class="gb-btn-row" style="margin-bottom:8px;">
+        <button class="gb-btn${gateTab==='main'?' primary':''}" data-gate-run-tab="main">🗺️ 행동/정산</button>
+        <button class="gb-btn${gateTab==='party'?' primary':''}" data-gate-run-tab="party">👥 파티 상세</button>
+        <button class="gb-btn${gateTab==='inventory'?' primary':''}" data-gate-run-tab="inventory">📦 인벤토리</button>
+        <button class="gb-btn${gateTab==='logs'?' primary':''}" data-gate-run-tab="logs">📜 전체 로그</button>
+      </div>
+
+      ${tabContent}
     </div>`;
 }
 async function applyGateSelectionToBattle(goBattle) {
@@ -8707,6 +8850,12 @@ function renderGateView() {
   const selected = getSelectedGeneratedGate();
   const list = (gs.generated || []);
   const run = getGateRun();
+
+  // Active gate run → show immersive full-screen layout only
+  if (run && !run.completed && !run.failed) {
+    return renderGateRunPanel(run);
+  }
+
   const rankButtons = GRADE_ORDER.map(r => `<button class="gb-btn ${rank===r?'primary':''}" data-gate-rank="${r}">${escapeHtml(r)}</button>`).join('');
   const sizeButtons = ['small','medium','large'].map(k => `<button class="gb-btn ${size===k?'primary':''}" data-gate-size="${k}">${escapeHtml(GATE_SIZE_META[k].label)}</button>`).join('');
   const cards = list.length ? list.map(g => `
@@ -9516,6 +9665,23 @@ function renderCommandPanel(runtime) {
     </div>`;
   }
 
+  function personalInvCapacity(type, entityId) {
+    const arr = type === 'persona' ? (model.db.personas || []) : (model.db.characters || []);
+    const entity = arr.find(x => x.id === entityId);
+    if (!entity) return { slots: PERSONAL_INV_BASE_SLOTS, maxWeightG: PERSONAL_INV_BASE_MAX_WEIGHT_G, weightMul: 1.0 };
+    const equippedBagId = (entity.inventory && entity.inventory.equipped && entity.inventory.equipped.bag && entity.inventory.equipped.bag.bagId) || null;
+    const bagId = equippedBagId || entity.bagId || 'none';
+    const bag = PARTY_BAGS[bagId] || PARTY_BAGS.none;
+    return {
+      slots: PERSONAL_INV_BASE_SLOTS + Number(bag.slotBonus || 0),
+      maxWeightG: PERSONAL_INV_BASE_MAX_WEIGHT_G + Number(bag.maxWeightBonusG || 0),
+      weightMul: Number(bag.weightMul || 1.0)
+    };
+  }
+  function personalInvUsedWeightG(inv, pCap) {
+    return Math.round((Array.isArray(inv.items) ? inv.items : []).reduce((s, it) => s + inventoryBaseWeightG(it), 0) * pCap.weightMul);
+  }
+
   function renderPersonalInventoryHtml(type, entityId) {
     if (!entityId) return '<div class="gb-panel gb-sub">캐릭터/페르소나를 먼저 저장하면 개인 인벤토리를 사용할 수 있다.</div>';
     const inv = getPersonalInv(type, entityId);
@@ -9635,10 +9801,27 @@ function renderCommandPanel(runtime) {
             <button class="gb-btn tiny primary" data-shared-to-personal="${type}:${entityId}:${escapeHtml(ikey)}">개인으로 이동</button>
           </div></div>`;
         }).join('');
+    const pCap = personalInvCapacity(type, entityId);
+    const pUsedSlots = inventoryUsedSlots(inv);
+    const pUsedWeight = personalInvUsedWeightG(inv, pCap);
+    const slotPct = pCap.slots > 0 ? Math.min(100, Math.round(pUsedSlots / pCap.slots * 100)) : 0;
+    const weightPct = pCap.maxWeightG > 0 ? Math.min(100, Math.round(pUsedWeight / pCap.maxWeightG * 100)) : 0;
+    const slotColor = slotPct >= 90 ? '#ef4444' : slotPct >= 70 ? '#eab308' : '#34d399';
+    const weightColor = weightPct >= 90 ? '#ef4444' : weightPct >= 70 ? '#eab308' : '#34d399';
     return `<div class="gb-panel" style="margin-top:10px;">
       <div class="gb-section-title">⚔️ 개인 장비창 / 인벤토리</div>
       ${tabBar}
-      <div class="gb-section-title" style="margin-top:8px;">개인 인벤 (${items.length}개)</div>
+      <div class="gb-section-title" style="margin-top:8px;">개인 인벤</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px;font-size:12px;">
+        <div style="flex:1;min-width:140px;">
+          <div style="display:flex;justify-content:space-between;"><span>슬롯</span><strong style="color:${slotColor}">${pUsedSlots} / ${pCap.slots}</strong></div>
+          <div style="height:6px;background:#1e293b;border-radius:99px;margin-top:3px;overflow:hidden;"><div style="width:${slotPct}%;height:100%;background:${slotColor};border-radius:99px;"></div></div>
+        </div>
+        <div style="flex:1;min-width:140px;">
+          <div style="display:flex;justify-content:space-between;"><span>무게</span><strong style="color:${weightColor}">${formatWeightG(pUsedWeight)} / ${formatWeightG(pCap.maxWeightG)}</strong></div>
+          <div style="height:6px;background:#1e293b;border-radius:99px;margin-top:3px;overflow:hidden;"><div style="width:${weightPct}%;height:100%;background:${weightColor};border-radius:99px;"></div></div>
+        </div>
+      </div>
       ${itemsHtml}
       <div class="gb-section-title" style="margin-top:8px;">📦 공용 인벤에서 이동</div>
       ${fromSharedHtml}
@@ -12587,10 +12770,20 @@ async function saveMaterialTraitFromForm() {
       try {
         if (activeGateRun()) { toast('이미 진행 중인 게이트가 있다.'); return; }
         beginGateRunFromSelectedGate();
+        model.state.gateRunTab = 'main';
         await saveState();
         renderApp();
         toast('게이트에 진입했다.');
       } catch (e) { toast(e.message || String(e), true); }
+    });
+    // Gate run tab switching
+    on('[data-gate-run-tab]', 'click', (ev) => {
+      model.state.gateRunTab = ev.currentTarget.getAttribute('data-gate-run-tab') || 'main';
+      renderApp();
+    });
+    // Gate fullscreen close → return to gate selection view
+    on('#gb-gate-fullscreen-close', 'click', () => {
+      renderApp();
     });
     on('[data-stage-choice]', 'click', async (ev) => {
       try {
