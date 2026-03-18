@@ -506,7 +506,7 @@ const ACCESSORY_STAT_BY_RANK = {
 // Shield: 물리방어 = half armor value; ATK = -(물리방어/2)
 const SUBWEAPON_DEF_RATIO = 0.5;
 // Max infusion by part
-const EQUIP_MAX_INFUSE = { weapon:2, subweapon:2, armor:2, accessory:1 };
+const EQUIP_MAX_INFUSE = { weapon:2, subweapon:3, armor:2, accessory:2 };
 
 // Repair fee base price per 1% durability lost (₩) — Weapon is ×2
 const REPAIR_FEE_BASE = { E:0, D:10000, C:100000, B:1000000, A:20000000, S:750000000 };
@@ -2102,7 +2102,7 @@ const RARE_FAMILY_PRESETS = {
       const armorBase = ARMOR_STAT_BY_RANK[rank] || { defRange:[0,5], resistance:1 };
       const maxDef = armorBase.defRange[1];
       // ── 무기 5종 ──
-      const weaponSuffixes = ['검','대검','창','활','총'];
+      const weaponSuffixes = ['검','대검','단검','지팡이','활'];
       for (let w = 0; w < 5; w++) {
         const isAssoc = (rank === 'E');
         const prefix = isAssoc ? '협회지급' : EQUIP_RANK_PREFIX[rank][w % EQUIP_RANK_PREFIX[rank].length];
@@ -2122,18 +2122,19 @@ const RARE_FAMILY_PRESETS = {
           note: isAssoc ? '협회에서 신규 헌터에게 지급하는 표준 규격 무기.' : `${rank}급 표준 ${suff}.`
         });
       }
-      // ── 보조무기 3종 ──
+      // ── 보조무기 3종 (기본 특성 1개, 주입 최대 3) ──
       const subSuffixes = ['방패','장갑','보호대'];
       for (let s = 0; s < 3; s++) {
         const prefix = EQUIP_RANK_PREFIX[rank][s % EQUIP_RANK_PREFIX[rank].length];
         const suff = subSuffixes[s];
         const pdef = Math.max(1, Math.round(maxDef * 0.25 * (0.85 + Math.random() * 0.10)));
         const price = Math.round(calcEquipBasePrice(rank, 'subweapon') * (0.85 + Math.random() * 0.10));
+        const subTrait = NORMAL_TRAIT_POOL[Math.floor(Math.random() * NORMAL_TRAIT_POOL.length)];
         items.push({
           id: `eq_${rank.toLowerCase()}_subweapon_${String(++idx).padStart(2,'0')}`,
           name: `${prefix} ${suff}`,
           part: 'subweapon', rank, rarity: 'Normal',
-          enhance: 0, infuse: 0, maxInfuse: 1, traits: [],
+          enhance: 0, infuse: 1, maxInfuse: 3, traits: [subTrait],
           durability: 100, maxDurability: 100,
           atk: 0, pdef, mdef: 0,
           mainStat: 'con', resistType: '', resistPct: 0,
@@ -2168,18 +2169,19 @@ const RARE_FAMILY_PRESETS = {
           });
         }
       }
-      // ── 악세서리 8종 ──
+      // ── 악세서리 8종 (기본 특성 1개, 주입 최대 2) ──
       const accSuffixes = ['귀걸이','반지','목걸이','벨트','표식','귀걸이','반지','목걸이'];
       const accMainStats = ['str','int','agi','con','sense','str','int','agi'];
       for (let ac = 0; ac < 8; ac++) {
         const prefix = EQUIP_RANK_PREFIX[rank][ac % EQUIP_RANK_PREFIX[rank].length];
         const suff = accSuffixes[ac];
         const price = Math.round(calcEquipBasePrice(rank, 'accessory') * (0.85 + Math.random() * 0.10));
+        const accTrait = NORMAL_TRAIT_POOL[Math.floor(Math.random() * NORMAL_TRAIT_POOL.length)];
         items.push({
           id: `eq_${rank.toLowerCase()}_acc_${String(++idx).padStart(2,'0')}`,
           name: `${prefix} ${suff}`,
           part: 'accessory', rank, rarity: 'Normal',
-          enhance: 0, infuse: 0, maxInfuse: 1, traits: [],
+          enhance: 0, infuse: 1, maxInfuse: 2, traits: [accTrait],
           durability: 100, maxDurability: 100,
           atk: 0, pdef: 0, mdef: 0,
           mainStat: accMainStats[ac], resistType: '', resistPct: 0,
@@ -6698,6 +6700,42 @@ function seedNpcAuctionListings() {
     };
     model.db.auctionListings.push({ id: `auc_npc_${uid}`, item, askPrice, marketPrice, priceRatio: ratio, isNpc: true, listedAt: Date.now() });
   }
+
+  // ── 희귀재료 매물 ──
+  if (!Array.isArray(model.db.auctionRareMats)) model.db.auctionRareMats = [];
+  const rareMatCount = model.db.auctionRareMats.filter(l => l.isNpc).length;
+  const rareMatNeeded = 15 - rareMatCount;
+  if (rareMatNeeded > 0) {
+    function pickRareMatRank() {
+      const r = Math.random() * 100;
+      if (r < 30) return 'E';
+      if (r < 60) return 'D';
+      if (r < 80) return 'C';
+      if (r < 98) return 'B';
+      if (r < 99.9) return 'A';
+      return 'S';
+    }
+    const rareMatCatalog = (model.db.rareMaterialCatalog || []);
+    for (let rm = 0; rm < rareMatNeeded; rm++) {
+      const rank = pickRareMatRank();
+      const uid2 = Date.now().toString(36) + Math.random().toString(36).slice(2,6) + 'rm' + rm;
+      const matchMats = rareMatCatalog.filter(m => m.rank === rank);
+      let matItem;
+      if (matchMats.length > 0) {
+        const picked = matchMats[Math.floor(Math.random() * matchMats.length)];
+        const baseWon = RARE_MATERIAL_BASE_WON[rank] || RARE_MATERIAL_BASE_WON.E;
+        const ratio2 = 0.85 + Math.random() * 0.30;
+        const askP = Math.round(baseWon * ratio2);
+        matItem = { id: `auc_rmat_${uid2}`, item: { id: `rmat_${rank.toLowerCase()}_${uid2}`, name: picked.name || `${rank}급 희귀재료`, category: 'rareMaterial', rank, traitId: picked.traitId || '', suggestedPrice: baseWon, stackable: false, unitWeightG: 200, note: picked.note || `${rank}급 희귀재료` }, askPrice: askP, marketPrice: baseWon, priceRatio: ratio2, isNpc: true, listedAt: Date.now() };
+      } else {
+        const baseWon = RARE_MATERIAL_BASE_WON[rank] || RARE_MATERIAL_BASE_WON.E;
+        const ratio2 = 0.85 + Math.random() * 0.30;
+        const askP = Math.round(baseWon * ratio2);
+        matItem = { id: `auc_rmat_${uid2}`, item: { id: `rmat_${rank.toLowerCase()}_${uid2}`, name: `${rank}급 희귀재료`, category: 'rareMaterial', rank, traitId: '', suggestedPrice: baseWon, stackable: false, unitWeightG: 200, note: `${rank}급 희귀재료` }, askPrice: askP, marketPrice: baseWon, priceRatio: ratio2, isNpc: true, listedAt: Date.now() };
+      }
+      model.db.auctionRareMats.push(matItem);
+    }
+  }
 }
 
 // 구매 경매 — 경쟁자 즉석 판정 (단계별 인터랙티브용)
@@ -6764,6 +6802,7 @@ function renderAuctionHouseHtml() {
   const tabBar = `<div class="gb-btn-row">
     <button class="gb-btn${tab==='browse'?' primary':''}" data-auction-tab="browse">🔍 구매</button>
     <button class="gb-btn${tab==='sell'?' primary':''}" data-auction-tab="sell">📦 판매 등록</button>
+    <button class="gb-btn${tab==='manastone'?' primary':''}" data-auction-tab="manastone">💎 마정석 거래</button>
   </div>`;
 
   let content = '';
@@ -6817,53 +6856,96 @@ function renderAuctionHouseHtml() {
           ${actionArea}
         </div>`;
     } else {
-      const listings = model.db.auctionListings;
+      const browseType = model.state.auctionBrowseType || 'equip';
+      const browseSubTabs = `<div class="gb-btn-row" style="margin-bottom:6px;">
+        <button class="gb-btn${browseType==='equip'?' primary':''}" data-auction-browse-type="equip">⚔️ 장비 & 스킬북</button>
+        <button class="gb-btn${browseType==='raremat'?' primary':''}" data-auction-browse-type="raremat">💎 희귀재료</button>
+      </div>`;
       const rankFilter = model.state.auctionRankFilter || '';
       const searchQ = (model.state.auctionSearchQ || '').trim().toLowerCase();
-      const filtered = listings.filter(l => {
-        const it = l.item;
-        const rankOk = !rankFilter || (it.rank||'E') === rankFilter;
-        const searchOk = !searchQ || (it.name||it.id||'').toLowerCase().includes(searchQ) ||
-          (it.note||'').toLowerCase().includes(searchQ) ||
-          ((it.traits||[]).some(t => (EQUIP_TRAIT_LABELS[t]||t).includes(searchQ)));
-        // 유니크/전설 아이템은 경매장에 표시하지 않음
-        const rarityOk = !it.rarity || (it.rarity !== 'Unique' && it.rarity !== 'Legendary');
-        return rankOk && searchOk && rarityOk;
-      });
 
       const rankBtns = ['','E','D','C','B','A','S'].map(r =>
         `<button class="gb-btn${rankFilter===r?' primary':''}" data-auction-rank="${escapeHtml(r)}">${r||'전체'}</button>`
       ).join('');
 
-      const listingsHtml = filtered.length === 0
-        ? '<div class="gb-sub">검색 결과 없음.</div>'
-        : filtered.map(l => {
-            const it = l.item;
-            const mktPrice = l.marketPrice || it.price || it.suggestedPrice || 0;
-            const isEquip = it.category === 'equipment';
-            const isSkillbook = it.category === 'skillbook';
-            const traitTxt = isEquip && (it.traits||[]).length ? `<span class="gb-badge" style="background:#7c3aed;">${(it.traits||[]).map(t=>equipTraitDisplay(t, it.rank)).join(', ')}</span>` : (!isEquip && !isSkillbook && it.traitId ? `<span class="gb-badge" style="background:#7c3aed;">${escapeHtml(equipTraitDisplay(it.traitId, it.rank))}</span>` : '');
-            const npcBadge = l.isNpc ? '<span class="gb-badge">NPC</span>' : '<span class="gb-badge" style="background:#0284c7;">플레이어</span>';
-            const catBadge = isEquip ? `<span class="gb-badge">${escapeHtml(EQUIP_PART_LABELS[it.part]||it.part||'')}</span>` : isSkillbook ? `<span class="gb-badge" style="background:#d97706;">📖 스킬북 T${it.skillTier||'?'}</span>` : '<span class="gb-badge">희귀재료</span>';
-            return `<div class="gb-unit" style="margin-bottom:6px;padding:8px;border:1px solid rgba(148,163,184,0.15);border-radius:6px;">
-              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
-                <div>
-                  <strong style="${rarityStyle(it.rarity)}">${escapeHtml(it.name||it.id)}</strong>
-                  <span class="gb-badge">${escapeHtml(it.rank||'E')}</span>
-                  ${catBadge}
-                  ${isEquip && it.rarity && it.rarity !== 'Normal' ? `<span class="gb-badge" style="background:${rarityColor(it.rarity)};color:#000;">${escapeHtml(it.rarity)}</span>` : ''}
-                  ${npcBadge} ${traitTxt}
-                  ${isEquip ? `<div class="gb-sub">${it.atk ? 'ATK+'+it.atk+' | ' : ''}${it.pdef ? 'PDEF+'+it.pdef+' | ' : ''}${it.mdef ? 'MDEF+'+it.mdef+' | ' : ''}주입 최대 ${it.maxInfuse||1}회 | 내구 ${it.durability||100}/${it.maxDurability||100}</div>` : ''}
-                  ${isSkillbook ? `<div class="gb-sub">${escapeHtml(it.note||'')}</div>` : ''}
-                  <div class="gb-sub">시장가: ${fmt(mktPrice)}</div>
+      let listingsHtml = '';
+      let totalCount = 0;
+
+      if (browseType === 'raremat') {
+        // 희귀재료 매물
+        const rareMatListings = (model.db.auctionRareMats || []);
+        const filteredMats = rareMatListings.filter(l => {
+          const it = l.item;
+          const rankOk = !rankFilter || (it.rank||'E') === rankFilter;
+          const searchOk = !searchQ || (it.name||it.id||'').toLowerCase().includes(searchQ) || (it.note||'').toLowerCase().includes(searchQ) || (it.traitId && (EQUIP_TRAIT_LABELS[it.traitId]||it.traitId).toLowerCase().includes(searchQ));
+          return rankOk && searchOk;
+        });
+        totalCount = filteredMats.length;
+        listingsHtml = filteredMats.length === 0
+          ? '<div class="gb-sub">검색 결과 없음.</div>'
+          : filteredMats.map(l => {
+              const it = l.item;
+              const mktPrice = l.marketPrice || it.suggestedPrice || 0;
+              const traitTxt = it.traitId ? `<span class="gb-badge" style="background:#7c3aed;">${escapeHtml(equipTraitDisplay(it.traitId, it.rank))}</span>` : '';
+              const npcBadge = l.isNpc ? '<span class="gb-badge">NPC</span>' : '<span class="gb-badge" style="background:#0284c7;">플레이어</span>';
+              return `<div class="gb-unit" style="margin-bottom:6px;padding:8px;border:1px solid rgba(148,163,184,0.15);border-radius:6px;">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+                  <div>
+                    <strong>${escapeHtml(it.name||it.id)}</strong>
+                    <span class="gb-badge">${escapeHtml(it.rank||'E')}</span>
+                    <span class="gb-badge">희귀재료</span>
+                    ${npcBadge} ${traitTxt}
+                    <div class="gb-sub">${escapeHtml(it.note||'')}</div>
+                    <div class="gb-sub">시장가: ${fmt(mktPrice)}</div>
+                  </div>
+                  <button class="gb-btn primary" data-auction-bid-raremat="${escapeHtml(l.id)}" data-auction-bid-mkt="${mktPrice}" style="white-space:nowrap;">🔨 경매 참여</button>
                 </div>
-                <button class="gb-btn primary" data-auction-bid="${escapeHtml(l.id)}" data-auction-bid-mkt="${mktPrice}" style="white-space:nowrap;">🔨 경매 참여</button>
-              </div>
-            </div>`;
-          }).join('');
+              </div>`;
+            }).join('');
+      } else {
+        // 장비 & 스킬북 매물
+        const listings = model.db.auctionListings;
+        const filtered = listings.filter(l => {
+          const it = l.item;
+          const rankOk = !rankFilter || (it.rank||'E') === rankFilter;
+          const searchOk = !searchQ || (it.name||it.id||'').toLowerCase().includes(searchQ) ||
+            (it.note||'').toLowerCase().includes(searchQ) ||
+            ((it.traits||[]).some(t => (EQUIP_TRAIT_LABELS[t]||t).includes(searchQ)));
+          const rarityOk = !it.rarity || (it.rarity !== 'Unique' && it.rarity !== 'Legendary');
+          return rankOk && searchOk && rarityOk;
+        });
+        totalCount = filtered.length;
+        listingsHtml = filtered.length === 0
+          ? '<div class="gb-sub">검색 결과 없음.</div>'
+          : filtered.map(l => {
+              const it = l.item;
+              const mktPrice = l.marketPrice || it.price || it.suggestedPrice || 0;
+              const isEquip = it.category === 'equipment';
+              const isSkillbook = it.category === 'skillbook';
+              const traitTxt = isEquip && (it.traits||[]).length ? `<span class="gb-badge" style="background:#7c3aed;">${(it.traits||[]).map(t=>equipTraitDisplay(t, it.rank)).join(', ')}</span>` : (!isEquip && !isSkillbook && it.traitId ? `<span class="gb-badge" style="background:#7c3aed;">${escapeHtml(equipTraitDisplay(it.traitId, it.rank))}</span>` : '');
+              const npcBadge = l.isNpc ? '<span class="gb-badge">NPC</span>' : '<span class="gb-badge" style="background:#0284c7;">플레이어</span>';
+              const catBadge = isEquip ? `<span class="gb-badge">${escapeHtml(EQUIP_PART_LABELS[it.part]||it.part||'')}</span>` : isSkillbook ? `<span class="gb-badge" style="background:#d97706;">📖 스킬북 T${it.skillTier||'?'}</span>` : '<span class="gb-badge">희귀재료</span>';
+              return `<div class="gb-unit" style="margin-bottom:6px;padding:8px;border:1px solid rgba(148,163,184,0.15);border-radius:6px;">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+                  <div>
+                    <strong style="${rarityStyle(it.rarity)}">${escapeHtml(it.name||it.id)}</strong>
+                    <span class="gb-badge">${escapeHtml(it.rank||'E')}</span>
+                    ${catBadge}
+                    ${isEquip && it.rarity && it.rarity !== 'Normal' ? `<span class="gb-badge" style="background:${rarityColor(it.rarity)};color:#000;">${escapeHtml(it.rarity)}</span>` : ''}
+                    ${npcBadge} ${traitTxt}
+                    ${isEquip ? `<div class="gb-sub">${it.part === 'armor' && it.armorSubtype && ARMOR_SUBTYPES[it.armorSubtype] ? '['+ARMOR_SUBTYPES[it.armorSubtype].label+'] ' : ''}${it.atk ? 'ATK+'+it.atk+' | ' : ''}${it.pdef ? 'PDEF+'+it.pdef+' | ' : ''}${it.mdef ? 'MDEF+'+it.mdef+' | ' : ''}주입 최대 ${it.maxInfuse||1}회 | 내구 ${it.durability||100}/${it.maxDurability||100}</div>` : ''}
+                    ${isSkillbook ? `<div class="gb-sub">${escapeHtml(it.note||'')}</div>` : ''}
+                    <div class="gb-sub">시장가: ${fmt(mktPrice)}</div>
+                  </div>
+                  <button class="gb-btn primary" data-auction-bid="${escapeHtml(l.id)}" data-auction-bid-mkt="${mktPrice}" style="white-space:nowrap;">🔨 경매 참여</button>
+                </div>
+              </div>`;
+            }).join('');
+      }
 
       content = `
-        <div class="gb-sub" style="margin-bottom:6px;">소지금: ${fmt(gold)} | 총 ${filtered.length}개 항목</div>
+        ${browseSubTabs}
+        <div class="gb-sub" style="margin-bottom:6px;">소지금: ${fmt(gold)} | 총 ${totalCount}개 항목</div>
         <div style="display:flex;gap:6px;margin-bottom:6px;">
           <input class="gb-input" id="gb-auction-search" type="text" placeholder="이름·특성 검색..." value="${escapeHtml(model.state.auctionSearchQ||'')}" style="flex:1;">
         </div>
@@ -6871,6 +6953,36 @@ function renderAuctionHouseHtml() {
         <button class="gb-btn" data-auction-refresh style="margin-bottom:8px;">🔄 NPC 목록 갱신 (${(() => { const today = new Date().toISOString().slice(0,10); const cnt = (model.state.auctionRefreshDate === today) ? (model.state.auctionRefreshCount || 0) : 0; return `${3 - cnt}/3`; })()})</button>
         <div>${listingsHtml}</div>`;
     }
+
+  } else if (tab === 'manastone') {
+    // 마정석 거래 탭
+    const fmt2 = fmt;
+    const MANA_RANKS = ['E','D','C','B','A','S'];
+    let manaHtml = '<div style="display:grid;gap:8px;">';
+    for (const r of MANA_RANKS) {
+      const wonPer = MANA_STONE_WON_PER_PCT[r] || 1000;
+      const purity = Math.floor(Math.random() * 11) + 90;
+      const baseVal = wonPer * purity;
+      const sellPrice = Math.round(baseVal * 1.20);
+      const label = MANA_STONE_LABELS[r] || (r + '급 마정석');
+      const canAfford = gold >= sellPrice;
+      manaHtml += `<div class="gb-unit" style="padding:8px;border:1px solid rgba(148,163,184,0.15);border-radius:6px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <strong>${escapeHtml(label)}</strong> <span class="gb-badge">${r}급</span>
+            <div class="gb-sub">순도: ${purity}% | 시세: ${fmt2(baseVal)} | 판매가: ${fmt2(sellPrice)} (120%)</div>
+          </div>
+          <button class="gb-btn tiny${canAfford?'':' danger'}" data-buy-manastone="${r}" data-ms-purity="${purity}" data-ms-price="${sellPrice}" ${canAfford?'':'disabled'}>
+            ₩${fmt2(sellPrice)} 구매
+          </button>
+        </div>
+      </div>`;
+    }
+    manaHtml += '</div>';
+    content = `
+      <div class="gb-sub" style="margin-bottom:6px;">💎 마정석 거래소 — 등급별 마정석을 시세의 120% 가격에 구매할 수 있다. (순도 90~100%)</div>
+      <div class="gb-sub" style="margin-bottom:8px;">소지금: ${fmt(gold)}</div>
+      ${manaHtml}`;
 
   } else {
     // 판매 등록 탭
@@ -7225,7 +7337,6 @@ const SHOP_CATEGORIES = [
   { id:'convenience',  label:'🏪 편의점',    desc:'식료품, 음료, 기본 보급품.' },
   { id:'department',   label:'🏬 백화점',    desc:'의류, 생활용품, 일반 장비.' },
   { id:'hunterstreet', label:'🗡️ 헌터거리',  desc:'헌터 전용 상점가. 수리점·대장간·소모품 등.' },
-  { id:'equip',        label:'⚔️ 장비상점',  desc:'무기, 방어구, 헌터 전용 장비 구매·판매.' },
   { id:'huntermarket', label:'🏷️ 헌터마켓',  desc:'헌터 간 중고장비 거래 플랫폼. 스킬북은 협회 중앙 경매장 전용.' },
   { id:'blackmarket',  label:'🖤 블랙마켓',  desc:'불법 거래소. 수수료 0%·세금 0%. 적발 위험 있음.' },
 ];
@@ -7381,7 +7492,7 @@ function renderEquipShopHtml() {
         const price = Number(e.price || calcEquipEnhancedPrice(calcEquipBasePrice(e.rank, e.part), e.enhance||0, e.rank));
         const canAfford = price === 0 || gold >= price;
         const traitTags = (e.traits||[]).map(t => `<span class="gb-badge">${escapeHtml(equipTraitDisplay(t, e.rank))}</span>`).join(' ');
-        const atkLine = e.part==='weapon' ? `ATK+${e.atk||WEAPON_BASE_ATK[e.rank]||0}` : e.part==='subweapon' ? `물리방어+${e.pdef||0} / ATK${-Math.ceil((e.pdef||0)/2)}` : e.part==='armor' ? `물리방어+${e.pdef||0} / 마법방어+${e.mdef||0}${e.resistType?` / ${escapeHtml(EQUIP_TRAIT_LABELS[''+e.resistType]||e.resistType)} 저항 ${e.resistPct||0}%`:''}` : e.part==='accessory' ? (e.traits&&e.traits.length ? `특성: ${(e.traits||[]).map(t=>equipTraitDisplay(t,e.rank)).join(', ')}` : '특성 없음') : '';
+        const atkLine = e.part==='weapon' ? `ATK+${e.atk||WEAPON_BASE_ATK[e.rank]||0}` : e.part==='subweapon' ? `물리방어+${e.pdef||0} / ATK${-Math.ceil((e.pdef||0)/2)}` : e.part==='armor' ? `${e.armorSubtype && ARMOR_SUBTYPES[e.armorSubtype] ? '['+ARMOR_SUBTYPES[e.armorSubtype].label+'] ' : ''}물리방어+${e.pdef||0} / 마법방어+${e.mdef||0}${e.resistType?` / ${escapeHtml(EQUIP_TRAIT_LABELS[''+e.resistType]||e.resistType)} 저항 ${e.resistPct||0}%`:''}` : e.part==='accessory' ? (e.traits&&e.traits.length ? `특성: ${(e.traits||[]).map(t=>equipTraitDisplay(t,e.rank)).join(', ')}` : '특성 없음') : '';
         const fmt = n => n >= 1e8 ? `${(n/1e8).toFixed(2)}억` : n >= 10000 ? `${Math.round(n/10000)}만` : n.toLocaleString('en-US');
         return `<div class="gb-unit">
           <div class="gb-unit-top">
@@ -7586,6 +7697,7 @@ function renderHunterMarketHtml() {
   // 장비 상세 툴팁 헬퍼
   function hmItemTooltip(e) {
     const lines = [`${e.name}${e.rank ? ` [${e.rank}급]` : ''}`, `부위: ${EQUIP_PART_LABELS[e.part||'weapon']||e.part||''}  |  내구도: ${Number(e.durability??100)}/${Number(e.maxDurability??100)}`];
+    if (e.part === 'armor' && e.armorSubtype && ARMOR_SUBTYPES[e.armorSubtype]) lines.push(`종류: ${ARMOR_SUBTYPES[e.armorSubtype].label}`);
     if (e.enhance > 0) lines.push(`강화: +${e.enhance}`);
     if (Number(e.atk||0) > 0) lines.push(`ATK: +${e.atk}`);
     if (Number(e.pdef||0) > 0) lines.push(`물리방어: +${e.pdef}`);
@@ -8681,6 +8793,7 @@ function renderInventoryView() {
       `분류: ${it.category || '기타'} | 수량: ${Number(it.count||1)} | 무게: ${formatWeightG(Math.round(inventoryBaseWeightG(it) * cap.weightMul))}`
     ];
     if (it.part) lines.push(`부위: ${EQUIP_PART_LABELS[it.part] || it.part}`);
+    if (it.part === 'armor' && it.armorSubtype && ARMOR_SUBTYPES[it.armorSubtype]) lines.push(`갑옷 종류: ${ARMOR_SUBTYPES[it.armorSubtype].label}`);
     if (it.enhance > 0) lines.push(`강화: +${it.enhance}`);
     if (it.durability != null) lines.push(`내구도: ${it.durability}/${it.maxDurability||it.durability}`);
     if (it.category === 'equipment') {
@@ -10854,6 +10967,39 @@ async function saveMaterialTraitFromForm() {
       model.state.auctionSellSel = '';
       model.state.auctionBid = null;
       model.state.auctionSell = null;
+      await saveState(); renderApp();
+    });
+    on('[data-auction-browse-type]', 'click', async (ev) => {
+      model.state.auctionBrowseType = ev.currentTarget.getAttribute('data-auction-browse-type') || 'equip';
+      await saveState(); renderApp();
+    });
+    on('[data-buy-manastone]', 'click', async (ev) => {
+      const rank = ev.currentTarget.getAttribute('data-buy-manastone');
+      const purity = Number(ev.currentTarget.getAttribute('data-ms-purity') || 95);
+      const price = Number(ev.currentTarget.getAttribute('data-ms-price') || 0);
+      const inv = getActiveInventory();
+      if (Number(inv.gold || 0) < price) { toast('소지금 부족!'); return; }
+      inv.gold = Number(inv.gold || 0) - price;
+      const stoneId = `mana_${rank}_${purity}`;
+      const label = (MANA_STONE_LABELS[rank] || (rank + ' 마정석')) + '(' + purity + ')';
+      const existing = (inv.items || []).find(it => it.id === stoneId && it.category === 'manaStone');
+      if (existing) {
+        existing.count = (existing.count || 1) + 1;
+      } else {
+        if (!inv.items) inv.items = [];
+        inv.items.push({ id: stoneId, name: label, category: 'manaStone', rank, count: 1, unitWeightG: manaStoneUnitWeight(String(purity)), stackable: true, note: String(purity) });
+      }
+      toast(`💎 ${label} 구매 완료! (-₩${price.toLocaleString('en-US')})`);
+      await saveDb(); renderApp();
+    });
+    on('[data-auction-bid-raremat]', 'click', async (ev) => {
+      const listingId = ev.currentTarget.getAttribute('data-auction-bid-raremat');
+      const mktPrice = Number(ev.currentTarget.getAttribute('data-auction-bid-mkt') || 0);
+      const inv = getActiveInventory();
+      const startRatio = AUCTION_BUY_START_RATIO;
+      const startPrice = Math.round(mktPrice * startRatio);
+      if (Number(inv.gold || 0) < startPrice) { toast('소지금 부족! 최소 시작가: ₩' + startPrice.toLocaleString('en-US')); return; }
+      model.state.auctionBid = { listingId, marketPrice: mktPrice, currentRatio: startRatio, step: 0, log: [`[경매 시작] 시장가: ₩${mktPrice.toLocaleString('en-US')} | 시작가: 시장가 ${Math.round(startRatio*100)}% = ₩${startPrice.toLocaleString('en-US')}`], done: false, isRareMat: true };
       await saveState(); renderApp();
     });
     on('[data-auction-rank]', 'click', async (ev) => {
