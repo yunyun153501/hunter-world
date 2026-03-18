@@ -1,7 +1,7 @@
 {
   "singleAttackPhysE": {
     "id": "singleAttackPhysE",
-    "name": "강격 E",
+    "name": "타격",
     "grade": "E",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -20,7 +20,7 @@
   },
   "singleAttackMagE": {
     "id": "singleAttackMagE",
-    "name": "마탄 E",
+    "name": "마탄",
     "grade": "E",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -39,7 +39,7 @@
   },
   "aoeAttackPhysE": {
     "id": "aoeAttackPhysE",
-    "name": "난무 E",
+    "name": "연타",
     "grade": "E",
     "category": "aoeAttack",
     "target": "allEnemies",
@@ -58,7 +58,7 @@
   },
   "aoeAttackMagE": {
     "id": "aoeAttackMagE",
-    "name": "마력진 E",
+    "name": "마력파",
     "grade": "E",
     "category": "aoeAttack",
     "target": "allEnemies",
@@ -77,7 +77,7 @@
   },
   "elemAttackFireE": {
     "id": "elemAttackFireE",
-    "name": "염화 E",
+    "name": "화염탄",
     "grade": "E",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -96,7 +96,7 @@
   },
   "elemAttackIceE": {
     "id": "elemAttackIceE",
-    "name": "빙침 E",
+    "name": "빙침",
     "grade": "E",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -115,7 +115,7 @@
   },
   "elemAttackWaterE": {
     "id": "elemAttackWaterE",
-    "name": "수파 E",
+    "name": "수류탄",
     "grade": "E",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -134,7 +134,7 @@
   },
   "elemAttackWindE": {
     "id": "elemAttackWindE",
-    "name": "열풍 E",
+    "name": "풍인",
     "grade": "E",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -153,7 +153,7 @@
   },
   "elemAttackEarthE": {
     "id": "elemAttackEarthE",
-    "name": "암쇄 E",
+    "name": "암석탄",
     "grade": "E",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -172,7 +172,7 @@
   },
   "elemAttackElectricE": {
     "id": "elemAttackElectricE",
-    "name": "뇌격 E",
+    "name": "전격",
     "grade": "E",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -191,7 +191,7 @@
   },
   "elemAttackLightE": {
     "id": "elemAttackLightE",
-    "name": "성섬 E",
+    "name": "섬광탄",
     "grade": "E",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -210,7 +210,7 @@
   },
   "elemAttackDarkE": {
     "id": "elemAttackDarkE",
-    "name": "명침 E",
+    "name": "암영탄",
     "grade": "E",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -229,7 +229,7 @@
   },
   "singleCcStunE": {
     "id": "singleCcStunE",
-    "name": "충격파 E",
+    "name": "타격파",
     "grade": "E",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -253,7 +253,7 @@
   },
   "singleCcFreezeE": {
     "id": "singleCcFreezeE",
-    "name": "동결술 E",
+    "name": "냉기술",
     "grade": "E",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -277,7 +277,7 @@
   },
   "singleCcParalyzeE": {
     "id": "singleCcParalyzeE",
-    "name": "전류속박 E",
+    "name": "감전",
     "grade": "E",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -301,7 +301,7 @@
   },
   "singleCcSleepE": {
     "id": "singleCcSleepE",
-    "name": "수면의 자장가 E",
+    "name": "졸음",
     "grade": "E",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -325,7 +325,7 @@
   },
   "singleCcBindE": {
     "id": "singleCcBindE",
-    "name": "사슬결박 E",
+    "name": "올가미",
     "grade": "E",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -349,7 +349,7 @@
   },
   "singleCcCurseE": {
     "id": "singleCcCurseE",
-    "name": "흑사의 저주 E",
+    "name": "주술",
     "grade": "E",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -373,7 +373,7 @@
   },
   "singleCcSilenceE": {
     "id": "singleCcSilenceE",
-    "name": "봉인술 E",
+    "name": "침묵",
     "grade": "E",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -397,7 +397,7 @@
   },
   "singleCcSlowE": {
     "id": "singleCcSlowE",
-    "name": "둔중의 주박 E",
+    "name": "감속",
     "grade": "E",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -421,7 +421,7 @@
   },
   "singleCcBlindE": {
     "id": "singleCcBlindE",
-    "name": "암막술 E",
+    "name": "눈부심",
     "grade": "E",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -445,7 +445,7 @@
   },
   "singleCcPoisonE": {
     "id": "singleCcPoisonE",
-    "name": "명독술 E",
+    "name": "독침",
     "grade": "E",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -469,7 +469,7 @@
   },
   "singleCcBleedE": {
     "id": "singleCcBleedE",
-    "name": "열상격 E",
+    "name": "할퀴기",
     "grade": "E",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -493,7 +493,7 @@
   },
   "singleCcBurnE": {
     "id": "singleCcBurnE",
-    "name": "점화술 E",
+    "name": "불씨",
     "grade": "E",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -517,7 +517,7 @@
   },
   "aoeCcStunE": {
     "id": "aoeCcStunE",
-    "name": "지진파 E",
+    "name": "대지진동",
     "grade": "E",
     "category": "aoeCC",
     "target": "allEnemies",
@@ -541,7 +541,7 @@
   },
   "aoeCcFreezeE": {
     "id": "aoeCcFreezeE",
-    "name": "절대영도 E",
+    "name": "냉기방출",
     "grade": "E",
     "category": "aoeCC",
     "target": "allEnemies",
@@ -565,7 +565,7 @@
   },
   "aoeCcPoisonE": {
     "id": "aoeCcPoisonE",
-    "name": "독무 E",
+    "name": "독연기",
     "grade": "E",
     "category": "aoeCC",
     "target": "allEnemies",
@@ -589,7 +589,7 @@
   },
   "aoeCcBurnE": {
     "id": "aoeCcBurnE",
-    "name": "업화 E",
+    "name": "불꽃비",
     "grade": "E",
     "category": "aoeCC",
     "target": "allEnemies",
@@ -613,7 +613,7 @@
   },
   "singleHealE": {
     "id": "singleHealE",
-    "name": "치유의 빛 E",
+    "name": "응급치료",
     "grade": "E",
     "category": "singleHeal",
     "target": "singleAlly",
@@ -632,7 +632,7 @@
   },
   "aoeHealE": {
     "id": "aoeHealE",
-    "name": "생명의 노래 E",
+    "name": "치유의 바람",
     "grade": "E",
     "category": "aoeHeal",
     "target": "allAllies",
@@ -651,7 +651,7 @@
   },
   "buffStrE": {
     "id": "buffStrE",
-    "name": "투사의 함성 E",
+    "name": "힘 강화",
     "grade": "E",
     "category": "buff",
     "target": "self",
@@ -676,7 +676,7 @@
   },
   "buffConE": {
     "id": "buffConE",
-    "name": "강철 의지 E",
+    "name": "체력 강화",
     "grade": "E",
     "category": "buff",
     "target": "self",
@@ -701,7 +701,7 @@
   },
   "buffIntE": {
     "id": "buffIntE",
-    "name": "명석의 비전 E",
+    "name": "지력 강화",
     "grade": "E",
     "category": "buff",
     "target": "self",
@@ -726,7 +726,7 @@
   },
   "buffAgiE": {
     "id": "buffAgiE",
-    "name": "질풍 보법 E",
+    "name": "민첩 강화",
     "grade": "E",
     "category": "buff",
     "target": "self",
@@ -751,7 +751,7 @@
   },
   "buffSenseE": {
     "id": "buffSenseE",
-    "name": "매의 눈 E",
+    "name": "감각 강화",
     "grade": "E",
     "category": "buff",
     "target": "self",
@@ -776,7 +776,7 @@
   },
   "buffPdefE": {
     "id": "buffPdefE",
-    "name": "석갑 부여 E",
+    "name": "방어 강화",
     "grade": "E",
     "category": "buff",
     "target": "self",
@@ -801,7 +801,7 @@
   },
   "buffMdefE": {
     "id": "buffMdefE",
-    "name": "마력 방벽 E",
+    "name": "마방 강화",
     "grade": "E",
     "category": "buff",
     "target": "self",
@@ -826,7 +826,7 @@
   },
   "buffTauntE": {
     "id": "buffTauntE",
-    "name": "도발 E",
+    "name": "위협",
     "grade": "E",
     "category": "buff",
     "target": "self",
@@ -850,7 +850,7 @@
   },
   "passiveStrE": {
     "id": "passiveStrE",
-    "name": "근력 단련 E",
+    "name": "기초 근력",
     "grade": "E",
     "category": "passive",
     "target": "self",
@@ -873,7 +873,7 @@
   },
   "passiveConE": {
     "id": "passiveConE",
-    "name": "체력 단련 E",
+    "name": "기초 체력",
     "grade": "E",
     "category": "passive",
     "target": "self",
@@ -896,7 +896,7 @@
   },
   "passiveIntE": {
     "id": "passiveIntE",
-    "name": "지력 수련 E",
+    "name": "기초 지력",
     "grade": "E",
     "category": "passive",
     "target": "self",
@@ -919,7 +919,7 @@
   },
   "passiveAgiE": {
     "id": "passiveAgiE",
-    "name": "신속 수련 E",
+    "name": "기초 민첩",
     "grade": "E",
     "category": "passive",
     "target": "self",
@@ -942,7 +942,7 @@
   },
   "passiveSenseE": {
     "id": "passiveSenseE",
-    "name": "감각 연마 E",
+    "name": "기초 감각",
     "grade": "E",
     "category": "passive",
     "target": "self",
@@ -965,7 +965,7 @@
   },
   "passivePdefE": {
     "id": "passivePdefE",
-    "name": "방어 숙련 E",
+    "name": "기초 방어",
     "grade": "E",
     "category": "passive",
     "target": "self",
@@ -988,7 +988,7 @@
   },
   "passiveMdefE": {
     "id": "passiveMdefE",
-    "name": "마법 내성 E",
+    "name": "기초 마방",
     "grade": "E",
     "category": "passive",
     "target": "self",
@@ -1011,7 +1011,7 @@
   },
   "singleAttackPhysD": {
     "id": "singleAttackPhysD",
-    "name": "강격 D",
+    "name": "강타",
     "grade": "D",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -1030,7 +1030,7 @@
   },
   "singleAttackMagD": {
     "id": "singleAttackMagD",
-    "name": "마탄 D",
+    "name": "마력탄",
     "grade": "D",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -1049,7 +1049,7 @@
   },
   "aoeAttackPhysD": {
     "id": "aoeAttackPhysD",
-    "name": "난무 D",
+    "name": "난무",
     "grade": "D",
     "category": "aoeAttack",
     "target": "allEnemies",
@@ -1068,7 +1068,7 @@
   },
   "aoeAttackMagD": {
     "id": "aoeAttackMagD",
-    "name": "마력진 D",
+    "name": "마력진",
     "grade": "D",
     "category": "aoeAttack",
     "target": "allEnemies",
@@ -1087,7 +1087,7 @@
   },
   "elemAttackFireD": {
     "id": "elemAttackFireD",
-    "name": "염화 D",
+    "name": "화염구",
     "grade": "D",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -1106,7 +1106,7 @@
   },
   "elemAttackIceD": {
     "id": "elemAttackIceD",
-    "name": "빙침 D",
+    "name": "빙결탄",
     "grade": "D",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -1125,7 +1125,7 @@
   },
   "elemAttackWaterD": {
     "id": "elemAttackWaterD",
-    "name": "수파 D",
+    "name": "수압포",
     "grade": "D",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -1144,7 +1144,7 @@
   },
   "elemAttackWindD": {
     "id": "elemAttackWindD",
-    "name": "열풍 D",
+    "name": "질풍타",
     "grade": "D",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -1163,7 +1163,7 @@
   },
   "elemAttackEarthD": {
     "id": "elemAttackEarthD",
-    "name": "암쇄 D",
+    "name": "지진격",
     "grade": "D",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -1182,7 +1182,7 @@
   },
   "elemAttackElectricD": {
     "id": "elemAttackElectricD",
-    "name": "뇌격 D",
+    "name": "방전",
     "grade": "D",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -1201,7 +1201,7 @@
   },
   "elemAttackLightD": {
     "id": "elemAttackLightD",
-    "name": "성섬 D",
+    "name": "성광격",
     "grade": "D",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -1220,7 +1220,7 @@
   },
   "elemAttackDarkD": {
     "id": "elemAttackDarkD",
-    "name": "명침 D",
+    "name": "명침",
     "grade": "D",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -1239,7 +1239,7 @@
   },
   "singleCcStunD": {
     "id": "singleCcStunD",
-    "name": "충격파 D",
+    "name": "충격파",
     "grade": "D",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -1263,7 +1263,7 @@
   },
   "singleCcFreezeD": {
     "id": "singleCcFreezeD",
-    "name": "동결술 D",
+    "name": "동결술",
     "grade": "D",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -1287,7 +1287,7 @@
   },
   "singleCcParalyzeD": {
     "id": "singleCcParalyzeD",
-    "name": "전류속박 D",
+    "name": "전류속박",
     "grade": "D",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -1311,7 +1311,7 @@
   },
   "singleCcSleepD": {
     "id": "singleCcSleepD",
-    "name": "수면의 자장가 D",
+    "name": "수면술",
     "grade": "D",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -1335,7 +1335,7 @@
   },
   "singleCcBindD": {
     "id": "singleCcBindD",
-    "name": "사슬결박 D",
+    "name": "사슬결박",
     "grade": "D",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -1359,7 +1359,7 @@
   },
   "singleCcCurseD": {
     "id": "singleCcCurseD",
-    "name": "흑사의 저주 D",
+    "name": "저주술",
     "grade": "D",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -1383,7 +1383,7 @@
   },
   "singleCcSilenceD": {
     "id": "singleCcSilenceD",
-    "name": "봉인술 D",
+    "name": "봉인술",
     "grade": "D",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -1407,7 +1407,7 @@
   },
   "singleCcSlowD": {
     "id": "singleCcSlowD",
-    "name": "둔중의 주박 D",
+    "name": "둔중술",
     "grade": "D",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -1431,7 +1431,7 @@
   },
   "singleCcBlindD": {
     "id": "singleCcBlindD",
-    "name": "암막술 D",
+    "name": "암막술",
     "grade": "D",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -1455,7 +1455,7 @@
   },
   "singleCcPoisonD": {
     "id": "singleCcPoisonD",
-    "name": "명독술 D",
+    "name": "독안개",
     "grade": "D",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -1479,7 +1479,7 @@
   },
   "singleCcBleedD": {
     "id": "singleCcBleedD",
-    "name": "열상격 D",
+    "name": "열상격",
     "grade": "D",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -1503,7 +1503,7 @@
   },
   "singleCcBurnD": {
     "id": "singleCcBurnD",
-    "name": "점화술 D",
+    "name": "점화술",
     "grade": "D",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -1527,7 +1527,7 @@
   },
   "aoeCcStunD": {
     "id": "aoeCcStunD",
-    "name": "지진파 D",
+    "name": "지진파",
     "grade": "D",
     "category": "aoeCC",
     "target": "allEnemies",
@@ -1551,7 +1551,7 @@
   },
   "aoeCcFreezeD": {
     "id": "aoeCcFreezeD",
-    "name": "절대영도 D",
+    "name": "동결진",
     "grade": "D",
     "category": "aoeCC",
     "target": "allEnemies",
@@ -1575,7 +1575,7 @@
   },
   "aoeCcPoisonD": {
     "id": "aoeCcPoisonD",
-    "name": "독무 D",
+    "name": "독무",
     "grade": "D",
     "category": "aoeCC",
     "target": "allEnemies",
@@ -1599,7 +1599,7 @@
   },
   "aoeCcBurnD": {
     "id": "aoeCcBurnD",
-    "name": "업화 D",
+    "name": "화염비",
     "grade": "D",
     "category": "aoeCC",
     "target": "allEnemies",
@@ -1623,7 +1623,7 @@
   },
   "singleHealD": {
     "id": "singleHealD",
-    "name": "치유의 빛 D",
+    "name": "치유의 빛",
     "grade": "D",
     "category": "singleHeal",
     "target": "singleAlly",
@@ -1642,7 +1642,7 @@
   },
   "aoeHealD": {
     "id": "aoeHealD",
-    "name": "생명의 노래 D",
+    "name": "생명의 노래",
     "grade": "D",
     "category": "aoeHeal",
     "target": "allAllies",
@@ -1661,7 +1661,7 @@
   },
   "buffStrD": {
     "id": "buffStrD",
-    "name": "투사의 함성 D",
+    "name": "투사의 함성",
     "grade": "D",
     "category": "buff",
     "target": "self",
@@ -1686,7 +1686,7 @@
   },
   "buffConD": {
     "id": "buffConD",
-    "name": "강철 의지 D",
+    "name": "강철 의지",
     "grade": "D",
     "category": "buff",
     "target": "self",
@@ -1711,7 +1711,7 @@
   },
   "buffIntD": {
     "id": "buffIntD",
-    "name": "명석의 비전 D",
+    "name": "명석의 비전",
     "grade": "D",
     "category": "buff",
     "target": "self",
@@ -1736,7 +1736,7 @@
   },
   "buffAgiD": {
     "id": "buffAgiD",
-    "name": "질풍 보법 D",
+    "name": "질풍 보법",
     "grade": "D",
     "category": "buff",
     "target": "self",
@@ -1761,7 +1761,7 @@
   },
   "buffSenseD": {
     "id": "buffSenseD",
-    "name": "매의 눈 D",
+    "name": "매의 눈",
     "grade": "D",
     "category": "buff",
     "target": "self",
@@ -1786,7 +1786,7 @@
   },
   "buffPdefD": {
     "id": "buffPdefD",
-    "name": "석갑 부여 D",
+    "name": "석갑 부여",
     "grade": "D",
     "category": "buff",
     "target": "self",
@@ -1811,7 +1811,7 @@
   },
   "buffMdefD": {
     "id": "buffMdefD",
-    "name": "마력 방벽 D",
+    "name": "마력 방벽",
     "grade": "D",
     "category": "buff",
     "target": "self",
@@ -1836,7 +1836,7 @@
   },
   "buffTauntD": {
     "id": "buffTauntD",
-    "name": "도발 D",
+    "name": "도발",
     "grade": "D",
     "category": "buff",
     "target": "self",
@@ -1860,7 +1860,7 @@
   },
   "passiveStrD": {
     "id": "passiveStrD",
-    "name": "근력 단련 D",
+    "name": "근력 단련",
     "grade": "D",
     "category": "passive",
     "target": "self",
@@ -1883,7 +1883,7 @@
   },
   "passiveConD": {
     "id": "passiveConD",
-    "name": "체력 단련 D",
+    "name": "체력 단련",
     "grade": "D",
     "category": "passive",
     "target": "self",
@@ -1906,7 +1906,7 @@
   },
   "passiveIntD": {
     "id": "passiveIntD",
-    "name": "지력 수련 D",
+    "name": "지력 수련",
     "grade": "D",
     "category": "passive",
     "target": "self",
@@ -1929,7 +1929,7 @@
   },
   "passiveAgiD": {
     "id": "passiveAgiD",
-    "name": "신속 수련 D",
+    "name": "신속 수련",
     "grade": "D",
     "category": "passive",
     "target": "self",
@@ -1952,7 +1952,7 @@
   },
   "passiveSenseD": {
     "id": "passiveSenseD",
-    "name": "감각 연마 D",
+    "name": "감각 연마",
     "grade": "D",
     "category": "passive",
     "target": "self",
@@ -1975,7 +1975,7 @@
   },
   "passivePdefD": {
     "id": "passivePdefD",
-    "name": "방어 숙련 D",
+    "name": "방어 숙련",
     "grade": "D",
     "category": "passive",
     "target": "self",
@@ -1998,7 +1998,7 @@
   },
   "passiveMdefD": {
     "id": "passiveMdefD",
-    "name": "마법 내성 D",
+    "name": "마법 내성",
     "grade": "D",
     "category": "passive",
     "target": "self",
@@ -2021,7 +2021,7 @@
   },
   "singleAttackPhysC": {
     "id": "singleAttackPhysC",
-    "name": "강격 C",
+    "name": "분쇄격",
     "grade": "C",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -2040,7 +2040,7 @@
   },
   "singleAttackMagC": {
     "id": "singleAttackMagC",
-    "name": "마탄 C",
+    "name": "마력포",
     "grade": "C",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -2059,7 +2059,7 @@
   },
   "aoeAttackPhysC": {
     "id": "aoeAttackPhysC",
-    "name": "난무 C",
+    "name": "질풍연타",
     "grade": "C",
     "category": "aoeAttack",
     "target": "allEnemies",
@@ -2078,7 +2078,7 @@
   },
   "aoeAttackMagC": {
     "id": "aoeAttackMagC",
-    "name": "마력진 C",
+    "name": "마력폭발",
     "grade": "C",
     "category": "aoeAttack",
     "target": "allEnemies",
@@ -2097,7 +2097,7 @@
   },
   "elemAttackFireC": {
     "id": "elemAttackFireC",
-    "name": "염화 C",
+    "name": "폭염",
     "grade": "C",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -2116,7 +2116,7 @@
   },
   "elemAttackIceC": {
     "id": "elemAttackIceC",
-    "name": "빙침 C",
+    "name": "동결파",
     "grade": "C",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -2135,7 +2135,7 @@
   },
   "elemAttackWaterC": {
     "id": "elemAttackWaterC",
-    "name": "수파 C",
+    "name": "해류격",
     "grade": "C",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -2154,7 +2154,7 @@
   },
   "elemAttackWindC": {
     "id": "elemAttackWindC",
-    "name": "열풍 C",
+    "name": "열풍격",
     "grade": "C",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -2173,7 +2173,7 @@
   },
   "elemAttackEarthC": {
     "id": "elemAttackEarthC",
-    "name": "암쇄 C",
+    "name": "암쇄",
     "grade": "C",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -2192,7 +2192,7 @@
   },
   "elemAttackElectricC": {
     "id": "elemAttackElectricC",
-    "name": "뇌격 C",
+    "name": "낙뢰",
     "grade": "C",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -2211,7 +2211,7 @@
   },
   "elemAttackLightC": {
     "id": "elemAttackLightC",
-    "name": "성섬 C",
+    "name": "광명격",
     "grade": "C",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -2230,7 +2230,7 @@
   },
   "elemAttackDarkC": {
     "id": "elemAttackDarkC",
-    "name": "명침 C",
+    "name": "암흑파",
     "grade": "C",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -2249,7 +2249,7 @@
   },
   "singleCcStunC": {
     "id": "singleCcStunC",
-    "name": "충격파 C",
+    "name": "지축격",
     "grade": "C",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -2273,7 +2273,7 @@
   },
   "singleCcFreezeC": {
     "id": "singleCcFreezeC",
-    "name": "동결술 C",
+    "name": "빙쇄파",
     "grade": "C",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -2297,7 +2297,7 @@
   },
   "singleCcParalyzeC": {
     "id": "singleCcParalyzeC",
-    "name": "전류속박 C",
+    "name": "마비전류",
     "grade": "C",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -2321,7 +2321,7 @@
   },
   "singleCcSleepC": {
     "id": "singleCcSleepC",
-    "name": "수면의 자장가 C",
+    "name": "자장가",
     "grade": "C",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -2345,7 +2345,7 @@
   },
   "singleCcBindC": {
     "id": "singleCcBindC",
-    "name": "사슬결박 C",
+    "name": "속박진",
     "grade": "C",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -2369,7 +2369,7 @@
   },
   "singleCcCurseC": {
     "id": "singleCcCurseC",
-    "name": "흑사의 저주 C",
+    "name": "원혼의 저주",
     "grade": "C",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -2393,7 +2393,7 @@
   },
   "singleCcSilenceC": {
     "id": "singleCcSilenceC",
-    "name": "봉인술 C",
+    "name": "마력봉인",
     "grade": "C",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -2417,7 +2417,7 @@
   },
   "singleCcSlowC": {
     "id": "singleCcSlowC",
-    "name": "둔중의 주박 C",
+    "name": "시간지연",
     "grade": "C",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -2441,7 +2441,7 @@
   },
   "singleCcBlindC": {
     "id": "singleCcBlindC",
-    "name": "암막술 C",
+    "name": "시야차단",
     "grade": "C",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -2465,7 +2465,7 @@
   },
   "singleCcPoisonC": {
     "id": "singleCcPoisonC",
-    "name": "명독술 C",
+    "name": "맹독술",
     "grade": "C",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -2489,7 +2489,7 @@
   },
   "singleCcBleedC": {
     "id": "singleCcBleedC",
-    "name": "열상격 C",
+    "name": "출혈참",
     "grade": "C",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -2513,7 +2513,7 @@
   },
   "singleCcBurnC": {
     "id": "singleCcBurnC",
-    "name": "점화술 C",
+    "name": "발화",
     "grade": "C",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -2537,7 +2537,7 @@
   },
   "aoeCcStunC": {
     "id": "aoeCcStunC",
-    "name": "지진파 C",
+    "name": "파쇄충격",
     "grade": "C",
     "category": "aoeCC",
     "target": "allEnemies",
@@ -2561,7 +2561,7 @@
   },
   "aoeCcFreezeC": {
     "id": "aoeCcFreezeC",
-    "name": "절대영도 C",
+    "name": "빙결의 파동",
     "grade": "C",
     "category": "aoeCC",
     "target": "allEnemies",
@@ -2585,7 +2585,7 @@
   },
   "aoeCcPoisonC": {
     "id": "aoeCcPoisonC",
-    "name": "독무 C",
+    "name": "독안개진",
     "grade": "C",
     "category": "aoeCC",
     "target": "allEnemies",
@@ -2609,7 +2609,7 @@
   },
   "aoeCcBurnC": {
     "id": "aoeCcBurnC",
-    "name": "업화 C",
+    "name": "업화",
     "grade": "C",
     "category": "aoeCC",
     "target": "allEnemies",
@@ -2633,7 +2633,7 @@
   },
   "singleHealC": {
     "id": "singleHealC",
-    "name": "치유의 빛 C",
+    "name": "생명의 손길",
     "grade": "C",
     "category": "singleHeal",
     "target": "singleAlly",
@@ -2652,7 +2652,7 @@
   },
   "aoeHealC": {
     "id": "aoeHealC",
-    "name": "생명의 노래 C",
+    "name": "대지의 은혜",
     "grade": "C",
     "category": "aoeHeal",
     "target": "allAllies",
@@ -2671,7 +2671,7 @@
   },
   "buffStrC": {
     "id": "buffStrC",
-    "name": "투사의 함성 C",
+    "name": "전투격려",
     "grade": "C",
     "category": "buff",
     "target": "self",
@@ -2696,7 +2696,7 @@
   },
   "buffConC": {
     "id": "buffConC",
-    "name": "강철 의지 C",
+    "name": "견고한 방벽",
     "grade": "C",
     "category": "buff",
     "target": "self",
@@ -2721,7 +2721,7 @@
   },
   "buffIntC": {
     "id": "buffIntC",
-    "name": "명석의 비전 C",
+    "name": "지혜의 각성",
     "grade": "C",
     "category": "buff",
     "target": "self",
@@ -2746,7 +2746,7 @@
   },
   "buffAgiC": {
     "id": "buffAgiC",
-    "name": "질풍 보법 C",
+    "name": "그림자 걸음",
     "grade": "C",
     "category": "buff",
     "target": "self",
@@ -2771,7 +2771,7 @@
   },
   "buffSenseC": {
     "id": "buffSenseC",
-    "name": "매의 눈 C",
+    "name": "천리안",
     "grade": "C",
     "category": "buff",
     "target": "self",
@@ -2796,7 +2796,7 @@
   },
   "buffPdefC": {
     "id": "buffPdefC",
-    "name": "석갑 부여 C",
+    "name": "철벽방어",
     "grade": "C",
     "category": "buff",
     "target": "self",
@@ -2821,7 +2821,7 @@
   },
   "buffMdefC": {
     "id": "buffMdefC",
-    "name": "마력 방벽 C",
+    "name": "마법저항",
     "grade": "C",
     "category": "buff",
     "target": "self",
@@ -2846,7 +2846,7 @@
   },
   "buffTauntC": {
     "id": "buffTauntC",
-    "name": "도발 C",
+    "name": "전장의 포효",
     "grade": "C",
     "category": "buff",
     "target": "self",
@@ -2870,7 +2870,7 @@
   },
   "passiveStrC": {
     "id": "passiveStrC",
-    "name": "근력 단련 C",
+    "name": "전사의 힘",
     "grade": "C",
     "category": "passive",
     "target": "self",
@@ -2893,7 +2893,7 @@
   },
   "passiveConC": {
     "id": "passiveConC",
-    "name": "체력 단련 C",
+    "name": "전사의 체력",
     "grade": "C",
     "category": "passive",
     "target": "self",
@@ -2916,7 +2916,7 @@
   },
   "passiveIntC": {
     "id": "passiveIntC",
-    "name": "지력 수련 C",
+    "name": "학자의 지식",
     "grade": "C",
     "category": "passive",
     "target": "self",
@@ -2939,7 +2939,7 @@
   },
   "passiveAgiC": {
     "id": "passiveAgiC",
-    "name": "신속 수련 C",
+    "name": "암살자의 발걸음",
     "grade": "C",
     "category": "passive",
     "target": "self",
@@ -2962,7 +2962,7 @@
   },
   "passiveSenseC": {
     "id": "passiveSenseC",
-    "name": "감각 연마 C",
+    "name": "사냥꾼의 감각",
     "grade": "C",
     "category": "passive",
     "target": "self",
@@ -2985,7 +2985,7 @@
   },
   "passivePdefC": {
     "id": "passivePdefC",
-    "name": "방어 숙련 C",
+    "name": "철벽 수호",
     "grade": "C",
     "category": "passive",
     "target": "self",
@@ -3008,7 +3008,7 @@
   },
   "passiveMdefC": {
     "id": "passiveMdefC",
-    "name": "마법 내성 C",
+    "name": "마력 차단",
     "grade": "C",
     "category": "passive",
     "target": "self",
@@ -3031,7 +3031,7 @@
   },
   "singleAttackPhysB": {
     "id": "singleAttackPhysB",
-    "name": "강격 B",
+    "name": "파쇄일섬",
     "grade": "B",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -3050,7 +3050,7 @@
   },
   "singleAttackMagB": {
     "id": "singleAttackMagB",
-    "name": "마탄 B",
+    "name": "섬멸의 탄환",
     "grade": "B",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -3069,7 +3069,7 @@
   },
   "aoeAttackPhysB": {
     "id": "aoeAttackPhysB",
-    "name": "난무 B",
+    "name": "광풍난무",
     "grade": "B",
     "category": "aoeAttack",
     "target": "allEnemies",
@@ -3088,7 +3088,7 @@
   },
   "aoeAttackMagB": {
     "id": "aoeAttackMagB",
-    "name": "마력진 B",
+    "name": "마기의 폭류",
     "grade": "B",
     "category": "aoeAttack",
     "target": "allEnemies",
@@ -3107,7 +3107,7 @@
   },
   "elemAttackFireB": {
     "id": "elemAttackFireB",
-    "name": "염화 B",
+    "name": "업화격",
     "grade": "B",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -3126,7 +3126,7 @@
   },
   "elemAttackIceB": {
     "id": "elemAttackIceB",
-    "name": "빙침 B",
+    "name": "빙폭",
     "grade": "B",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -3145,7 +3145,7 @@
   },
   "elemAttackWaterB": {
     "id": "elemAttackWaterB",
-    "name": "수파 B",
+    "name": "격류",
     "grade": "B",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -3164,7 +3164,7 @@
   },
   "elemAttackWindB": {
     "id": "elemAttackWindB",
-    "name": "열풍 B",
+    "name": "폭풍참",
     "grade": "B",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -3183,7 +3183,7 @@
   },
   "elemAttackEarthB": {
     "id": "elemAttackEarthB",
-    "name": "암쇄 B",
+    "name": "지각붕괴",
     "grade": "B",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -3202,7 +3202,7 @@
   },
   "elemAttackElectricB": {
     "id": "elemAttackElectricB",
-    "name": "뇌격 B",
+    "name": "뇌전",
     "grade": "B",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -3221,7 +3221,7 @@
   },
   "elemAttackLightB": {
     "id": "elemAttackLightB",
-    "name": "성섬 B",
+    "name": "성스러운 빛",
     "grade": "B",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -3240,7 +3240,7 @@
   },
   "elemAttackDarkB": {
     "id": "elemAttackDarkB",
-    "name": "명침 B",
+    "name": "심연의 손길",
     "grade": "B",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -3259,7 +3259,7 @@
   },
   "singleCcStunB": {
     "id": "singleCcStunB",
-    "name": "충격파 B",
+    "name": "뇌진격",
     "grade": "B",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -3283,7 +3283,7 @@
   },
   "singleCcFreezeB": {
     "id": "singleCcFreezeB",
-    "name": "동결술 B",
+    "name": "극한동파",
     "grade": "B",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -3307,7 +3307,7 @@
   },
   "singleCcParalyzeB": {
     "id": "singleCcParalyzeB",
-    "name": "전류속박 B",
+    "name": "신경차단",
     "grade": "B",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -3331,7 +3331,7 @@
   },
   "singleCcSleepB": {
     "id": "singleCcSleepB",
-    "name": "수면의 자장가 B",
+    "name": "깊은 잠",
     "grade": "B",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -3355,7 +3355,7 @@
   },
   "singleCcBindB": {
     "id": "singleCcBindB",
-    "name": "사슬결박 B",
+    "name": "구속쇄",
     "grade": "B",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -3379,7 +3379,7 @@
   },
   "singleCcCurseB": {
     "id": "singleCcCurseB",
-    "name": "흑사의 저주 B",
+    "name": "파멸의 저주",
     "grade": "B",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -3403,7 +3403,7 @@
   },
   "singleCcSilenceB": {
     "id": "singleCcSilenceB",
-    "name": "봉인술 B",
+    "name": "정신쇄",
     "grade": "B",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -3427,7 +3427,7 @@
   },
   "singleCcSlowB": {
     "id": "singleCcSlowB",
-    "name": "둔중의 주박 B",
+    "name": "중력구속",
     "grade": "B",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -3451,7 +3451,7 @@
   },
   "singleCcBlindB": {
     "id": "singleCcBlindB",
-    "name": "암막술 B",
+    "name": "암흑안개",
     "grade": "B",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -3475,7 +3475,7 @@
   },
   "singleCcPoisonB": {
     "id": "singleCcPoisonB",
-    "name": "명독술 B",
+    "name": "독사의 이빨",
     "grade": "B",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -3499,7 +3499,7 @@
   },
   "singleCcBleedB": {
     "id": "singleCcBleedB",
-    "name": "열상격 B",
+    "name": "혈풍참",
     "grade": "B",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -3523,7 +3523,7 @@
   },
   "singleCcBurnB": {
     "id": "singleCcBurnB",
-    "name": "점화술 B",
+    "name": "화염방사",
     "grade": "B",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -3547,7 +3547,7 @@
   },
   "aoeCcStunB": {
     "id": "aoeCcStunB",
-    "name": "지진파 B",
+    "name": "충격파동",
     "grade": "B",
     "category": "aoeCC",
     "target": "allEnemies",
@@ -3571,7 +3571,7 @@
   },
   "aoeCcFreezeB": {
     "id": "aoeCcFreezeB",
-    "name": "절대영도 B",
+    "name": "빙하의 포효",
     "grade": "B",
     "category": "aoeCC",
     "target": "allEnemies",
@@ -3595,7 +3595,7 @@
   },
   "aoeCcPoisonB": {
     "id": "aoeCcPoisonB",
-    "name": "독무 B",
+    "name": "역병의 숨결",
     "grade": "B",
     "category": "aoeCC",
     "target": "allEnemies",
@@ -3619,7 +3619,7 @@
   },
   "aoeCcBurnB": {
     "id": "aoeCcBurnB",
-    "name": "업화 B",
+    "name": "화염폭풍",
     "grade": "B",
     "category": "aoeCC",
     "target": "allEnemies",
@@ -3643,7 +3643,7 @@
   },
   "singleHealB": {
     "id": "singleHealB",
-    "name": "치유의 빛 B",
+    "name": "신성한 치유",
     "grade": "B",
     "category": "singleHeal",
     "target": "singleAlly",
@@ -3662,7 +3662,7 @@
   },
   "aoeHealB": {
     "id": "aoeHealB",
-    "name": "생명의 노래 B",
+    "name": "성스러운 비",
     "grade": "B",
     "category": "aoeHeal",
     "target": "allAllies",
@@ -3681,7 +3681,7 @@
   },
   "buffStrB": {
     "id": "buffStrB",
-    "name": "투사의 함성 B",
+    "name": "광전사의 분노",
     "grade": "B",
     "category": "buff",
     "target": "self",
@@ -3706,7 +3706,7 @@
   },
   "buffConB": {
     "id": "buffConB",
-    "name": "강철 의지 B",
+    "name": "불굴의 의지",
     "grade": "B",
     "category": "buff",
     "target": "self",
@@ -3731,7 +3731,7 @@
   },
   "buffIntB": {
     "id": "buffIntB",
-    "name": "명석의 비전 B",
+    "name": "마력 해방",
     "grade": "B",
     "category": "buff",
     "target": "self",
@@ -3756,7 +3756,7 @@
   },
   "buffAgiB": {
     "id": "buffAgiB",
-    "name": "질풍 보법 B",
+    "name": "번개 발걸음",
     "grade": "B",
     "category": "buff",
     "target": "self",
@@ -3781,7 +3781,7 @@
   },
   "buffSenseB": {
     "id": "buffSenseB",
-    "name": "매의 눈 B",
+    "name": "예지의 눈",
     "grade": "B",
     "category": "buff",
     "target": "self",
@@ -3806,7 +3806,7 @@
   },
   "buffPdefB": {
     "id": "buffPdefB",
-    "name": "석갑 부여 B",
+    "name": "난공불락",
     "grade": "B",
     "category": "buff",
     "target": "self",
@@ -3831,7 +3831,7 @@
   },
   "buffMdefB": {
     "id": "buffMdefB",
-    "name": "마력 방벽 B",
+    "name": "마법반사",
     "grade": "B",
     "category": "buff",
     "target": "self",
@@ -3856,7 +3856,7 @@
   },
   "buffTauntB": {
     "id": "buffTauntB",
-    "name": "도발 B",
+    "name": "왕의 위엄",
     "grade": "B",
     "category": "buff",
     "target": "self",
@@ -3880,7 +3880,7 @@
   },
   "passiveStrB": {
     "id": "passiveStrB",
-    "name": "근력 단련 B",
+    "name": "강인한 근력",
     "grade": "B",
     "category": "passive",
     "target": "self",
@@ -3903,7 +3903,7 @@
   },
   "passiveConB": {
     "id": "passiveConB",
-    "name": "체력 단련 B",
+    "name": "강인한 체력",
     "grade": "B",
     "category": "passive",
     "target": "self",
@@ -3926,7 +3926,7 @@
   },
   "passiveIntB": {
     "id": "passiveIntB",
-    "name": "지력 수련 B",
+    "name": "현자의 지혜",
     "grade": "B",
     "category": "passive",
     "target": "self",
@@ -3949,7 +3949,7 @@
   },
   "passiveAgiB": {
     "id": "passiveAgiB",
-    "name": "신속 수련 B",
+    "name": "바람의 민첩",
     "grade": "B",
     "category": "passive",
     "target": "self",
@@ -3972,7 +3972,7 @@
   },
   "passiveSenseB": {
     "id": "passiveSenseB",
-    "name": "감각 연마 B",
+    "name": "예리한 감각",
     "grade": "B",
     "category": "passive",
     "target": "self",
@@ -3995,7 +3995,7 @@
   },
   "passivePdefB": {
     "id": "passivePdefB",
-    "name": "방어 숙련 B",
+    "name": "요새의 몸",
     "grade": "B",
     "category": "passive",
     "target": "self",
@@ -4018,7 +4018,7 @@
   },
   "passiveMdefB": {
     "id": "passiveMdefB",
-    "name": "마법 내성 B",
+    "name": "마법저항 체질",
     "grade": "B",
     "category": "passive",
     "target": "self",
@@ -4041,7 +4041,7 @@
   },
   "singleAttackPhysA": {
     "id": "singleAttackPhysA",
-    "name": "강격 A",
+    "name": "멸살참",
     "grade": "A",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -4060,7 +4060,7 @@
   },
   "singleAttackMagA": {
     "id": "singleAttackMagA",
-    "name": "마탄 A",
+    "name": "마멸포",
     "grade": "A",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -4079,7 +4079,7 @@
   },
   "aoeAttackPhysA": {
     "id": "aoeAttackPhysA",
-    "name": "난무 A",
+    "name": "천격연무",
     "grade": "A",
     "category": "aoeAttack",
     "target": "allEnemies",
@@ -4098,7 +4098,7 @@
   },
   "aoeAttackMagA": {
     "id": "aoeAttackMagA",
-    "name": "마력진 A",
+    "name": "성마의 진",
     "grade": "A",
     "category": "aoeAttack",
     "target": "allEnemies",
@@ -4117,7 +4117,7 @@
   },
   "elemAttackFireA": {
     "id": "elemAttackFireA",
-    "name": "염화 A",
+    "name": "홍련의 불꽃",
     "grade": "A",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -4136,7 +4136,7 @@
   },
   "elemAttackIceA": {
     "id": "elemAttackIceA",
-    "name": "빙침 A",
+    "name": "영겁의 서리",
     "grade": "A",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -4155,7 +4155,7 @@
   },
   "elemAttackWaterA": {
     "id": "elemAttackWaterA",
-    "name": "수파 A",
+    "name": "폭류의 파도",
     "grade": "A",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -4174,7 +4174,7 @@
   },
   "elemAttackWindA": {
     "id": "elemAttackWindA",
-    "name": "열풍 A",
+    "name": "진공의 칼날",
     "grade": "A",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -4193,7 +4193,7 @@
   },
   "elemAttackEarthA": {
     "id": "elemAttackEarthA",
-    "name": "암쇄 A",
+    "name": "산악의 진노",
     "grade": "A",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -4212,7 +4212,7 @@
   },
   "elemAttackElectricA": {
     "id": "elemAttackElectricA",
-    "name": "뇌격 A",
+    "name": "뇌신의 번개",
     "grade": "A",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -4231,7 +4231,7 @@
   },
   "elemAttackLightA": {
     "id": "elemAttackLightA",
-    "name": "성섬 A",
+    "name": "천광의 창",
     "grade": "A",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -4250,7 +4250,7 @@
   },
   "elemAttackDarkA": {
     "id": "elemAttackDarkA",
-    "name": "명침 A",
+    "name": "황혼의 칼날",
     "grade": "A",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -4269,7 +4269,7 @@
   },
   "singleCcStunA": {
     "id": "singleCcStunA",
-    "name": "충격파 A",
+    "name": "공명파괴",
     "grade": "A",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -4293,7 +4293,7 @@
   },
   "singleCcFreezeA": {
     "id": "singleCcFreezeA",
-    "name": "동결술 A",
+    "name": "빙하의 감옥",
     "grade": "A",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -4317,7 +4317,7 @@
   },
   "singleCcParalyzeA": {
     "id": "singleCcParalyzeA",
-    "name": "전류속박 A",
+    "name": "전신마비",
     "grade": "A",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -4341,7 +4341,7 @@
   },
   "singleCcSleepA": {
     "id": "singleCcSleepA",
-    "name": "수면의 자장가 A",
+    "name": "천년의 안식",
     "grade": "A",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -4365,7 +4365,7 @@
   },
   "singleCcBindA": {
     "id": "singleCcBindA",
-    "name": "사슬결박 A",
+    "name": "천쇄의 감옥",
     "grade": "A",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -4389,7 +4389,7 @@
   },
   "singleCcCurseA": {
     "id": "singleCcCurseA",
-    "name": "흑사의 저주 A",
+    "name": "사신의 낙인",
     "grade": "A",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -4413,7 +4413,7 @@
   },
   "singleCcSilenceA": {
     "id": "singleCcSilenceA",
-    "name": "봉인술 A",
+    "name": "영혼봉인",
     "grade": "A",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -4437,7 +4437,7 @@
   },
   "singleCcSlowA": {
     "id": "singleCcSlowA",
-    "name": "둔중의 주박 A",
+    "name": "시간왜곡",
     "grade": "A",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -4461,7 +4461,7 @@
   },
   "singleCcBlindA": {
     "id": "singleCcBlindA",
-    "name": "암막술 A",
+    "name": "무한어둠",
     "grade": "A",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -4485,7 +4485,7 @@
   },
   "singleCcPoisonA": {
     "id": "singleCcPoisonA",
-    "name": "명독술 A",
+    "name": "치명독",
     "grade": "A",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -4509,7 +4509,7 @@
   },
   "singleCcBleedA": {
     "id": "singleCcBleedA",
-    "name": "열상격 A",
+    "name": "피의 광풍",
     "grade": "A",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -4533,7 +4533,7 @@
   },
   "singleCcBurnA": {
     "id": "singleCcBurnA",
-    "name": "점화술 A",
+    "name": "홍련격",
     "grade": "A",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -4557,7 +4557,7 @@
   },
   "aoeCcStunA": {
     "id": "aoeCcStunA",
-    "name": "지진파 A",
+    "name": "천둥의 진",
     "grade": "A",
     "category": "aoeCC",
     "target": "allEnemies",
@@ -4581,7 +4581,7 @@
   },
   "aoeCcFreezeA": {
     "id": "aoeCcFreezeA",
-    "name": "절대영도 A",
+    "name": "동토의 결계",
     "grade": "A",
     "category": "aoeCC",
     "target": "allEnemies",
@@ -4605,7 +4605,7 @@
   },
   "aoeCcPoisonA": {
     "id": "aoeCcPoisonA",
-    "name": "독무 A",
+    "name": "만독의 진",
     "grade": "A",
     "category": "aoeCC",
     "target": "allEnemies",
@@ -4629,7 +4629,7 @@
   },
   "aoeCcBurnA": {
     "id": "aoeCcBurnA",
-    "name": "업화 A",
+    "name": "불꽃지옥",
     "grade": "A",
     "category": "aoeCC",
     "target": "allEnemies",
@@ -4653,7 +4653,7 @@
   },
   "singleHealA": {
     "id": "singleHealA",
-    "name": "치유의 빛 A",
+    "name": "천사의 가호",
     "grade": "A",
     "category": "singleHeal",
     "target": "singleAlly",
@@ -4672,7 +4672,7 @@
   },
   "aoeHealA": {
     "id": "aoeHealA",
-    "name": "생명의 노래 A",
+    "name": "천사의 찬가",
     "grade": "A",
     "category": "aoeHeal",
     "target": "allAllies",
@@ -4691,7 +4691,7 @@
   },
   "buffStrA": {
     "id": "buffStrA",
-    "name": "투사의 함성 A",
+    "name": "영웅의 함성",
     "grade": "A",
     "category": "buff",
     "target": "self",
@@ -4716,7 +4716,7 @@
   },
   "buffConA": {
     "id": "buffConA",
-    "name": "강철 의지 A",
+    "name": "불사의 육체",
     "grade": "A",
     "category": "buff",
     "target": "self",
@@ -4741,7 +4741,7 @@
   },
   "buffIntA": {
     "id": "buffIntA",
-    "name": "명석의 비전 A",
+    "name": "대현자의 지혜",
     "grade": "A",
     "category": "buff",
     "target": "self",
@@ -4766,7 +4766,7 @@
   },
   "buffAgiA": {
     "id": "buffAgiA",
-    "name": "질풍 보법 A",
+    "name": "잔상보법",
     "grade": "A",
     "category": "buff",
     "target": "self",
@@ -4791,7 +4791,7 @@
   },
   "buffSenseA": {
     "id": "buffSenseA",
-    "name": "매의 눈 A",
+    "name": "만물감지",
     "grade": "A",
     "category": "buff",
     "target": "self",
@@ -4816,7 +4816,7 @@
   },
   "buffPdefA": {
     "id": "buffPdefA",
-    "name": "석갑 부여 A",
+    "name": "무적의 방패",
     "grade": "A",
     "category": "buff",
     "target": "self",
@@ -4841,7 +4841,7 @@
   },
   "buffMdefA": {
     "id": "buffMdefA",
-    "name": "마력 방벽 A",
+    "name": "마력무효화",
     "grade": "A",
     "category": "buff",
     "target": "self",
@@ -4866,7 +4866,7 @@
   },
   "buffTauntA": {
     "id": "buffTauntA",
-    "name": "도발 A",
+    "name": "공포의 기운",
     "grade": "A",
     "category": "buff",
     "target": "self",
@@ -4890,7 +4890,7 @@
   },
   "passiveStrA": {
     "id": "passiveStrA",
-    "name": "근력 단련 A",
+    "name": "초인의 힘",
     "grade": "A",
     "category": "passive",
     "target": "self",
@@ -4913,7 +4913,7 @@
   },
   "passiveConA": {
     "id": "passiveConA",
-    "name": "체력 단련 A",
+    "name": "초인의 체력",
     "grade": "A",
     "category": "passive",
     "target": "self",
@@ -4936,7 +4936,7 @@
   },
   "passiveIntA": {
     "id": "passiveIntA",
-    "name": "지력 수련 A",
+    "name": "대마도사의 지력",
     "grade": "A",
     "category": "passive",
     "target": "self",
@@ -4959,7 +4959,7 @@
   },
   "passiveAgiA": {
     "id": "passiveAgiA",
-    "name": "신속 수련 A",
+    "name": "번개의 몸놀림",
     "grade": "A",
     "category": "passive",
     "target": "self",
@@ -4982,7 +4982,7 @@
   },
   "passiveSenseA": {
     "id": "passiveSenseA",
-    "name": "감각 연마 A",
+    "name": "초감각",
     "grade": "A",
     "category": "passive",
     "target": "self",
@@ -5005,7 +5005,7 @@
   },
   "passivePdefA": {
     "id": "passivePdefA",
-    "name": "방어 숙련 A",
+    "name": "강철 피부",
     "grade": "A",
     "category": "passive",
     "target": "self",
@@ -5028,7 +5028,7 @@
   },
   "passiveMdefA": {
     "id": "passiveMdefA",
-    "name": "마법 내성 A",
+    "name": "마력 면역",
     "grade": "A",
     "category": "passive",
     "target": "self",
@@ -5051,7 +5051,7 @@
   },
   "singleAttackPhysS": {
     "id": "singleAttackPhysS",
-    "name": "강격 S",
+    "name": "천벌의 일격",
     "grade": "S",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -5070,7 +5070,7 @@
   },
   "singleAttackMagS": {
     "id": "singleAttackMagS",
-    "name": "마탄 S",
+    "name": "성천의 마탄",
     "grade": "S",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -5089,7 +5089,7 @@
   },
   "aoeAttackPhysS": {
     "id": "aoeAttackPhysS",
-    "name": "난무 S",
+    "name": "멸살의 광풍",
     "grade": "S",
     "category": "aoeAttack",
     "target": "allEnemies",
@@ -5108,7 +5108,7 @@
   },
   "aoeAttackMagS": {
     "id": "aoeAttackMagS",
-    "name": "마력진 S",
+    "name": "궁극의 마력진",
     "grade": "S",
     "category": "aoeAttack",
     "target": "allEnemies",
@@ -5127,7 +5127,7 @@
   },
   "elemAttackFireS": {
     "id": "elemAttackFireS",
-    "name": "염화 S",
+    "name": "멸화의 극염",
     "grade": "S",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -5146,7 +5146,7 @@
   },
   "elemAttackIceS": {
     "id": "elemAttackIceS",
-    "name": "빙침 S",
+    "name": "극한빙결",
     "grade": "S",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -5165,7 +5165,7 @@
   },
   "elemAttackWaterS": {
     "id": "elemAttackWaterS",
-    "name": "수파 S",
+    "name": "심해의 포효",
     "grade": "S",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -5184,7 +5184,7 @@
   },
   "elemAttackWindS": {
     "id": "elemAttackWindS",
-    "name": "열풍 S",
+    "name": "천공의 폭풍",
     "grade": "S",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -5203,7 +5203,7 @@
   },
   "elemAttackEarthS": {
     "id": "elemAttackEarthS",
-    "name": "암쇄 S",
+    "name": "대지의 심판",
     "grade": "S",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -5222,7 +5222,7 @@
   },
   "elemAttackElectricS": {
     "id": "elemAttackElectricS",
-    "name": "뇌격 S",
+    "name": "만뢰의 심판",
     "grade": "S",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -5241,7 +5241,7 @@
   },
   "elemAttackLightS": {
     "id": "elemAttackLightS",
-    "name": "성섬 S",
+    "name": "성천의 심판",
     "grade": "S",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -5260,7 +5260,7 @@
   },
   "elemAttackDarkS": {
     "id": "elemAttackDarkS",
-    "name": "명침 S",
+    "name": "나락의 심판",
     "grade": "S",
     "category": "singleAttack",
     "target": "singleEnemy",
@@ -5279,7 +5279,7 @@
   },
   "singleCcStunS": {
     "id": "singleCcStunS",
-    "name": "충격파 S",
+    "name": "천둥의 일격",
     "grade": "S",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -5303,7 +5303,7 @@
   },
   "singleCcFreezeS": {
     "id": "singleCcFreezeS",
-    "name": "동결술 S",
+    "name": "시간동결",
     "grade": "S",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -5327,7 +5327,7 @@
   },
   "singleCcParalyzeS": {
     "id": "singleCcParalyzeS",
-    "name": "전류속박 S",
+    "name": "절대속박",
     "grade": "S",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -5351,7 +5351,7 @@
   },
   "singleCcSleepS": {
     "id": "singleCcSleepS",
-    "name": "수면의 자장가 S",
+    "name": "영겁의 잠",
     "grade": "S",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -5375,7 +5375,7 @@
   },
   "singleCcBindS": {
     "id": "singleCcBindS",
-    "name": "사슬결박 S",
+    "name": "차원봉인",
     "grade": "S",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -5399,7 +5399,7 @@
   },
   "singleCcCurseS": {
     "id": "singleCcCurseS",
-    "name": "흑사의 저주 S",
+    "name": "천벌의 저주",
     "grade": "S",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -5423,7 +5423,7 @@
   },
   "singleCcSilenceS": {
     "id": "singleCcSilenceS",
-    "name": "봉인술 S",
+    "name": "절대침묵",
     "grade": "S",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -5447,7 +5447,7 @@
   },
   "singleCcSlowS": {
     "id": "singleCcSlowS",
-    "name": "둔중의 주박 S",
+    "name": "시공정지",
     "grade": "S",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -5471,7 +5471,7 @@
   },
   "singleCcBlindS": {
     "id": "singleCcBlindS",
-    "name": "암막술 S",
+    "name": "심연의 눈",
     "grade": "S",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -5495,7 +5495,7 @@
   },
   "singleCcPoisonS": {
     "id": "singleCcPoisonS",
-    "name": "명독술 S",
+    "name": "멸독의 비수",
     "grade": "S",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -5519,7 +5519,7 @@
   },
   "singleCcBleedS": {
     "id": "singleCcBleedS",
-    "name": "열상격 S",
+    "name": "혈계의 참격",
     "grade": "S",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -5543,7 +5543,7 @@
   },
   "singleCcBurnS": {
     "id": "singleCcBurnS",
-    "name": "점화술 S",
+    "name": "지옥의 업화",
     "grade": "S",
     "category": "singleCC",
     "target": "singleEnemy",
@@ -5567,7 +5567,7 @@
   },
   "aoeCcStunS": {
     "id": "aoeCcStunS",
-    "name": "지진파 S",
+    "name": "신벌의 지진",
     "grade": "S",
     "category": "aoeCC",
     "target": "allEnemies",
@@ -5591,7 +5591,7 @@
   },
   "aoeCcFreezeS": {
     "id": "aoeCcFreezeS",
-    "name": "절대영도 S",
+    "name": "빙결의 종말",
     "grade": "S",
     "category": "aoeCC",
     "target": "allEnemies",
@@ -5615,7 +5615,7 @@
   },
   "aoeCcPoisonS": {
     "id": "aoeCcPoisonS",
-    "name": "독무 S",
+    "name": "멸독의 안개",
     "grade": "S",
     "category": "aoeCC",
     "target": "allEnemies",
@@ -5639,7 +5639,7 @@
   },
   "aoeCcBurnS": {
     "id": "aoeCcBurnS",
-    "name": "업화 S",
+    "name": "종말의 화염",
     "grade": "S",
     "category": "aoeCC",
     "target": "allEnemies",
@@ -5663,7 +5663,7 @@
   },
   "singleHealS": {
     "id": "singleHealS",
-    "name": "치유의 빛 S",
+    "name": "기적의 치유",
     "grade": "S",
     "category": "singleHeal",
     "target": "singleAlly",
@@ -5682,7 +5682,7 @@
   },
   "aoeHealS": {
     "id": "aoeHealS",
-    "name": "생명의 노래 S",
+    "name": "기적의 성가",
     "grade": "S",
     "category": "aoeHeal",
     "target": "allAllies",
@@ -5701,7 +5701,7 @@
   },
   "buffStrS": {
     "id": "buffStrS",
-    "name": "투사의 함성 S",
+    "name": "전쟁신의 축복",
     "grade": "S",
     "category": "buff",
     "target": "self",
@@ -5726,7 +5726,7 @@
   },
   "buffConS": {
     "id": "buffConS",
-    "name": "강철 의지 S",
+    "name": "신체의 축복",
     "grade": "S",
     "category": "buff",
     "target": "self",
@@ -5751,7 +5751,7 @@
   },
   "buffIntS": {
     "id": "buffIntS",
-    "name": "명석의 비전 S",
+    "name": "전지의 축복",
     "grade": "S",
     "category": "buff",
     "target": "self",
@@ -5776,7 +5776,7 @@
   },
   "buffAgiS": {
     "id": "buffAgiS",
-    "name": "질풍 보법 S",
+    "name": "시공의 축복",
     "grade": "S",
     "category": "buff",
     "target": "self",
@@ -5801,7 +5801,7 @@
   },
   "buffSenseS": {
     "id": "buffSenseS",
-    "name": "매의 눈 S",
+    "name": "전지전능의 눈",
     "grade": "S",
     "category": "buff",
     "target": "self",
@@ -5826,7 +5826,7 @@
   },
   "buffPdefS": {
     "id": "buffPdefS",
-    "name": "석갑 부여 S",
+    "name": "절대방어",
     "grade": "S",
     "category": "buff",
     "target": "self",
@@ -5851,7 +5851,7 @@
   },
   "buffMdefS": {
     "id": "buffMdefS",
-    "name": "마력 방벽 S",
+    "name": "절대마방",
     "grade": "S",
     "category": "buff",
     "target": "self",
@@ -5876,7 +5876,7 @@
   },
   "buffTauntS": {
     "id": "buffTauntS",
-    "name": "도발 S",
+    "name": "절대지배",
     "grade": "S",
     "category": "buff",
     "target": "self",
@@ -5900,7 +5900,7 @@
   },
   "passiveStrS": {
     "id": "passiveStrS",
-    "name": "근력 단련 S",
+    "name": "신의 근력",
     "grade": "S",
     "category": "passive",
     "target": "self",
@@ -5923,7 +5923,7 @@
   },
   "passiveConS": {
     "id": "passiveConS",
-    "name": "체력 단련 S",
+    "name": "신의 체력",
     "grade": "S",
     "category": "passive",
     "target": "self",
@@ -5946,7 +5946,7 @@
   },
   "passiveIntS": {
     "id": "passiveIntS",
-    "name": "지력 수련 S",
+    "name": "신의 지력",
     "grade": "S",
     "category": "passive",
     "target": "self",
@@ -5969,7 +5969,7 @@
   },
   "passiveAgiS": {
     "id": "passiveAgiS",
-    "name": "신속 수련 S",
+    "name": "신의 민첩",
     "grade": "S",
     "category": "passive",
     "target": "self",
@@ -5992,7 +5992,7 @@
   },
   "passiveSenseS": {
     "id": "passiveSenseS",
-    "name": "감각 연마 S",
+    "name": "신의 감각",
     "grade": "S",
     "category": "passive",
     "target": "self",
@@ -6015,7 +6015,7 @@
   },
   "passivePdefS": {
     "id": "passivePdefS",
-    "name": "방어 숙련 S",
+    "name": "신의 갑옷",
     "grade": "S",
     "category": "passive",
     "target": "self",
@@ -6038,7 +6038,7 @@
   },
   "passiveMdefS": {
     "id": "passiveMdefS",
-    "name": "마법 내성 S",
+    "name": "신의 마력",
     "grade": "S",
     "category": "passive",
     "target": "self",
