@@ -37,9 +37,9 @@ try {
     bleed_apply:2, burn_apply:2, curse_apply:2, poison_apply:2,
     fire_damage:2, water_damage:2, ice_damage:2, earth_damage:2,
     wind_damage:2, lightning_damage:2, light_damage:2, dark_damage:2,
+    stat_str_up:2, stat_con_up:2, stat_int_up:2, stat_agi_up:2, stat_sense_up:2,
     healing_done:3, magic_defense:3, physical_defense:3, shield_effect:3,
     pdef_flat:3, mdef_flat:3,
-    stat_str_up:3, stat_con_up:3, stat_int_up:3, stat_agi_up:3, stat_sense_up:3,
     healing_received:4, bleed_resist:4, burn_resist:4, curse_resist:4,
     fire_resist:4, water_resist:4, ice_resist:4, earth_resist:4,
     wind_resist:4, lightning_resist:4, light_resist:4, dark_resist:4,
@@ -890,12 +890,12 @@ const DEFAULT_RARE_MATERIAL_PACK = {
       "S": 70
     },
     "statFlat": {
-      "E": 1,
-      "D": 2,
-      "C": 3,
-      "B": 5,
-      "A": 7,
-      "S": 10
+      "E": 2,
+      "D": 4,
+      "C": 7,
+      "B": 10,
+      "A": 14,
+      "S": 20
     }
   },
   "traits": [
@@ -4709,6 +4709,8 @@ function getBuffedStat(unit, statKey) {
     if (attacker && attacker.isMonster && Number(attacker.monsterBaseDamage || 0) > 0) {
       const isSkill = !!(skill && skill.id && skill.id !== 'basicAttack');
       rawBase = Number(attacker.monsterBaseDamage || 1) * (isSkill ? Number(attacker.monsterSkillMul || 1) : 1);
+      // 몬스터 광역 스킬: 대상당 데미지 ×0.58 감소 (헌터 광역 계수와 동일)
+      if (skill && (skill.category === 'aoeAttack' || skill.category === 'aoeCC')) rawBase *= 0.58;
     } else {
       const mainStat = getStatPower(attacker, skill);
       rawBase = (2 * mainStat) + (3 * Number(attacker.atk || 0));
