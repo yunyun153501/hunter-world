@@ -434,6 +434,14 @@ const ARMOR_STAT_BY_RANK = {
   A: { totalStatSum:11, defRange:[0,100], resistance:7, enhanceStat:5 },
   S: { totalStatSum:16, defRange:[0,200], resistance:10,enhanceStat:6 },
 };
+// Armor subtypes: different defense multipliers, stat pools, and stat bonus modifiers
+const ARMOR_SUBTYPES = {
+  heavy:   { label:'중갑',   defMul:[0.90,1.00], statPool:['con','str'], atkMul:-0.10, statBonusMul:0 },
+  light:   { label:'경갑',   defMul:[0.70,0.80], statPool:['con','str','agi'], atkMul:0, statBonusMul:0 },
+  leather: { label:'가죽갑', defMul:[0.50,0.60], statPool:['str','agi','int','sense'], atkMul:0, statBonusMul:0.10 },
+  robe:    { label:'로브',   defMul:[0.40,0.50], statPool:['agi','int','sense'], atkMul:0, statBonusMul:0.20 }
+};
+const ARMOR_SUBTYPE_KEYS = ['heavy','light','leather','robe'];
 // Accessory base stats by rank
 const ACCESSORY_STAT_BY_RANK = {
   E: { totalStatSum:0,   traits:1, enhanceStat:1 },
@@ -4272,9 +4280,20 @@ function buildDropEquipment(rank, forcePart) {
   const price = basePrice + traitBonus;
   const uid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const partLabel = EQUIP_PART_LABELS[part] || part;
-  const nameSuffixes = { weapon:['검','창','활','완드','도끼'], armor:['갑옷','로브','체인메일','플레이트'], subweapon:['방패'], accessory:['반지','목걸이','팔찌'] };
-  const suffArr = nameSuffixes[part] || [partLabel];
-  const suff = suffArr[Math.floor(Math.random() * suffArr.length)];
+  // Armor subtype selection
+  let armorSubtype = null;
+  if (part === 'armor') {
+    const subKey = ARMOR_SUBTYPE_KEYS[Math.floor(Math.random() * ARMOR_SUBTYPE_KEYS.length)];
+    armorSubtype = { key: subKey, ...ARMOR_SUBTYPES[subKey] };
+  }
+  const nameSuffixes = { weapon:['검','창','활','완드','도끼'], subweapon:['방패'], accessory:['반지','목걸이','팔찌'] };
+  let suff;
+  if (part === 'armor' && armorSubtype) {
+    suff = armorSubtype.label;
+  } else {
+    const suffArr = nameSuffixes[part] || [partLabel];
+    suff = suffArr[Math.floor(Math.random() * suffArr.length)];
+  }
   // 희귀도 자동 판정
   const { rarity: autoRarity, traitTier: autoTier } = assignEquipRarity(part, traits[0] || '');
   const name = `${r}급 드랍 ${suff}${hasTrait ? ` [${traitName}]` : ''}`;
@@ -4298,10 +4317,12 @@ function buildDropEquipment(rank, forcePart) {
     unitWeightG: EQUIP_WEIGHT_G[part] || 1000,
     stackKey: `equipment:drop_${r}_${part}_${uid}`,
     note: hasTrait ? `게이트 드랍. 특성: ${traitName} | 특성주입 최대 ${maxInfuse}회` : `게이트 드랍. 특성주입 최대 ${maxInfuse}회`,
-    atk: part === 'weapon' ? (WEAPON_BASE_ATK[r] || 5) : 0,
-    pdef: part === 'armor' ? Math.round((ARMOR_STAT_BY_RANK[r]||{defRange:[0,5]}).defRange[1] * 0.5) : (part === 'subweapon' ? Math.round((ARMOR_STAT_BY_RANK[r]||{defRange:[0,5]}).defRange[1] * 0.25) : 0),
-    mdef: part === 'armor' ? Math.round((ARMOR_STAT_BY_RANK[r]||{defRange:[0,5]}).defRange[1] * 0.5) : 0,
-    mainStat: part === 'weapon' ? (Math.random() < 0.5 ? 'str' : 'int') : (part === 'armor' ? 'con' : 'str'),
+    atk: part === 'weapon' ? (WEAPON_BASE_ATK[r] || 5) : (part === 'armor' && armorSubtype && armorSubtype.atkMul ? Math.round((WEAPON_BASE_ATK[r] || 5) * armorSubtype.atkMul) : 0),
+    pdef: part === 'armor' ? (() => { const base = (ARMOR_STAT_BY_RANK[r]||{defRange:[0,5]}).defRange[1]; const [lo,hi] = armorSubtype ? armorSubtype.defMul : [0.5,0.5]; const mul = lo + Math.random()*(hi-lo); return Math.round(base * mul); })() : (part === 'subweapon' ? Math.round((ARMOR_STAT_BY_RANK[r]||{defRange:[0,5]}).defRange[1] * 0.25) : 0),
+    mdef: part === 'armor' ? (() => { const base = (ARMOR_STAT_BY_RANK[r]||{defRange:[0,5]}).defRange[1]; const [lo,hi] = armorSubtype ? armorSubtype.defMul : [0.5,0.5]; const mul = lo + Math.random()*(hi-lo); return Math.round(base * mul); })() : 0,
+    mainStat: part === 'weapon' ? (Math.random() < 0.5 ? 'str' : 'int') : (part === 'armor' && armorSubtype ? armorSubtype.statPool[Math.floor(Math.random() * armorSubtype.statPool.length)] : (part === 'armor' ? 'con' : 'str')),
+    armorSubtype: armorSubtype ? armorSubtype.key : undefined,
+    armorStatBonusMul: armorSubtype ? armorSubtype.statBonusMul : undefined,
     resistType: '',
     resistPct: 0
   };
@@ -6530,9 +6551,15 @@ function seedNpcAuctionListings() {
       const ratio = randomAuctionRatio();
       const askPrice = Math.round(marketPrice * ratio);
       const uid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + i;
-      const nameSuffixes = { weapon:['검','창','활','완드','도끼'], armor:['갑옷','로브','체인메일','플레이트'], subweapon:['방패'], accessory:['반지','목걸이','팔찌'] };
-      const suffArr = nameSuffixes[part] || [EQUIP_PART_LABELS[part]||part];
-      const suff = suffArr[Math.floor(Math.random() * suffArr.length)];
+      const _armorSub = part === 'armor' ? (() => { const k = ARMOR_SUBTYPE_KEYS[Math.floor(Math.random()*ARMOR_SUBTYPE_KEYS.length)]; return {key:k,...ARMOR_SUBTYPES[k]}; })() : null;
+      const nameSuffixes = { weapon:['검','창','활','완드','도끼'], subweapon:['방패'], accessory:['반지','목걸이','팔찌'] };
+      let suff;
+      if (part === 'armor' && _armorSub) {
+        suff = _armorSub.label;
+      } else {
+        const suffArr = nameSuffixes[part] || [EQUIP_PART_LABELS[part]||part];
+        suff = suffArr[Math.floor(Math.random() * suffArr.length)];
+      }
       // 희귀도 자동 판정: 실제 특성 ID 기반
       const { rarity: npcRarity, traitTier: npcTier } = assignEquipRarity(part, traitId);
       const traitLabel = hasTrait ? ` [${traitName}]` : '';
@@ -6545,10 +6572,12 @@ function seedNpcAuctionListings() {
         category: 'equipment', isDropped: true, stackable: false,
         unitWeightG: EQUIP_WEIGHT_G[part] || 1000,
         stackKey: `equipment:npc_${uid}`, note: `NPC 경매 등록${hasTrait ? `. 특성: ${traitName}` : ''}`,
-        atk: part === 'weapon' ? (WEAPON_BASE_ATK[rank] || 5) : 0,
-        pdef: part === 'armor' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.5) : (part === 'subweapon' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.25) : 0),
-        mdef: part === 'armor' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.5) : 0,
-        mainStat: part === 'weapon' ? (Math.random() < 0.5 ? 'str' : 'int') : (part === 'armor' ? 'con' : 'str'),
+        atk: part === 'weapon' ? (WEAPON_BASE_ATK[rank] || 5) : (part === 'armor' && _armorSub && _armorSub.atkMul ? Math.round((WEAPON_BASE_ATK[rank] || 5) * _armorSub.atkMul) : 0),
+        pdef: part === 'armor' ? (() => { const base = (ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1]; const [lo,hi] = _armorSub ? _armorSub.defMul : [0.5,0.5]; const mul = lo + Math.random()*(hi-lo); return Math.round(base * mul); })() : (part === 'subweapon' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.25) : 0),
+        mdef: part === 'armor' ? (() => { const base = (ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1]; const [lo,hi] = _armorSub ? _armorSub.defMul : [0.5,0.5]; const mul = lo + Math.random()*(hi-lo); return Math.round(base * mul); })() : 0,
+        mainStat: part === 'weapon' ? (Math.random() < 0.5 ? 'str' : 'int') : (part === 'armor' && _armorSub ? _armorSub.statPool[Math.floor(Math.random() * _armorSub.statPool.length)] : (part === 'armor' ? 'con' : 'str')),
+        armorSubtype: _armorSub ? _armorSub.key : undefined,
+        armorStatBonusMul: _armorSub ? _armorSub.statBonusMul : undefined,
         resistType: '', resistPct: 0
       };
       model.db.auctionListings.push({ id: `auc_npc_${uid}`, item, askPrice, marketPrice, priceRatio: ratio, isNpc: true, listedAt: Date.now() });
@@ -7332,9 +7361,15 @@ function seedNpcUsedListings() {
     const conditionMul = calcUsedEquipConditionMul(dur, maxDur);
     const usedPrice = Math.round(marketPrice * conditionMul);
     const uid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + i;
-    const nameSuffixes = { weapon:['검','창','활','완드','도끼'], armor:['갑옷','로브','체인메일','플레이트'], subweapon:['방패'], accessory:['반지','목걸이','팔찌'] };
-    const suffArr = nameSuffixes[part] || [EQUIP_PART_LABELS[part]||part];
-    const suff = suffArr[Math.floor(Math.random() * suffArr.length)];
+    const _armorSub = part === 'armor' ? (() => { const k = ARMOR_SUBTYPE_KEYS[Math.floor(Math.random()*ARMOR_SUBTYPE_KEYS.length)]; return {key:k,...ARMOR_SUBTYPES[k]}; })() : null;
+    const nameSuffixes = { weapon:['검','창','활','완드','도끼'], subweapon:['방패'], accessory:['반지','목걸이','팔찌'] };
+    let suff;
+    if (part === 'armor' && _armorSub) {
+      suff = _armorSub.label;
+    } else {
+      const suffArr = nameSuffixes[part] || [EQUIP_PART_LABELS[part]||part];
+      suff = suffArr[Math.floor(Math.random() * suffArr.length)];
+    }
     const enhLabel = enhance > 0 ? ` +${enhance}` : '';
     const traitLabel = hasTrait ? ` [${traitName}]` : '';
     // 희귀도 자동 판정
@@ -7348,10 +7383,12 @@ function seedNpcUsedListings() {
       unitWeightG: EQUIP_WEIGHT_G[part] || 1000,
       stackKey: `equipment:npc_used_${uid}`,
       note: `NPC 중고 등록${hasTrait ? `. 특성: ${traitName}` : ''}`,
-      atk: part === 'weapon' ? (WEAPON_BASE_ATK[rank] || 5) : 0,
-      pdef: part === 'armor' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.5) : (part === 'subweapon' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.25) : 0),
-      mdef: part === 'armor' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.5) : 0,
-      mainStat: part === 'weapon' ? (Math.random() < 0.5 ? 'str' : 'int') : (part === 'armor' ? 'con' : 'str'),
+      atk: part === 'weapon' ? (WEAPON_BASE_ATK[rank] || 5) : (part === 'armor' && _armorSub && _armorSub.atkMul ? Math.round((WEAPON_BASE_ATK[rank] || 5) * _armorSub.atkMul) : 0),
+      pdef: part === 'armor' ? (() => { const base = (ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1]; const [lo,hi] = _armorSub ? _armorSub.defMul : [0.5,0.5]; const mul = lo + Math.random()*(hi-lo); return Math.round(base * mul); })() : (part === 'subweapon' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.25) : 0),
+      mdef: part === 'armor' ? (() => { const base = (ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1]; const [lo,hi] = _armorSub ? _armorSub.defMul : [0.5,0.5]; const mul = lo + Math.random()*(hi-lo); return Math.round(base * mul); })() : 0,
+      mainStat: part === 'weapon' ? (Math.random() < 0.5 ? 'str' : 'int') : (part === 'armor' && _armorSub ? _armorSub.statPool[Math.floor(Math.random() * _armorSub.statPool.length)] : (part === 'armor' ? 'con' : 'str')),
+      armorSubtype: _armorSub ? _armorSub.key : undefined,
+      armorStatBonusMul: _armorSub ? _armorSub.statBonusMul : undefined,
       resistType: '', resistPct: 0
     };
     model.db.hmUsedListings.push({
@@ -9166,7 +9203,9 @@ function renderCommandPanel(runtime) {
       // 방어구/악세서리만 totalStatSum 기반 주스탯 보너스 적용 (무기/보조무기는 주스탯 없음)
       if (part === 'armor' && eq.mainStat && bonus[eq.mainStat] !== undefined) {
         const armorData = ARMOR_STAT_BY_RANK[eq.rank || 'E'] || ARMOR_STAT_BY_RANK.E;
-        bonus[eq.mainStat] += armorData.totalStatSum || 0;
+        const baseStat = armorData.totalStatSum || 0;
+        const subBonusMul = (eq.armorSubtype && ARMOR_SUBTYPES[eq.armorSubtype]) ? ARMOR_SUBTYPES[eq.armorSubtype].statBonusMul : 0;
+        bonus[eq.mainStat] += Math.round(baseStat * (1 + subBonusMul));
       }
       if (part === 'accessory' && eq.mainStat && bonus[eq.mainStat] !== undefined) {
         const accData = ACCESSORY_STAT_BY_RANK[eq.rank || 'E'] || ACCESSORY_STAT_BY_RANK.E;
@@ -9481,8 +9520,7 @@ function renderCommandPanel(runtime) {
     } else {
       item = {
         id:'', name:'', grade:'E', rarity:'Normal', category:'singleAttack', target:'singleEnemy', coef:0, mp:0, sp:0,
-        damageType:'physical', element:'none', statTypes:'', duration:0, ccType:'', ccTurns:0, ccChance:'', buffStat:'', buffValue:0, stealth:false, statusType:'', statusTurns:0, statusChance:'', cooldown:0, desc:'',
-        specialEffect:null
+        damageType:'physical', element:'none', statTypes:'', duration:0, ccType:'', ccTurns:0, ccChance:'', buffStat:'', buffValue:0, stealth:false, statusType:'', statusTurns:0, statusChance:'', cooldown:0, desc:''
       };
     }
     const catLabels = { singleAttack:'단일공격', aoeAttack:'광역공격', singleCC:'단일CC', aoeCC:'광역CC', singleHeal:'힐', aoeHeal:'광역힐', buff:'버프', passive:'패시브', utility:'유틸' };
@@ -9494,6 +9532,13 @@ function renderCommandPanel(runtime) {
       const catKey = sk.category || 'etc';
       if (!builtinsByCategory[catKey]) builtinsByCategory[catKey] = [];
       builtinsByCategory[catKey].push(sk);
+    });
+    // Merge custom skills into builtin accordion categories
+    const customFiltered = (model.db.customSkills || []).filter(c => !BUILTIN_SKILLS[c.id]);
+    customFiltered.forEach(c => {
+      const catKey = c.category || 'etc';
+      if (!builtinsByCategory[catKey]) builtinsByCategory[catKey] = [];
+      builtinsByCategory[catKey].push({ ...c, _isCustom: true });
     });
     function renderSkillRow(sk) {
       const cat = catLabels[sk.category] || sk.category;
@@ -9527,8 +9572,12 @@ function renderCommandPanel(runtime) {
       if (sk.statTypes) extras.push('스탯:' + (Array.isArray(sk.statTypes) ? sk.statTypes : [sk.statTypes]).join('/'));
       if (sk.cooldown) extras.push('쿨타임:' + sk.cooldown + '턴');
       const extraStr = extras.join(' · ');
-      return `<div class="gb-skill-row" data-load-builtin-skill="${escapeHtml(sk.id)}" style="padding:6px 0;border-bottom:1px solid rgba(148,163,184,0.1);cursor:pointer;" title="클릭하면 편집기로 불러옵니다">
-        <div><strong>${escapeHtml(sk.name)}</strong> <span class="gb-badge">${escapeHtml(grade)}</span>${rarity} <span class="gb-badge">${escapeHtml(cat)}</span> <span class="gb-badge">${escapeHtml(sk.id)}</span>${overrideBadge}</div>
+      const isCustom = sk._isCustom;
+      const clickAttr = isCustom ? `data-select-type="skills" data-id="${escapeHtml(sk.id)}"` : `data-load-builtin-skill="${escapeHtml(sk.id)}"`;
+      const customBadge = isCustom ? ' <span class="gb-badge" style="background:#22c55e;color:#fff;">커스텀</span>' : '';
+      const isActive = isCustom && sk.id === model.state.selected.skills;
+      return `<div class="gb-skill-row" ${clickAttr} style="padding:6px 0;border-bottom:1px solid rgba(148,163,184,0.1);cursor:pointer;${isActive?'background:#1e293b;border-radius:6px;padding-left:6px;':''}" title="클릭하면 편집기로 불러옵니다">
+        <div><strong>${escapeHtml(sk.name)}</strong> <span class="gb-badge">${escapeHtml(grade)}</span>${rarity} <span class="gb-badge">${escapeHtml(cat)}</span> <span class="gb-badge">${escapeHtml(sk.id)}</span>${overrideBadge}${customBadge}</div>
         <div style="font-size:12px;margin-top:2px;">${coefStr ? `<span style="color:#3b82f6;font-weight:600;">${escapeHtml(coefStr)}</span>` : ''}${costStr ? ` <span style="color:#f59e0b;">[${escapeHtml(costStr)}]</span>` : ''}</div>
         ${byRankStr ? `<div class="gb-sub" style="font-size:11px;margin-top:2px;">📈 성장: ${escapeHtml(byRankStr)}</div>` : ''}
         ${extraStr ? `<div class="gb-sub" style="font-size:11px;margin-top:1px;">${escapeHtml(extraStr)}</div>` : ''}
@@ -9536,9 +9585,11 @@ function renderCommandPanel(runtime) {
       </div>`;
     }
     const catOrder = ['singleAttack','aoeAttack','singleCC','aoeCC','singleHeal','aoeHeal','buff','passive','utility'];
-    const builtinAccordion = catOrder.filter(c => builtinsByCategory[c] && builtinsByCategory[c].length).map(catKey => {
-      const label = catLabels[catKey] || catKey;
-      const icon = catIcons[catKey] || '📋';
+    const builtinAccordionOrder = [...catOrder];
+    if (builtinsByCategory['etc'] && builtinsByCategory['etc'].length) builtinAccordionOrder.push('etc');
+    const builtinAccordion = builtinAccordionOrder.filter(c => builtinsByCategory[c] && builtinsByCategory[c].length).map(catKey => {
+      const label = catKey === 'etc' ? '기타' : (catLabels[catKey] || catKey);
+      const icon = catKey === 'etc' ? '📋' : (catIcons[catKey] || '📋');
       const items = builtinsByCategory[catKey];
       const rows = items.map(renderSkillRow).join('');
       return `<div class="gb-skill-accordion">
@@ -9551,70 +9602,6 @@ function renderCommandPanel(runtime) {
         </div>
       </div>`;
     }).join('');
-    const customFiltered = (model.db.customSkills || []).filter(c => !BUILTIN_SKILLS[c.id]);
-    const customByCat = {};
-    customFiltered.forEach(c => {
-      const catKey = c.category || 'etc';
-      if (!customByCat[catKey]) customByCat[catKey] = [];
-      customByCat[catKey].push(c);
-    });
-    const customAccordionCats = catOrder.filter(c => customByCat[c] && customByCat[c].length);
-    const etcCustom = customByCat['etc'];
-    if (etcCustom && etcCustom.length) customAccordionCats.push('etc');
-    function renderCustomSkillRow(sk) {
-      const cat = catLabels[sk.category] || sk.category;
-      const grade = sk.grade || '?';
-      const rarity = sk.rarity && sk.rarity !== 'Normal' ? ` <span class="gb-badge" style="background:#a855f7;color:#fff;">${escapeHtml(sk.rarity)}</span>` : '';
-      const costs = sk.costs || {};
-      const costParts = [];
-      if (costs.mp || sk.mp) costParts.push('MP:' + (costs.mp || sk.mp));
-      if (costs.sp || sk.sp) costParts.push('SP:' + (costs.sp || sk.sp));
-      const costStr = costParts.length ? costParts.join(' / ') : '';
-      const coefStr = sk.coef != null && sk.coef !== 0 ? '계수:' + sk.coef : (sk.baseSingleCoef != null ? '기본계수:' + sk.baseSingleCoef + ' (광역CC→½)' : '');
-      const byRankStr = sk.byRank ? Object.entries(sk.byRank).map(([g, v]) => {
-        const parts = [];
-        if (v.coef != null) parts.push('계수:' + v.coef);
-        if (v.costs) { if (v.costs.mp) parts.push('MP:' + v.costs.mp); if (v.costs.sp) parts.push('SP:' + v.costs.sp); }
-        if (v.buff && v.buff.stats) parts.push('버프:' + Object.entries(v.buff.stats).map(([s,n])=>s.toUpperCase()+'+'+n).join(','));
-        if (v.passiveBonuses) parts.push('패시브:' + Object.entries(v.passiveBonuses).map(([s,n])=>s.toUpperCase()+'+'+n).join(','));
-        return parts.length ? g + '(' + parts.join(', ') + ')' : '';
-      }).filter(Boolean).join(' | ') : '';
-      const extras = [];
-      if (sk.damageType) extras.push(sk.damageType === 'physical' ? '물리' : '마법');
-      if (sk.element && sk.element !== 'none') extras.push('속성:' + sk.element);
-      if (sk.cc) extras.push('CC:' + sk.cc.type + ' ' + sk.cc.turns + '턴');
-      if (sk.buff && sk.buff.stats) extras.push('버프:' + Object.entries(sk.buff.stats).map(([s,n])=>s.toUpperCase()+'+'+n).join(','));
-      if (sk.buff && sk.buff.threatBonus) extras.push('위협+' + sk.buff.threatBonus);
-      if (sk.duration) extras.push(sk.duration + '턴');
-      if (sk.resourceRestore) extras.push('회복:' + Object.entries(sk.resourceRestore).map(([k,v])=>k.toUpperCase()+'+'+v).join(','));
-      if (sk.passiveBonuses) extras.push('패시브:' + Object.entries(sk.passiveBonuses).map(([s,n])=>s.toUpperCase()+'+'+n).join(','));
-      if (sk.statTypes) extras.push('스탯:' + (Array.isArray(sk.statTypes) ? sk.statTypes : [sk.statTypes]).join('/'));
-      if (sk.cooldown) extras.push('쿨타임:' + sk.cooldown + '턴');
-      const extraStr = extras.join(' · ');
-      const isActive = sk.id === model.state.selected.skills;
-      return `<div class="gb-skill-row" data-select-type="skills" data-id="${escapeHtml(sk.id)}" style="padding:6px 0;border-bottom:1px solid rgba(148,163,184,0.1);cursor:pointer;${isActive?'background:#1e293b;border-radius:6px;padding-left:6px;':''}" title="클릭하면 편집기로 불러옵니다">
-        <div><strong>${escapeHtml(sk.name)}</strong> <span class="gb-badge">${escapeHtml(grade)}</span>${rarity} <span class="gb-badge">${escapeHtml(cat)}</span> <span class="gb-badge">${escapeHtml(sk.id)}</span></div>
-        <div style="font-size:12px;margin-top:2px;">${coefStr ? `<span style="color:#3b82f6;font-weight:600;">${escapeHtml(coefStr)}</span>` : ''}${costStr ? ` <span style="color:#f59e0b;">[${escapeHtml(costStr)}]</span>` : ''}</div>
-        ${byRankStr ? `<div class="gb-sub" style="font-size:11px;margin-top:2px;">📈 성장: ${escapeHtml(byRankStr)}</div>` : ''}
-        ${extraStr ? `<div class="gb-sub" style="font-size:11px;margin-top:1px;">${escapeHtml(extraStr)}</div>` : ''}
-        ${sk.desc ? `<div class="gb-skill-desc" style="margin-top:2px;">${escapeHtml(sk.desc)}</div>` : ''}
-      </div>`;
-    }
-    const list = customFiltered.length ? customAccordionCats.map(catKey => {
-      const label = catKey === 'etc' ? '기타' : (catLabels[catKey] || catKey);
-      const icon = catKey === 'etc' ? '📋' : (catIcons[catKey] || '📋');
-      const items = customByCat[catKey];
-      const rows = items.map(renderCustomSkillRow).join('');
-      return `<div class="gb-skill-accordion">
-        <div class="gb-skill-accordion-header" data-accordion-cat="custom_${escapeHtml(catKey)}">
-          <span>${icon} ${escapeHtml(label)} <span class="gb-sub">(${items.length}종)</span></span>
-          <span class="gb-skill-accordion-arrow">▶</span>
-        </div>
-        <div class="gb-skill-accordion-body" data-accordion-body="custom_${escapeHtml(catKey)}" style="display:none;">
-          <div class="gb-skill-list">${rows}</div>
-        </div>
-      </div>`;
-    }).join('') : '';
     const isEditingBuiltin = item.id && BUILTIN_SKILLS[item.id];
     const editorTitle = isEditingBuiltin ? `내장 스킬 편집 — <span style="color:#3b82f6;">${escapeHtml(item.name || item.id)}</span>` : '커스텀 스킬 편집';
     return `
@@ -9623,7 +9610,7 @@ function renderCommandPanel(runtime) {
         ${builtinAccordion}
       </div>` : ''}
       <div class="gb-grid db" style="margin-top:12px;">
-        <div class="gb-panel"><div class="gb-section-title">커스텀 스킬 목록 <span class="gb-sub">(카테고리를 클릭하여 펼치기)</span></div>${list || '<div class="gb-sub">등록된 커스텀 스킬 없음.</div>'}<div class="gb-btn-row"><button class="gb-btn" id="gb-skill-new">새 스킬</button><button class="gb-btn danger" id="gb-skill-clear-all">스킬 전체삭제</button></div></div>
+        <div class="gb-panel"><div class="gb-section-title">커스텀 스킬 관리</div><div class="gb-sub">커스텀 스킬은 위 카테고리 아코디언에 <span class="gb-badge" style="background:#22c55e;color:#fff;">커스텀</span> 태그와 함께 표시됩니다.</div><div class="gb-btn-row"><button class="gb-btn" id="gb-skill-new">새 스킬</button><button class="gb-btn danger" id="gb-skill-clear-all">스킬 전체삭제</button></div></div>
         <div class="gb-panel">
           <div class="gb-section-title">${editorTitle}</div>
           <div class="gb-grid two">
@@ -9652,29 +9639,6 @@ function renderCommandPanel(runtime) {
             <label>상태이상 턴<input class="gb-input" id="gb-skill-statusturns" type="number" value="${escapeHtml(item.statusTurns)}" /></label>
             <label>상태이상 확률(0~1)<input class="gb-input" id="gb-skill-statuschance" type="number" step="0.01" min="0" max="1" value="${escapeHtml(item.statusChance)}" placeholder="비우면 기본값" /></label>
             <label>쿨타임(턴)<input class="gb-input" id="gb-skill-cooldown" type="number" value="${escapeHtml(item.cooldown)}" placeholder="0=없음" /></label>
-          </div>
-
-          <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(148,163,184,0.15);">
-            <div class="gb-section-title">✨ 특수효과 (Special Effect)</div>
-            <div class="gb-sub">버프=아군 강화 효과, 디버프=적에게 받는 피해 증가 효과.</div>
-            <div class="gb-grid two" style="margin-top:6px;">
-              <label>효과 종류<select class="gb-input" id="gb-skill-sme-type">
-                <option value="" ${!(item.specialEffect&&item.specialEffect.type)?'selected':''}>없음</option>
-                <option value="buff" ${(item.specialEffect&&item.specialEffect.type)==='buff'?'selected':''}>버프 (아군 강화)</option>
-                <option value="debuff" ${(item.specialEffect&&item.specialEffect.type)==='debuff'?'selected':''}>디버프 (받는 피해 증가)</option>
-              </select></label>
-              <label>발동확률 (%)<input class="gb-input" id="gb-skill-sme-chance" type="number" min="0" max="100" value="${(item.specialEffect&&item.specialEffect.chance)||0}" /></label>
-              <label>효과 선택<select class="gb-input" id="gb-skill-sme-effect">
-                ${smeOptionsHtml((item.specialEffect&&item.specialEffect.effectId)||'', (item.specialEffect&&item.specialEffect.type)||'')}
-              </select></label>
-              <label>효과 수치<input class="gb-input" id="gb-skill-sme-value" type="number" value="${(item.specialEffect&&item.specialEffect.value)||0}" /></label>
-            </div>
-            ${item.specialEffect && item.specialEffect.effectId ? (() => {
-              const eff = getSpecialMaterialEffectById(item.specialEffect.effectId);
-              if (!eff) return '';
-              const desc = (item.specialEffect.type === 'debuff' && eff.canDebuff) ? eff.debuffDesc : eff.buffDesc;
-              return '<div class="gb-sub" style="margin-top:4px;color:#a78bfa;">미리보기: ' + escapeHtml((desc||'').replace(/N/g, String(item.specialEffect.value||0))) + ' (발동확률 ' + (item.specialEffect.chance||0) + '%)</div>';
-            })() : ''}
           </div>
 
           <label>설명<textarea class="gb-textarea short" id="gb-skill-desc">${escapeHtml(item.desc || '')}</textarea></label>
@@ -9904,6 +9868,7 @@ function renderCommandPanel(runtime) {
 
           ${part === 'armor' ? `
           <div class="gb-sub" style="margin-top:6px;">🛡 방어구: 물리방어/마법방어 ${armorStat.defRange?armorStat.defRange[0]+'~'+armorStat.defRange[1]:''} | 총 스탯합 ${armorStat.totalStatSum||0} | 강화당 주스탯 +${armorStat.enhanceStat||0}</div>
+          <div class="gb-sub" style="margin-top:4px;">🛡 방어구 종류: 중갑(방어90~100%,STR/CON,ATK-10%) · 경갑(방어70~80%,STR/CON/AGI) · 가죽(방어50~60%,STR/AGI/INT/SEN,스탯+10%) · 로브(방어40~50%,AGI/INT/SEN,스탯+20%)</div>
           <div class="gb-sub" style="color:#94a3b8;">⚗️ 저항은 희귀재료 인퓨즈로 부여 (DB에서 직접 수정 가능). 기본 저항 없음.</div>
           <div class="gb-grid two">
             <label>물리방어<input class="gb-input" id="gb-eq-pdef" type="number" value="${Number(item.pdef||0)}" /></label>
@@ -10560,17 +10525,6 @@ async function saveMaterialTraitFromForm() {
       const stChanceVal = fieldValue('#gb-skill-statuschance').trim();
       if (stChanceVal !== '') stObj.chance = Math.max(0, Math.min(1, Number(stChanceVal)));
       item.status = stObj;
-    }
-    // Special material effect
-    const skillSmeType = fieldValue('#gb-skill-sme-type');
-    const skillSmeEffect = fieldValue('#gb-skill-sme-effect');
-    if (skillSmeType && skillSmeEffect) {
-      item.specialEffect = {
-        type: skillSmeType,
-        effectId: skillSmeEffect,
-        chance: Math.max(0, Math.min(100, Number(fieldValue('#gb-skill-sme-chance')||0))),
-        value: Number(fieldValue('#gb-skill-sme-value')||0)
-      };
     }
     if (!item.name) throw new Error('스킬 이름이 비어 있다.');
     upsertById(model.db.customSkills, item);
