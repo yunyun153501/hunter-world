@@ -6698,6 +6698,16 @@ function renderHub() {
     ${runInfo}
     ${currentInfo}
     <div class="gb-panel">
+      <div class="gb-section-title">💾 데이터 관리</div>
+      <div class="gb-sub">플러그인 업데이트 전 반드시 데이터를 내보내기(백업) 해두세요. 불러오기로 이전 데이터를 복원할 수 있습니다.</div>
+      <div class="gb-btn-row" style="margin-top:8px;">
+        <button class="gb-btn primary" id="gb-data-export">📥 데이터 내보내기 (백업)</button>
+        <button class="gb-btn" id="gb-data-import">📤 데이터 불러오기 (복원)</button>
+        <button class="gb-btn" id="gb-data-clear" style="background:rgba(239,68,68,0.15);color:#fca5a5;">🗑️ 저장 데이터 전체 삭제</button>
+      </div>
+      <input type="file" id="gb-data-import-file" accept=".json" style="display:none;">
+    </div>
+    <div class="gb-panel">
       <div class="gb-section-title">v7.2 범위</div>
       <div class="gb-sub">허브 / 게이트 / 전투 / 파티 / 캐릭터 / 공용인벤 / DB / 협회(정산·경매) / 상점 / 주거 / 길드 / 가방·무게 / 게이트 자동 생성 / 방 단위 진행 / 광맥 채굴.</div>
       <div class="gb-rule">광역CC = 단일CC의 1/2 계수 + 자원 소모 2배</div>
@@ -10520,6 +10530,8 @@ function renderApp() {
     _startSellAuctionTimer();
   }
   const view = model.state.view || 'hub';
+  // Gate immersive fullscreen: skip header/nav when active gate run
+  const gateImmersive = view === 'gate' && activeGateRun();
   let body;
   if      (view === 'hub')         body = renderHub();
   else if (view === 'gate')        body = renderGateView();
@@ -10532,28 +10544,36 @@ function renderApp() {
   else if (view === 'home')        body = renderHomeView();
   else if (view === 'guild')       body = renderGuildView();
   else                             body = renderDbView();
-  root.innerHTML = `
-    <div class="gb-shell ${model.state.visible ? '' : 'hidden'}">
-      <div class="gb-header">
-        <div>
-          <div class="gb-title">⚔️ Gate Battle Prototype v7.4</div>
-          <div class="gb-sub">허브 · 게이트 · 전투 · 파티 · 캐릭터 · 공용인벤 · DB</div>
-        </div>
-        <div style="display:flex; gap:8px; align-items:flex-start; flex-wrap:wrap;">
-          <button class="gb-btn ${view==='hub'?'primary':''}" data-go="hub">허브</button>
-          <button class="gb-btn ${view==='gate'?'primary':''}" data-go="gate">게이트</button>
-          <button class="gb-btn ${view==='battle'?'primary':''}" data-go="battle">전투</button>
-          <button class="gb-btn ${view==='party'?'primary':''}" data-go="party">파티</button>
-          <button class="gb-btn ${view==='inventory'?'primary':''}" data-go="inventory">공용인벤</button>
-          <button class="gb-btn ${view==='character'?'primary':''}" data-go="character">캐릭터</button>
-          <button class="gb-btn ${view==='db'?'primary':''}" data-go="db">DB</button>
-          <button class="gb-btn" id="gb-close-ui">닫기</button>
-        </div>
+  if (gateImmersive) {
+    root.innerHTML = `
+      <div class="gb-shell ${model.state.visible ? '' : 'hidden'}">
+        ${body}
       </div>
-      ${renderDateCharBar()}
-      ${body}
-    </div>
-  `;
+    `;
+  } else {
+    root.innerHTML = `
+      <div class="gb-shell ${model.state.visible ? '' : 'hidden'}">
+        <div class="gb-header">
+          <div>
+            <div class="gb-title">⚔️ Gate Battle Prototype v7.4</div>
+            <div class="gb-sub">허브 · 게이트 · 전투 · 파티 · 캐릭터 · 공용인벤 · DB</div>
+          </div>
+          <div style="display:flex; gap:8px; align-items:flex-start; flex-wrap:wrap;">
+            <button class="gb-btn ${view==='hub'?'primary':''}" data-go="hub">허브</button>
+            <button class="gb-btn ${view==='gate'?'primary':''}" data-go="gate">게이트</button>
+            <button class="gb-btn ${view==='battle'?'primary':''}" data-go="battle">전투</button>
+            <button class="gb-btn ${view==='party'?'primary':''}" data-go="party">파티</button>
+            <button class="gb-btn ${view==='inventory'?'primary':''}" data-go="inventory">공용인벤</button>
+            <button class="gb-btn ${view==='character'?'primary':''}" data-go="character">캐릭터</button>
+            <button class="gb-btn ${view==='db'?'primary':''}" data-go="db">DB</button>
+            <button class="gb-btn" id="gb-close-ui">닫기</button>
+          </div>
+        </div>
+        ${renderDateCharBar()}
+        ${body}
+      </div>
+    `;
+  }
   bindUI();
 }
 
@@ -10571,11 +10591,12 @@ function readPartySlotsFromUI() {
     const runtime = model.state.runtime;
     const pending = {};
     getAlive(runtime.party).forEach(unit => {
-      pending[unit.uid] = {
-        mode: fieldValue(`#gb-act-mode-${unit.uid}`) || 'basic',
-        skillId: fieldValue(`#gb-act-skill-${unit.uid}`) || '',
-        target: fieldValue(`#gb-act-target-${unit.uid}`) || ''
-      };
+      let mode = fieldValue(`#gb-act-mode-${unit.uid}`) || 'basic';
+      const skillId = fieldValue(`#gb-act-skill-${unit.uid}`) || '';
+      const target = fieldValue(`#gb-act-target-${unit.uid}`) || '';
+      // 스킬이 선택되어 있으면 모드가 '기본공격'이어도 자동으로 스킬 모드로 전환
+      if (skillId && mode === 'basic') mode = 'skill';
+      pending[unit.uid] = { mode, skillId, target };
     });
     runtime.pendingActions = pending;
   }
@@ -11153,9 +11174,9 @@ async function saveMaterialTraitFromForm() {
     });
     on('[data-go]', 'click', async (ev) => {
       const target = ev.currentTarget.getAttribute('data-go');
-      // 게이트 진행 중에는 gate/battle 외 다른 화면 이동 차단
+      // 게이트 진행 중에는 gate/battle/party/hub 외 다른 화면 이동 차단
       if (activeGateRun()) {
-        const allowed = ['gate', 'battle', 'party'];
+        const allowed = ['gate', 'battle', 'party', 'hub'];
         if (!allowed.includes(target)) {
           alert('⚠️ 게이트 진행 중에는 다른 화면으로 이동할 수 없습니다. 후퇴하거나 클리어 후 이용해 주세요.');
           return;
@@ -11163,6 +11184,82 @@ async function saveMaterialTraitFromForm() {
       }
       model.state.view = target;
       await saveState();
+      renderApp();
+    });
+    // ── 데이터 관리 핸들러 (내보내기/불러오기/삭제) ────────────────────────────
+    on('#gb-data-export', 'click', () => {
+      try {
+        const exportData = {
+          _exportVersion: 'GateBattleV21',
+          _exportDate: new Date().toISOString(),
+          db: deepClone(model.db),
+          state: deepClone(model.state)
+        };
+        // runtime은 전투 중 임시 데이터이므로 제거
+        delete exportData.state.runtime;
+        const json = JSON.stringify(exportData, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        a.href = url;
+        a.download = `hunter-world-save-${dateStr}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast('💾 데이터를 파일로 내보냈습니다.');
+      } catch (e) { toast('내보내기 실패: ' + (e.message || String(e)), true); }
+    });
+    on('#gb-data-import', 'click', () => {
+      const fileInput = root.querySelector('#gb-data-import-file');
+      if (fileInput) fileInput.click();
+    });
+    on('#gb-data-import-file', 'change', async (ev) => {
+      try {
+        const file = ev.currentTarget.files && ev.currentTarget.files[0];
+        if (!file) return;
+        const text = await file.text();
+        const imported = JSON.parse(text);
+        if (!imported || typeof imported !== 'object' || !imported.db) {
+          throw new Error('유효하지 않은 저장 파일입니다. (db 키가 없음)');
+        }
+        if (!confirm('⚠️ 현재 데이터를 불러온 데이터로 덮어씁니다.\n기존 데이터가 모두 교체됩니다.\n\n계속하시겠습니까?')) return;
+        model.db = Object.assign(buildDefaultDb(), imported.db);
+        if (imported.state && typeof imported.state === 'object') {
+          const next = buildDefaultState();
+          model.state = Object.assign(next, imported.state);
+          model.state.runtime = buildDefaultRuntime();
+          model.state.gate = Object.assign(buildDefaultGateState(), imported.state.gate || {});
+          if (model.state.gate && model.state.gate.run && typeof model.state.gate.run === 'object') {
+            if (model.state.gate.run.elapsedMinutes == null) model.state.gate.run.elapsedMinutes = 0;
+            if (!('postBattle' in model.state.gate.run)) model.state.gate.run.postBattle = null;
+            if (model.state.gate.run.partyStartCount == null) model.state.gate.run.partyStartCount = Array.isArray(model.state.gate.run.partyState) ? model.state.gate.run.partyState.length : 0;
+            if (!model.state.gate.run.campSupplies) model.state.gate.run.campSupplies = { used:false, legacyMigrated:false };
+            ensureGateLogContainers(model.state.gate.run);
+          }
+        }
+        model.state.visible = true;
+        getInventory();
+        if (!Array.isArray(model.db.auctionListings)) model.db.auctionListings = [];
+        if (!Array.isArray(model.db.hmUsedListings)) model.db.hmUsedListings = [];
+        ensureSelections();
+        await saveDb();
+        await saveState();
+        toast('✅ 데이터를 성공적으로 불러왔습니다!');
+        renderApp();
+      } catch (e) { toast('불러오기 실패: ' + (e.message || String(e)), true); }
+      ev.currentTarget.value = '';
+    });
+    on('#gb-data-clear', 'click', async () => {
+      if (!confirm('⚠️ 정말로 모든 저장 데이터를 삭제하시겠습니까?\n캐릭터, 장비, 인벤토리, 게이트 진행 등 모든 데이터가 초기화됩니다.\n\n이 작업은 되돌릴 수 없습니다!')) return;
+      if (!confirm('🔴 최종 확인: 정말 삭제하시겠습니까?')) return;
+      model.db = buildDefaultDb();
+      model.state = buildDefaultState();
+      model.state.visible = true;
+      await saveDb();
+      await saveState();
+      toast('🗑️ 모든 데이터가 초기화되었습니다.');
       renderApp();
     });
     // ── 날짜 시스템 핸들러 ─────────────────────────────────────────────────────
@@ -12781,8 +12878,9 @@ async function saveMaterialTraitFromForm() {
       model.state.gateRunTab = ev.currentTarget.getAttribute('data-gate-run-tab') || 'main';
       renderApp();
     });
-    // Gate fullscreen close → return to gate selection view
+    // Gate fullscreen close → return to hub view
     on('#gb-gate-fullscreen-close', 'click', () => {
+      model.state.view = 'hub';
       renderApp();
     });
     on('[data-stage-choice]', 'click', async (ev) => {
