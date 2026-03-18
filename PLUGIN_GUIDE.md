@@ -385,144 +385,127 @@ dark → light → ice → fire → water → earth → wind → electric → da
 
 ---
 
-### 5.1 특성 (Trait) 시스템 — 37종
+### 5.1 통합 특성 (Trait) 시스템 — 42종
 
-장비에 부여할 수 있는 특성은 총 **37종**이며, **4개 티어**로 구분됩니다.
+장비 특성, 재료 특수효과, 스킬 특수효과가 하나의 **통합 특성 시스템**으로 운영됩니다.
+총 **42종**이며, **4개 티어**로 구분됩니다. 수치는 장비 등급(E~S)에 따라 자동 적용됩니다.
+
+> 💡 **통합 특성**: 장비 주입, 스킬 특수효과, 장비 기본 특성이 모두 동일한 특성 ID와 수치 체계를 사용합니다.
+> - **디버프**: 10종(물리/마법/8속성 피해 증가)만 디버프로 전환 가능 (`canDebuff`)
+> - **버프**: 42종 모두 버프로 사용 가능
 
 #### 🗡️ 공격 특성 (12종)
 
-| ID | 이름 | 티어 |
-|----|------|:----:|
-| `physical_damage` | 물리 피해 증가 | 1 |
-| `magic_damage` | 마법 피해 증가 | 1 |
-| `crit_chance` | 크리티컬 확률 | 1 |
-| `crit_damage` | 크리티컬 피해 | 1 |
-| `fire_damage` | 화염 피해 증가 | 2 |
-| `water_damage` | 수속성 피해 증가 | 2 |
-| `ice_damage` | 빙결 피해 증가 | 2 |
-| `earth_damage` | 대지 피해 증가 | 2 |
-| `wind_damage` | 풍속성 피해 증가 | 2 |
-| `lightning_damage` | 번개 피해 증가 | 2 |
-| `light_damage` | 빛 피해 증가 | 2 |
-| `dark_damage` | 암흑 피해 증가 | 2 |
+| ID | 이름 | 티어 | 스케일 |
+|----|------|:----:|:------:|
+| `physical_damage` | 물리 피해 증가 | 1 | percentSmall |
+| `magic_damage` | 마법 피해 증가 | 1 | percentSmall |
+| `crit_chance` | 크리티컬 확률 | 1 | critChance |
+| `crit_damage` | 크리티컬 피해 | 1 | critDamage |
+| `fire_damage` | 화염 피해 증가 | 2 | statusPercent |
+| `water_damage` | 수속성 피해 증가 | 2 | statusPercent |
+| `ice_damage` | 빙결 피해 증가 | 2 | statusPercent |
+| `earth_damage` | 대지 피해 증가 | 2 | statusPercent |
+| `wind_damage` | 풍속성 피해 증가 | 2 | statusPercent |
+| `lightning_damage` | 번개 피해 증가 | 2 | statusPercent |
+| `light_damage` | 빛 피해 증가 | 2 | statusPercent |
+| `dark_damage` | 암흑 피해 증가 | 2 | statusPercent |
 
 #### 🛡️ 방어 특성 (12종)
 
-| ID | 이름 | 티어 |
-|----|------|:----:|
-| `physical_defense` | 물리피해감소 증가 | 3 |
-| `magic_defense` | 마법피해감소 증가 | 3 |
-| `pdef_flat` | 물리방어력 증가 | 3 |
-| `mdef_flat` | 마법방어력 증가 | 3 |
-| `fire_resist` | 화염 저항 | 4 |
-| `water_resist` | 수속성 저항 | 4 |
-| `ice_resist` | 빙결 저항 | 4 |
-| `earth_resist` | 대지 저항 | 4 |
-| `wind_resist` | 풍속성 저항 | 4 |
-| `lightning_resist` | 번개 저항 | 4 |
-| `light_resist` | 빛 저항 | 4 |
-| `dark_resist` | 암흑 저항 | 4 |
+| ID | 이름 | 티어 | 스케일 |
+|----|------|:----:|:------:|
+| `physical_defense` | 물리피해감소 증가 | 3 | percentSmall |
+| `magic_defense` | 마법피해감소 증가 | 3 | percentSmall |
+| `pdef_flat` | 물리방어력 증가 | 3 | defenseFlat |
+| `mdef_flat` | 마법방어력 증가 | 3 | defenseFlat |
+| `fire_resist` | 화염 저항 | 4 | statusPercent |
+| `water_resist` | 수속성 저항 | 4 | statusPercent |
+| `ice_resist` | 빙결 저항 | 4 | statusPercent |
+| `earth_resist` | 대지 저항 | 4 | statusPercent |
+| `wind_resist` | 풍속성 저항 | 4 | statusPercent |
+| `lightning_resist` | 번개 저항 | 4 | statusPercent |
+| `light_resist` | 빛 저항 | 4 | statusPercent |
+| `dark_resist` | 암흑 저항 | 4 | statusPercent |
 
 #### 💀 상태이상 적용 특성 (4종)
 
-| ID | 이름 | 티어 |
-|----|------|:----:|
-| `poison_apply` | 독 부여 확률 | 2 |
-| `bleed_apply` | 출혈 부여 확률 | 2 |
-| `burn_apply` | 화상 부여 확률 | 2 |
-| `curse_apply` | 저주 부여 확률 | 2 |
+| ID | 이름 | 티어 | 스케일 |
+|----|------|:----:|:------:|
+| `poison_apply` | 독 부여 확률 | 2 | statusPercent |
+| `bleed_apply` | 출혈 부여 확률 | 2 | statusPercent |
+| `burn_apply` | 화상 부여 확률 | 2 | statusPercent |
+| `curse_apply` | 저주 부여 확률 | 2 | statusPercent |
 
 #### 🛡️ 상태이상 저항 특성 (4종)
 
-| ID | 이름 | 티어 |
-|----|------|:----:|
-| `poison_resist` | 독 저항 | 4 |
-| `bleed_resist` | 출혈 저항 | 4 |
-| `burn_resist` | 화상 저항 | 4 |
-| `curse_resist` | 저주 저항 | 4 |
+| ID | 이름 | 티어 | 스케일 |
+|----|------|:----:|:------:|
+| `poison_resist` | 독 저항 | 4 | statusPercent |
+| `bleed_resist` | 출혈 저항 | 4 | statusPercent |
+| `burn_resist` | 화상 저항 | 4 | statusPercent |
+| `curse_resist` | 저주 저항 | 4 | statusPercent |
 
 #### 💚 지원 특성 (5종)
 
-| ID | 이름 | 티어 |
-|----|------|:----:|
-| `healing_done` | 치유량 증가 | 3 |
-| `healing_received` | 받는 치유량 증가 | 4 |
-| `shield_effect` | 보호막 효과 | 3 |
-| `threat_up` | 위협 증가 | 4 |
-| `threat_down` | 위협 감소 | 4 |
+| ID | 이름 | 티어 | 스케일 |
+|----|------|:----:|:------:|
+| `healing_done` | 치유량 증가 | 3 | percentSmall |
+| `healing_received` | 받는 치유량 증가 | 4 | percentSmall |
+| `shield_effect` | 보호막 효과 | 3 | statusPercent |
+| `threat_up` | 위협 증가 | 4 | threatPercent |
+| `threat_down` | 위협 감소 | 4 | threatPercent |
+
+#### 💪 스탯 특성 (5종) — 신규
+
+| ID | 이름 | 티어 | 스케일 | 효과 |
+|----|------|:----:|:------:|------|
+| `stat_str_up` | STR 증가 | 3 | statFlat | HP +3N, ATK +0.2N |
+| `stat_con_up` | CON 증가 | 3 | statFlat | HP +10N |
+| `stat_int_up` | INT 증가 | 3 | statFlat | MP +10N, ATK +0.3N |
+| `stat_agi_up` | AGI 증가 | 3 | statFlat | SP +10N, 행동순서 +2N, 크리확률 +0.25N% |
+| `stat_sense_up` | SENSE 증가 | 3 | statFlat | MP +3N, SP +3N, 명중률 +0.5N%, 크리확률 +0.25N% |
 
 #### 🎯 티어 분류
 
 | 티어 | 등급 | 포함 특성 |
 |:----:|------|-----------|
 | **Tier 1** | 🔴 희귀 | crit_chance, crit_damage, physical_damage, magic_damage |
-| **Tier 2** | 🟠 희귀 | 속성 피해 증가, 상태이상 적용 |
-| **Tier 3** | 🟢 일반 | physical_defense, magic_defense, pdef_flat, mdef_flat, healing_done, shield_effect |
-| **Tier 4** | ⬜ 일반 | 속성 저항류, 상태이상 저항류, 위협, healing_received |
+| **Tier 2** | 🟠 희귀 | 속성 피해 증가 (8종), 상태이상 적용 (4종) |
+| **Tier 3** | 🟢 일반 | physical_defense, magic_defense, pdef_flat, mdef_flat, healing_done, shield_effect, 스탯 증가 (5종) |
+| **Tier 4** | ⬜ 일반 | 속성 저항 (8종), 상태이상 저항 (4종), healing_received, threat_up, threat_down |
 
-#### 📊 특성 효과 수치 (등급별 %)
+#### 📊 특성 효과 수치 (등급별)
 
-| 카테고리 | E | D | C | B | A | S |
-|----------|:-:|:-:|:-:|:-:|:-:|:-:|
-| **percentSmall** (물리/마법 피해 증감, 치유) | 1% | 2% | 3% | 5% | 7% | 10% |
-| **statusPercent** (속성 피해/저항, 상태이상 확률/저항, 보호막) | 2% | 4% | 6% | 8% | 10% | 12% |
-| **critChance** (크리티컬 확률) | 1% | 2% | 3% | 4% | 5% | 7% |
-| **critDamage** (크리티컬 피해) | 5% | 10% | 15% | 20% | 25% | 35% |
-| **threatPercent** (위협 수치) | 10% | 20% | 30% | 40% | 50% | 60% |
-| **defenseFlat** (물리/마법 방어력, 고정값) | +3 | +8 | +20 | +35 | +50 | +70 |
+| 카테고리 | E | D | C | B | A | S | 적용 대상 |
+|----------|:-:|:-:|:-:|:-:|:-:|:-:|-----------|
+| **percentSmall** | 1% | 2% | 3% | 5% | 7% | 10% | 물리/마법 피해 증감, 치유 |
+| **statusPercent** | 2% | 4% | 6% | 8% | 10% | 12% | 속성 피해/저항, 상태이상 확률/저항, 보호막 |
+| **critChance** | 1% | 2% | 3% | 4% | 5% | 7% | 크리티컬 확률 |
+| **critDamage** | 5% | 10% | 15% | 20% | 25% | 35% | 크리티컬 피해 |
+| **threatPercent** | 10% | 20% | 30% | 40% | 50% | 60% | 위협 수치 |
+| **defenseFlat** | +3 | +8 | +20 | +35 | +50 | +70 | 물리/마법 방어력 (고정값) |
+| **statFlat** | +1 | +2 | +3 | +5 | +7 | +10 | 스탯 증가 (고정값) |
 
-> **v7.7 변경사항**:
-> - `shield_effect`가 `percentSmall` → `statusPercent`로 이동 (힐링보다 보호막이 더 높은 % 적용)
-> - 장비 특성이 전투에 자동 적용됨 (v7.6까지는 UI 표시만)
-> - 보호막 HP 시스템 삭제 (초과 회복→보호막 변환, 보호막 흡수 제거)
-> - HP/MP/SP에 레벨 보너스 +(레벨-1)×2 복원
+#### 🔴 디버프 가능 특성 (10종)
+
+피해 증가 계열만 디버프로 전환 가능합니다 (`canDebuff: true`).
+디버프 시 **적에게 해당 속성 "받는 피해 증가"** 효과를 적용합니다.
+
+| ID | 버프 효과 | 디버프 효과 |
+|----|-----------|-------------|
+| `physical_damage` | +N% 물리 피해 | +N% 받는 물리 피해 증가 |
+| `magic_damage` | +N% 마법 피해 | +N% 받는 마법 피해 증가 |
+| `fire_damage` | +N% 화염 피해 | +N% 받는 화염 피해 증가 |
+| `water_damage` | +N% 물 피해 | +N% 받는 물 피해 증가 |
+| `ice_damage` | +N% 빙결 피해 | +N% 받는 빙결 피해 증가 |
+| `earth_damage` | +N% 대지 피해 | +N% 받는 대지 피해 증가 |
+| `wind_damage` | +N% 바람 피해 | +N% 받는 바람 피해 증가 |
+| `lightning_damage` | +N% 번개 피해 | +N% 받는 번개 피해 증가 |
+| `light_damage` | +N% 빛 피해 | +N% 받는 빛 피해 증가 |
+| `dark_damage` | +N% 암흑 피해 | +N% 받는 암흑 피해 증가 |
 
 > ⚠️ **1개의 장비에 같은 특성은 중복 부여 불가**
-
-#### 📦 특수재료 효과 (SPECIAL_MATERIAL_EFFECTS)
-
-재료에 내장된 특수효과(`SPECIAL_MATERIAL_EFFECTS`)의 상세 분류입니다. 총 **24종**이 코드에 정의되어 있으며, 장비와 스킬에 적용 가능합니다.
-
-- **버프(buff)**: 자신 또는 아군에게 적용하여 해당 능력을 **증가**시킴
-- **디버프(debuff)**: 적에게 적용하여 해당 속성의 "**받는 피해를 증가**"시킴 (`canDebuff: true`인 효과만 가능)
-
-**🟢 버프 전용 효과 (14종)**
-
-| # | ID | 이름 | 분류 | 버프 효과 | 상세 설명 |
-|:-:|----|------|------|-----------|-----------|
-| 1 | `crit_chance_up` | 치명타 확률 증가 | 공격 | +N% 치확 | 크리티컬 적중 확률을 N% 증가. 기본 크리 확률: `0.25 × (AGI + SENSE)` (3~35%) |
-| 2 | `crit_damage_up` | 치명타 피해 증가 | 공격 | +N% 치피 | 크리티컬 적중 시 추가 피해 배율 N% 증가. 기본 크리 배율: ×1.5 |
-| 3 | `physical_defense_up` | 물리 방어 증가 | 방어 | +N% 물리 방어 | PDEF를 N% 증가 |
-| 4 | `magic_defense_up` | 마법 방어 증가 | 방어 | +N% 마법 방어 | MDEF를 N% 증가 |
-| 5 | `healing_up` | 회복량 증가 | 지원 | +N% 회복량 | 힐 스킬 회복량 N% 증가 |
-| 6 | `shield_up` | 보호막 효과 증가 | 지원 | +N% 보호막 효과 | 보호막 생성량 N% 증가 |
-| 7 | `stat_str_up` | STR 증가 | 스탯 | STR +N | HP +3N, ATK +0.2N, rawBase +2N(주스탯 시) |
-| 8 | `stat_con_up` | CON 증가 | 스탯 | CON +N | HP +10N, rawBase +2N(주스탯 시) |
-| 9 | `stat_int_up` | INT 증가 | 스탯 | INT +N | MP +10N, ATK +0.3N, rawBase +2N(주스탯 시) |
-| 10 | `stat_agi_up` | AGI 증가 | 스탯 | AGI +N | SP +10N, ATK +0.2N, 행동순서 +2N, 크리확률 +0.25N% |
-| 11 | `stat_sense_up` | SENSE 증가 | 스탯 | SENSE +N | MP +3N, SP +3N, 명중률 +0.5N%, 크리확률 +0.25N% |
-| 12 | `bleed_apply` | 출혈 부여 | 상태이상 | 출혈 부여 +N% | 피해의 30% 즉시 추가피해 + 3턴간 받는 회복량 50% 감소 |
-| 13 | `burn_apply` | 화상 부여 | 상태이상 | 화상 부여 +N% | 매턴 DoT + 받는 피해 +10%. 최대 5중첩 |
-| 14 | `curse_apply` | 저주 부여 | 상태이상 | 저주 부여 +N% | 공격력 감소 + 받는 피해 증가(E:10%~S:30%), 3턴 |
-
-**🔴 버프/디버프 겸용 효과 (10종)** — `canDebuff: true`
-
-| # | ID | 이름 | 버프 시 효과 | 디버프 시 효과 |
-|:-:|----|------|-------------|---------------|
-| 1 | `physical_damage_up` | 물리 피해 증가 | +N% 물리 피해 | +N% 받는 물리 피해 증가 |
-| 2 | `magic_damage_up` | 마법 피해 증가 | +N% 마법 피해 | +N% 받는 마법 피해 증가 |
-| 3 | `fire_damage_up` | 화염 피해 증가 | +N% 화염 피해 | +N% 받는 화염 피해 증가 |
-| 4 | `ice_damage_up` | 빙결 피해 증가 | +N% 빙결 피해 | +N% 받는 빙결 피해 증가 |
-| 5 | `lightning_damage_up` | 번개 피해 증가 | +N% 번개 피해 | +N% 받는 번개 피해 증가 |
-| 6 | `dark_damage_up` | 암흑 피해 증가 | +N% 암흑 피해 | +N% 받는 암흑 피해 증가 |
-| 7 | `water_damage_up` | 물 피해 증가 | +N% 물 피해 | +N% 받는 물 피해 증가 |
-| 8 | `earth_damage_up` | 대지 피해 증가 | +N% 대지 피해 | +N% 받는 대지 피해 증가 |
-| 9 | `wind_damage_up` | 바람 피해 증가 | +N% 바람 피해 | +N% 받는 바람 피해 증가 |
-| 10 | `light_damage_up` | 빛 피해 증가 | +N% 빛 피해 | +N% 받는 빛 피해 증가 |
-
-> 💡 `canDebuff: true` 효과만 디버프로 사용 가능. 버프로 사용 시 자신/아군 강화, 디버프로 사용 시 적에게 해당 속성 "받는 피해 증가" 적용.
-
-> 코드 참조: `SPECIAL_MATERIAL_EFFECTS` 배열, `smeOptionsHtml()` 함수 (type='debuff' 시 canDebuff:true 필터링)
 
 #### 🎯 상태이상 일람
 
@@ -1136,10 +1119,10 @@ dark → light → ice → fire → water → earth → wind → electric → da
 | 기본 스탯 수 | 5종 (STR, CON, INT, AGI, SENSE) |
 | 속성 수 | 8종 (순환 상성) |
 | 종족 수 | 10종 |
-| 장비 특성 수 | 37종 (4티어) |
+| 통합 특성 수 | 42종 (4티어, 디버프 10종 포함) |
 | 물약 종류 수 | 42종 (7타입 × 6등급) |
 | 물약 일일 한도 | 5회 (6회째 효율 20%) |
-| 특수재료효과 수 | 24종 (버프 14 + 디버프 겸용 10) |
+| 특수재료효과 수 | → 통합 특성에 포함 (42종) |
 | 스킬 카테고리 | 8종 |
 | 게이트 방 타입 | 8종 |
 | 장비 슬롯 | 4+1 (무기/보조/방어구/악세/가방) |

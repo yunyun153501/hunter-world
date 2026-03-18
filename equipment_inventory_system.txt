@@ -53,25 +53,27 @@
 
 ---
 
-## 5. 장비 특성 (Trait) 시스템
+## 5. 통합 특성 (Trait) 시스템
 
-### 특성 종류 (37종)
+> 장비 특성, 재료 특수효과, 스킬 특수효과가 하나의 통합 시스템으로 운영됩니다.
+
+### 특성 종류 (42종)
 
 **공격 (12종)**
-| ID | 라벨 |
-|----|------|
-| physical_damage | 물리 피해 증가 |
-| magic_damage | 마법 피해 증가 |
-| fire_damage | 불 속성 피해 증가 |
-| water_damage | 물 속성 피해 증가 |
-| ice_damage | 얼음 속성 피해 증가 |
-| earth_damage | 대지 속성 피해 증가 |
-| wind_damage | 바람 속성 피해 증가 |
-| lightning_damage | 전기 속성 피해 증가 |
-| light_damage | 빛 속성 피해 증가 |
-| dark_damage | 어둠 속성 피해 증가 |
-| crit_chance | 치명타 확률 증가 |
-| crit_damage | 치명타 피해 증가 |
+| ID | 라벨 | 디버프 |
+|----|------|:---:|
+| physical_damage | 물리 피해 증가 | ✅ |
+| magic_damage | 마법 피해 증가 | ✅ |
+| fire_damage | 불 속성 피해 증가 | ✅ |
+| water_damage | 물 속성 피해 증가 | ✅ |
+| ice_damage | 얼음 속성 피해 증가 | ✅ |
+| earth_damage | 대지 속성 피해 증가 | ✅ |
+| wind_damage | 바람 속성 피해 증가 | ✅ |
+| lightning_damage | 전기 속성 피해 증가 | ✅ |
+| light_damage | 빛 속성 피해 증가 | ✅ |
+| dark_damage | 어둠 속성 피해 증가 | ✅ |
+| crit_chance | 치명타 확률 증가 | — |
+| crit_damage | 치명타 피해 증가 | — |
 
 **방어 (12종)**
 | ID | 라벨 |
@@ -113,6 +115,15 @@
 | shield_effect | 보호막 효과 증가 |
 | threat_up | 위협 수치 증가 |
 | threat_down | 위협 수치 감소 |
+
+**스탯 (5종) — 신규**
+| ID | 라벨 | 효과 |
+|----|------|------|
+| stat_str_up | STR 증가 | HP +3N, ATK +0.2N |
+| stat_con_up | CON 증가 | HP +10N |
+| stat_int_up | INT 증가 | MP +10N, ATK +0.3N |
+| stat_agi_up | AGI 증가 | SP +10N, 행동순서 +2N, 크리확률 +0.25N% |
+| stat_sense_up | SENSE 증가 | MP +3N, SP +3N, 명중률 +0.5N%, 크리확률 +0.25N% |
 
 ### 특성 효과치 (등급별 — 카테고리별)
 
@@ -163,6 +174,14 @@
 | **고정값** | +3 | +8 | +20 | +35 | +50 | +70 |
 
 > 적용 특성: pdef_flat, mdef_flat — DEF에 직접 가산
+
+**statFlat** (스탯 증가 — 고정값)
+
+| 등급 | E | D | C | B | A | S |
+|------|:---:|:---:|:---:|:---:|:---:|:---:|
+| **고정값** | +1 | +2 | +3 | +5 | +7 | +10 |
+
+> 적용 특성: stat_str_up, stat_con_up, stat_int_up, stat_agi_up, stat_sense_up — 전투 시작 시 스탯에 직접 합산
 
 ---
 

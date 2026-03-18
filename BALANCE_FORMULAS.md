@@ -24,11 +24,11 @@
 16. [은신(Stealth) 시스템](#16-은신stealth-시스템)
 17. [몬스터 전투 테이블](#17-몬스터-전투-테이블)
 18. [장비 시스템](#18-장비-시스템)
-19. [장비 특성(Trait) 시스템 — 37종](#19-장비-특성trait-시스템--37종)
-20. [특성 효과 수치 (등급별 %)](#20-특성-효과-수치-등급별-)
+19. [통합 특성(Trait) 시스템 — 42종](#19-통합-특성trait-시스템--42종)
+20. [특성 효과 수치 (등급별)](#20-특성-효과-수치-등급별)
 21. [특성 티어 분류 (TRAIT_TIER_MAP)](#21-특성-티어-분류-trait_tier_map)
 22. [희귀도(Rarity) 시스템](#22-희귀도rarity-시스템)
-23. [특수효과 시스템 (Special Material Effects)](#23-특수효과-시스템-special-material-effects)
+23. [디버프 가능 특성 (10종)](#23-디버프-가능-특성-10종)
 24. [포션 시스템](#24-포션-시스템)
 25. [스킬 계수/비용 기준표](#26-스킬-계수비용-기준표)
 27. [쿨타임 시스템](#27-쿨타임-시스템)
@@ -612,24 +612,27 @@ passiveMods: {
 
 ---
 
-## 19. 장비 특성(Trait) 시스템 — 37종
+## 19. 통합 특성(Trait) 시스템 — 42종
+
+> 장비 특성, 재료 특수효과, 스킬 특수효과가 하나의 통합 특성 시스템으로 운영됩니다.
+> 수치는 장비 등급(E~S)에 따라 스케일 테이블로 자동 적용.
 
 ### 19.1 공격 특성 (12종)
 
-| ID | 이름 | 스케일 |
-|----|------|:---:|
-| `physical_damage` | 물리 피해 증가 | percentSmall |
-| `magic_damage` | 마법 피해 증가 | percentSmall |
-| `fire_damage` | 불 속성 피해 증가 | statusPercent |
-| `water_damage` | 물 속성 피해 증가 | statusPercent |
-| `ice_damage` | 얼음 속성 피해 증가 | statusPercent |
-| `earth_damage` | 대지 속성 피해 증가 | statusPercent |
-| `wind_damage` | 바람 속성 피해 증가 | statusPercent |
-| `lightning_damage` | 전기 속성 피해 증가 | statusPercent |
-| `light_damage` | 빛 속성 피해 증가 | statusPercent |
-| `dark_damage` | 어둠 속성 피해 증가 | statusPercent |
-| `crit_chance` | 치명타 확률 증가 | critChance |
-| `crit_damage` | 치명타 피해 증가 | critDamage |
+| ID | 이름 | 스케일 | 디버프 |
+|----|------|:---:|:---:|
+| `physical_damage` | 물리 피해 증가 | percentSmall | ✅ |
+| `magic_damage` | 마법 피해 증가 | percentSmall | ✅ |
+| `fire_damage` | 불 속성 피해 증가 | statusPercent | ✅ |
+| `water_damage` | 물 속성 피해 증가 | statusPercent | ✅ |
+| `ice_damage` | 얼음 속성 피해 증가 | statusPercent | ✅ |
+| `earth_damage` | 대지 속성 피해 증가 | statusPercent | ✅ |
+| `wind_damage` | 바람 속성 피해 증가 | statusPercent | ✅ |
+| `lightning_damage` | 전기 속성 피해 증가 | statusPercent | ✅ |
+| `light_damage` | 빛 속성 피해 증가 | statusPercent | ✅ |
+| `dark_damage` | 어둠 속성 피해 증가 | statusPercent | ✅ |
+| `crit_chance` | 치명타 확률 증가 | critChance | — |
+| `crit_damage` | 치명타 피해 증가 | critDamage | — |
 
 ### 19.2 방어 특성 (12종)
 
@@ -672,13 +675,23 @@ passiveMods: {
 |----|------|:---:|
 | `healing_done` | 치유량 증가 | percentSmall |
 | `healing_received` | 받는 치유량 증가 | percentSmall |
-| `shield_effect` | 보호막 효과 증가 | percentSmall |
+| `shield_effect` | 보호막 효과 증가 | statusPercent |
 | `threat_up` | 위협 수치 증가 | threatPercent |
 | `threat_down` | 위협 수치 감소 | threatPercent |
 
+### 19.6 스탯 특성 (5종) — 신규
+
+| ID | 이름 | 스케일 | 효과 |
+|----|------|:---:|------|
+| `stat_str_up` | STR 증가 | statFlat | HP +3N, ATK +0.2N |
+| `stat_con_up` | CON 증가 | statFlat | HP +10N |
+| `stat_int_up` | INT 증가 | statFlat | MP +10N, ATK +0.3N |
+| `stat_agi_up` | AGI 증가 | statFlat | SP +10N, 행동순서 +2N, 크리확률 +0.25N% |
+| `stat_sense_up` | SENSE 증가 | statFlat | MP +3N, SP +3N, 명중률 +0.5N%, 크리확률 +0.25N% |
+
 ---
 
-## 20. 특성 효과 수치 (등급별 %)
+## 20. 특성 효과 수치 (등급별)
 
 ### percentSmall (물리/마법 피해감소, 물리/마법 피해 증가, 치유)
 
@@ -730,6 +743,16 @@ passiveMods: {
 
 > **중요**: defenseFlat은 **퍼센트가 아닌 고정 수치**. DEF에 직접 더해짐.
 
+### statFlat (스탯 증가) — 고정값, 신규
+
+| 등급 | E | D | C | B | A | S |
+|------|:---:|:---:|:---:|:---:|:---:|:---:|
+| **고정값** | +1 | +2 | +3 | +5 | +7 | +10 |
+
+**적용 특성**: stat_str_up, stat_con_up, stat_int_up, stat_agi_up, stat_sense_up
+
+> 스탯 고정 수치가 전투 시작 시 해당 스탯에 직접 합산됨.
+
 ---
 
 ## 21. 특성 티어 분류 (TRAIT_TIER_MAP)
@@ -740,7 +763,7 @@ passiveMods: {
 |:---:|------|------|
 | **1** | crit_chance, crit_damage, physical_damage, magic_damage | 최고가치 (공격 핵심) |
 | **2** | 8종 속성 피해, 4종 상태이상 부여 | 고가치 (속성/상태이상) |
-| **3** | physical_defense, magic_defense, healing_done, shield_effect, pdef_flat, mdef_flat | 중가치 (방어/지원) |
+| **3** | physical_defense, magic_defense, healing_done, shield_effect, pdef_flat, mdef_flat, 5종 스탯 증가 | 중가치 (방어/지원/스탯) |
 | **4** | 8종 속성 저항, 4종 상태이상 저항, healing_received, threat_up, threat_down | 저가치 (저항/유틸) |
 
 ### 레어리티 판정 규칙
@@ -764,47 +787,26 @@ passiveMods: {
 
 ---
 
-## 23. 특수효과 시스템 (Special Material Effects)
+## 23. 디버프 가능 특성 (10종)
 
-### 23.1 버프 전용 효과 (20종)
+> 통합 특성 42종 중 피해 증가 계열 10종만 디버프로 전환 가능 (`TRAIT_CAN_DEBUFF`).
+> 디버프 시 적에게 해당 속성 "받는 피해 증가" 효과를 적용합니다.
 
-| ID | 이름 | 설명 |
-|----|------|------|
-| physical_damage_up | 물리 피해 증가 | +N% 물리 피해 |
-| magic_damage_up | 마법 피해 증가 | +N% 마법 피해 |
-| fire_damage_up | 화염 피해 증가 | +N% 화염 피해 |
-| ice_damage_up | 빙결 피해 증가 | +N% 빙결 피해 |
-| lightning_damage_up | 번개 피해 증가 | +N% 번개 피해 |
-| dark_damage_up | 암흑 피해 증가 | +N% 암흑 피해 |
-| light_damage_up | 빛 피해 증가 | +N% 빛 피해 |
-| crit_chance_up | 치명타 확률 증가 | +N% 치확 |
-| crit_damage_up | 치명타 피해 증가 | +N% 치피 |
-| physical_defense_up | 물리 방어 증가 | +N% 물리 방어 |
-| magic_defense_up | 마법 방어 증가 | +N% 마법 방어 |
-| healing_up | 회복량 증가 | +N% 회복량 |
-| shield_up | 보호막 효과 증가 | +N% 보호막 효과 |
-| stat_str_up | STR 증가 | STR +N |
-| stat_con_up | CON 증가 | CON +N |
-| stat_int_up | INT 증가 | INT +N |
-| stat_agi_up | AGI 증가 | AGI +N |
-| stat_sense_up | SENSE 증가 | SENSE +N |
-| bleed_apply | 출혈 부여 | 출혈 부여 +N% |
-| burn_apply | 화상 부여 | 화상 부여 +N% |
-| curse_apply | 저주 부여 | 저주 부여 +N% |
+| ID | 버프 효과 | 디버프 효과 |
+|----|-----------|-------------|
+| `physical_damage` | +N% 물리 피해 | +N% 받는 물리 피해 증가 |
+| `magic_damage` | +N% 마법 피해 | +N% 받는 마법 피해 증가 |
+| `fire_damage` | +N% 화염 피해 | +N% 받는 화염 피해 증가 |
+| `water_damage` | +N% 물 피해 | +N% 받는 물 피해 증가 |
+| `ice_damage` | +N% 빙결 피해 | +N% 받는 빙결 피해 증가 |
+| `earth_damage` | +N% 대지 피해 | +N% 받는 대지 피해 증가 |
+| `wind_damage` | +N% 바람 피해 | +N% 받는 바람 피해 증가 |
+| `lightning_damage` | +N% 번개 피해 | +N% 받는 번개 피해 증가 |
+| `light_damage` | +N% 빛 피해 | +N% 받는 빛 피해 증가 |
+| `dark_damage` | +N% 암흑 피해 | +N% 받는 암흑 피해 증가 |
 
-### 23.2 디버프 가능 효과 (canDebuff: true, 7종)
-
-| ID | 디버프 설명 |
-|----|------------|
-| physical_damage_up | +N% 받는 물리 피해 증가 |
-| magic_damage_up | +N% 받는 마법 피해 증가 |
-| fire_damage_up | +N% 받는 화염 피해 증가 |
-| ice_damage_up | +N% 받는 빙결 피해 증가 |
-| lightning_damage_up | +N% 받는 번개 피해 증가 |
-| dark_damage_up | +N% 받는 암흑 피해 증가 |
-| light_damage_up | +N% 받는 빛 피해 증가 |
-
-> 디버프는 **피해 증가 계열만** 가능 (방어/치유/스탯 디버프는 불가)
+> 방어/치유/스탯/상태이상 특성은 디버프로 사용 불가.
+> 레거시 `_up` 접미사 ID (예: `physical_damage_up`)는 자동으로 통합 ID로 변환됩니다.
 
 ---
 

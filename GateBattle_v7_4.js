@@ -39,10 +39,17 @@ try {
     wind_damage:2, lightning_damage:2, light_damage:2, dark_damage:2,
     healing_done:3, magic_defense:3, physical_defense:3, shield_effect:3,
     pdef_flat:3, mdef_flat:3,
+    stat_str_up:3, stat_con_up:3, stat_int_up:3, stat_agi_up:3, stat_sense_up:3,
     healing_received:4, bleed_resist:4, burn_resist:4, curse_resist:4,
     fire_resist:4, water_resist:4, ice_resist:4, earth_resist:4,
     wind_resist:4, lightning_resist:4, light_resist:4, dark_resist:4,
     poison_resist:4, threat_up:4, threat_down:4,
+  };
+  // 디버프 가능 특성 매핑 (10종 — 피해 증가 계열만 디버프로 전환 가능)
+  const TRAIT_CAN_DEBUFF = {
+    physical_damage:true, magic_damage:true,
+    fire_damage:true, water_damage:true, ice_damage:true, earth_damage:true,
+    wind_damage:true, lightning_damage:true, light_damage:true, dark_damage:true,
   };
   // 장비 희귀도 자동 판정: weapon/armor → 특성 유무, subweapon/accessory → 실제 특성 티어
   function assignEquipRarity(part, traitId) {
@@ -53,38 +60,88 @@ try {
     return { rarity: traitId ? 'Rare' : 'Normal', traitTier: 0 };
   }
 
-  // ── 특수효과 (Special Effects) ──
-  const SPECIAL_MATERIAL_EFFECTS = [
-    { id:'physical_damage_up',  label:'물리 피해 증가', buffDesc:'+N% 물리 피해', debuffDesc:'+N% 받는 물리 피해 증가', category:'offense', canDebuff:true },
-    { id:'magic_damage_up',     label:'마법 피해 증가', buffDesc:'+N% 마법 피해', debuffDesc:'+N% 받는 마법 피해 증가', category:'offense', canDebuff:true },
-    { id:'fire_damage_up',      label:'화염 피해 증가', buffDesc:'+N% 화염 피해', debuffDesc:'+N% 받는 화염 피해 증가', category:'offense', canDebuff:true },
-    { id:'ice_damage_up',       label:'빙결 피해 증가', buffDesc:'+N% 빙결 피해', debuffDesc:'+N% 받는 빙결 피해 증가', category:'offense', canDebuff:true },
-    { id:'lightning_damage_up', label:'번개 피해 증가', buffDesc:'+N% 번개 피해', debuffDesc:'+N% 받는 번개 피해 증가', category:'offense', canDebuff:true },
-    { id:'dark_damage_up',      label:'암흑 피해 증가', buffDesc:'+N% 암흑 피해', debuffDesc:'+N% 받는 암흑 피해 증가', category:'offense', canDebuff:true },
-    { id:'water_damage_up',     label:'물 피해 증가',   buffDesc:'+N% 물 피해',   debuffDesc:'+N% 받는 물 피해 증가',   category:'offense', canDebuff:true },
-    { id:'earth_damage_up',     label:'대지 피해 증가', buffDesc:'+N% 대지 피해', debuffDesc:'+N% 받는 대지 피해 증가', category:'offense', canDebuff:true },
-    { id:'wind_damage_up',      label:'바람 피해 증가', buffDesc:'+N% 바람 피해', debuffDesc:'+N% 받는 바람 피해 증가', category:'offense', canDebuff:true },
-    { id:'light_damage_up',     label:'빛 피해 증가',   buffDesc:'+N% 빛 피해',   debuffDesc:'+N% 받는 빛 피해 증가',   category:'offense', canDebuff:true },
-    { id:'crit_chance_up',      label:'치명타 확률 증가', buffDesc:'+N% 치확',    category:'offense' },
-    { id:'crit_damage_up',      label:'치명타 피해 증가', buffDesc:'+N% 치피',    category:'offense' },
-    { id:'physical_defense_up', label:'물리 방어 증가', buffDesc:'+N% 물리 방어',  category:'defense' },
-    { id:'magic_defense_up',    label:'마법 방어 증가', buffDesc:'+N% 마법 방어',  category:'defense' },
-    { id:'healing_up',          label:'회복량 증가',    buffDesc:'+N% 회복량',     category:'support' },
-    { id:'shield_up',           label:'보호막 효과 증가', buffDesc:'+N% 보호막 효과', category:'support' },
-    { id:'stat_str_up',         label:'STR 증가',       buffDesc:'STR +N',         category:'stat' },
-    { id:'stat_con_up',         label:'CON 증가',       buffDesc:'CON +N',         category:'stat' },
-    { id:'stat_int_up',         label:'INT 증가',       buffDesc:'INT +N',         category:'stat' },
-    { id:'stat_agi_up',         label:'AGI 증가',       buffDesc:'AGI +N',         category:'stat' },
-    { id:'stat_sense_up',       label:'SENSE 증가',     buffDesc:'SENSE +N',       category:'stat' },
-    { id:'bleed_apply',         label:'출혈 부여',      buffDesc:'출혈 부여 +N%',  category:'status' },
-    { id:'burn_apply',          label:'화상 부여',      buffDesc:'화상 부여 +N%',  category:'status' },
-    { id:'curse_apply',         label:'저주 부여',      buffDesc:'저주 부여 +N%',  category:'status' },
-  ];
-  function getSpecialMaterialEffectById(id) { return SPECIAL_MATERIAL_EFFECTS.find(e => e.id === id); }
+  // ── 통합 특성 시스템 (Unified Trait System) ──
+  // SPECIAL_MATERIAL_EFFECTS는 EQUIP_TRAIT_LABELS + TRAIT_CAN_DEBUFF 기반으로 자동 생성
+  // 스킬 특수효과 / 장비 주입 / 장비 특성이 모두 동일한 특성 ID 사용
+  const TRAIT_DEBUFF_DESC = {
+    physical_damage:'+N% 받는 물리 피해 증가', magic_damage:'+N% 받는 마법 피해 증가',
+    fire_damage:'+N% 받는 화염 피해 증가', water_damage:'+N% 받는 물 피해 증가',
+    ice_damage:'+N% 받는 빙결 피해 증가', earth_damage:'+N% 받는 대지 피해 증가',
+    wind_damage:'+N% 받는 바람 피해 증가', lightning_damage:'+N% 받는 번개 피해 증가',
+    light_damage:'+N% 받는 빛 피해 증가', dark_damage:'+N% 받는 암흑 피해 증가',
+  };
+  const TRAIT_BUFF_DESC = {
+    physical_damage:'+N% 물리 피해', magic_damage:'+N% 마법 피해',
+    fire_damage:'+N% 화염 피해', water_damage:'+N% 물 피해',
+    ice_damage:'+N% 빙결 피해', earth_damage:'+N% 대지 피해',
+    wind_damage:'+N% 바람 피해', lightning_damage:'+N% 번개 피해',
+    light_damage:'+N% 빛 피해', dark_damage:'+N% 암흑 피해',
+    crit_chance:'+N% 치확', crit_damage:'+N% 치피',
+    physical_defense:'+N% 물리 방어', magic_defense:'+N% 마법 방어',
+    pdef_flat:'물리방어력 +N', mdef_flat:'마법방어력 +N',
+    fire_resist:'+N% 불 저항', water_resist:'+N% 물 저항',
+    ice_resist:'+N% 얼음 저항', earth_resist:'+N% 대지 저항',
+    wind_resist:'+N% 바람 저항', lightning_resist:'+N% 전기 저항',
+    light_resist:'+N% 빛 저항', dark_resist:'+N% 암흑 저항',
+    poison_apply:'독 부여 +N%', bleed_apply:'출혈 부여 +N%',
+    burn_apply:'화상 부여 +N%', curse_apply:'저주 부여 +N%',
+    poison_resist:'독 저항 +N%', bleed_resist:'출혈 저항 +N%',
+    burn_resist:'화상 저항 +N%', curse_resist:'저주 저항 +N%',
+    healing_done:'+N% 치유량', healing_received:'+N% 받는 치유량',
+    shield_effect:'+N% 보호막 효과',
+    threat_up:'+N% 위협 증가', threat_down:'+N% 위협 감소',
+    stat_str_up:'STR +N', stat_con_up:'CON +N', stat_int_up:'INT +N',
+    stat_agi_up:'AGI +N', stat_sense_up:'SENSE +N',
+  };
+  // 하위호환: SPECIAL_MATERIAL_EFFECTS 구조 유지 (스킬/장비 에디터 UI 등에서 사용)
+  const SPECIAL_MATERIAL_EFFECTS = (function() {
+    // 이전 _up 접미사 ID → 통합 trait ID 매핑
+    const legacyMap = {
+      physical_damage_up:'physical_damage', magic_damage_up:'magic_damage',
+      fire_damage_up:'fire_damage', ice_damage_up:'ice_damage',
+      lightning_damage_up:'lightning_damage', dark_damage_up:'dark_damage',
+      water_damage_up:'water_damage', earth_damage_up:'earth_damage',
+      wind_damage_up:'wind_damage', light_damage_up:'light_damage',
+      crit_chance_up:'crit_chance', crit_damage_up:'crit_damage',
+      physical_defense_up:'physical_defense', magic_defense_up:'magic_defense',
+      healing_up:'healing_done', shield_up:'shield_effect',
+    };
+    // 통합 특성 목록에서 자동 생성 (장비특성 42종 전체를 특수효과로 사용 가능)
+    const result = [];
+    // 기존 EQUIP_TRAIT_TYPES에서 참조할 수 있도록 lazy init (EQUIP_TRAIT_TYPES는 아래에 정의됨)
+    // → 42종 전부를 특수효과 선택지로 제공
+    return { _legacyMap: legacyMap, _result: result, _init: false };
+  })();
+  // lazy init: EQUIP_TRAIT_TYPES 정의 후 호출
+  function initSpecialMaterialEffects() {
+    if (SPECIAL_MATERIAL_EFFECTS._init) return;
+    SPECIAL_MATERIAL_EFFECTS._init = true;
+    const arr = SPECIAL_MATERIAL_EFFECTS._result;
+    arr.length = 0;
+    (typeof EQUIP_TRAIT_TYPES !== 'undefined' ? EQUIP_TRAIT_TYPES : []).forEach(tid => {
+      const label = (typeof EQUIP_TRAIT_LABELS !== 'undefined' ? EQUIP_TRAIT_LABELS[tid] : tid) || tid;
+      const entry = { id:tid, label:label, buffDesc: TRAIT_BUFF_DESC[tid] || ('+N% ' + label), category:'offense' };
+      if (TRAIT_CAN_DEBUFF[tid]) { entry.canDebuff = true; entry.debuffDesc = TRAIT_DEBUFF_DESC[tid] || ('+N% 받는 ' + label); }
+      arr.push(entry);
+    });
+  }
+  // ID 변환: 레거시 _up ID → 통합 trait ID
+  function normalizeTraitId(id) {
+    if (!id) return id;
+    const m = SPECIAL_MATERIAL_EFFECTS._legacyMap;
+    return m[id] || id;
+  }
+  function getSpecialMaterialEffectById(id) {
+    initSpecialMaterialEffects();
+    const nid = normalizeTraitId(id);
+    return SPECIAL_MATERIAL_EFFECTS._result.find(e => e.id === nid) || SPECIAL_MATERIAL_EFFECTS._result.find(e => e.id === id);
+  }
   function smeOptionsHtml(selectedId, type) {
-    const list = type === 'debuff' ? SPECIAL_MATERIAL_EFFECTS.filter(e => e.canDebuff) : SPECIAL_MATERIAL_EFFECTS;
-    return '<option value="" ' + (!selectedId ? 'selected' : '') + '>(선택)</option>' +
-      list.map(e => '<option value="' + e.id + '"' + (selectedId === e.id ? ' selected' : '') + '>' + escapeHtml(e.label + (type === 'debuff' && e.canDebuff ? ' → 받는 ' + e.label : '')) + '</option>').join('');
+    initSpecialMaterialEffects();
+    const list = type === 'debuff' ? SPECIAL_MATERIAL_EFFECTS._result.filter(e => e.canDebuff) : SPECIAL_MATERIAL_EFFECTS._result;
+    const nid = normalizeTraitId(selectedId);
+    return '<option value="" ' + (!nid ? 'selected' : '') + '>(선택)</option>' +
+      list.map(e => '<option value="' + e.id + '"' + (nid === e.id ? ' selected' : '') + '>' + escapeHtml(e.label + (type === 'debuff' && e.canDebuff ? ' → 받는 ' + e.label : '')) + '</option>').join('');
   }
 
 const ELEMENTS = DAMAGE_ELEMENTS;
@@ -405,7 +462,7 @@ function calcForgeEnhancedUsedPrice(basePrice, enhance, part, rank) {
   return Math.round(enhanced * calcUsedEquipConditionMul(99, 99));
 }
 
-// Trait types for equipment (all 37 rare material trait IDs, snake_case)
+// 통합 특성 목록 (42종 = 기존 37종 + 스탯 5종)
 const EQUIP_TRAIT_TYPES = [
   // 공격
   'physical_damage','magic_damage',
@@ -423,12 +480,14 @@ const EQUIP_TRAIT_TYPES = [
   'poison_resist','bleed_resist','burn_resist','curse_resist',
   // 지원
   'healing_done','healing_received','shield_effect','threat_up','threat_down',
+  // 스탯
+  'stat_str_up','stat_con_up','stat_int_up','stat_agi_up','stat_sense_up',
 ];
 // 희귀(tier1-2) / 일반(tier3-4) 특성 풀 — 경매장 80/20 비율 제어용
 const RARE_TRAIT_POOL = EQUIP_TRAIT_TYPES.filter(t => (TRAIT_TIER_MAP[t] || 3) <= 2);
 const NORMAL_TRAIT_POOL = EQUIP_TRAIT_TYPES.filter(t => (TRAIT_TIER_MAP[t] || 3) > 2);
 const EQUIP_TRAIT_LABELS = {
-  // snake_case (37개 전체)
+  // snake_case (42종 전체)
   physical_damage:'물리 피해 증가', magic_damage:'마법 피해 증가',
   fire_damage:'불 속성 피해 증가', water_damage:'물 속성 피해 증가',
   ice_damage:'얼음 속성 피해 증가', earth_damage:'대지 속성 피해 증가',
@@ -448,11 +507,15 @@ const EQUIP_TRAIT_LABELS = {
   healing_done:'치유량 증가', healing_received:'받는 치유량 증가',
   shield_effect:'보호막 효과 증가',
   threat_up:'위협 수치 증가', threat_down:'위협 수치 감소',
+  stat_str_up:'STR 증가', stat_con_up:'CON 증가', stat_int_up:'INT 증가',
+  stat_agi_up:'AGI 증가', stat_sense_up:'SENSE 증가',
   // 구버전 camelCase (하위 호환)
   physicalDamage:'물리 피해', magicDamage:'마법 피해', elementalDamage:'속성 피해',
   physicalDefense:'물리피해감소', magicDefense:'마법피해감소', elementalDefense:'속성 저항',
   increasedHealing:'치유 증가'
 };
+// SPECIAL_MATERIAL_EFFECTS lazy init 트리거
+initSpecialMaterialEffects();
 // Trait effect % by rank — fallback for legacy camelCase traits not in the pack
 const EQUIP_TRAIT_EFFECT_PCT = {
   E: 3, D: 5, C: 8, B: 12, A: 18, S: 25
@@ -775,8 +838,8 @@ function buildConvFoodItem(foodDef, count=1) {
 }
 
 const DEFAULT_RARE_MATERIAL_PACK = {
-  "version": 2,
-  "note": "GateBattle v7.7 — defenseFlat scale added, elemental damage/resist moved to statusPercent, shield_effect moved to statusPercent, trait combat integration.",
+  "version": 3,
+  "note": "GateBattle v7.8 — unified trait system (42 traits), statFlat scale added for 5 stat traits, SPECIAL_MATERIAL_EFFECTS auto-derived from EQUIP_TRAIT_TYPES.",
   "valueScales": {
     "percentSmall": {
       "E": 1,
@@ -825,6 +888,14 @@ const DEFAULT_RARE_MATERIAL_PACK = {
       "B": 35,
       "A": 50,
       "S": 70
+    },
+    "statFlat": {
+      "E": 1,
+      "D": 2,
+      "C": 3,
+      "B": 5,
+      "A": 7,
+      "S": 10
     }
   },
   "traits": [
@@ -1073,6 +1144,36 @@ const DEFAULT_RARE_MATERIAL_PACK = {
       "name": "위협 수치 감소",
       "category": "support",
       "scale": "threatPercent"
+    },
+    {
+      "id": "stat_str_up",
+      "name": "STR 증가",
+      "category": "stat",
+      "scale": "statFlat"
+    },
+    {
+      "id": "stat_con_up",
+      "name": "CON 증가",
+      "category": "stat",
+      "scale": "statFlat"
+    },
+    {
+      "id": "stat_int_up",
+      "name": "INT 증가",
+      "category": "stat",
+      "scale": "statFlat"
+    },
+    {
+      "id": "stat_agi_up",
+      "name": "AGI 증가",
+      "category": "stat",
+      "scale": "statFlat"
+    },
+    {
+      "id": "stat_sense_up",
+      "name": "SENSE 증가",
+      "category": "stat",
+      "scale": "statFlat"
     }
   ]
 };
@@ -1889,6 +1990,14 @@ function buildDefaultState() {
     applyPassiveInitialization(unit);
     // 장비 특성 전투 적용: 장착 장비 traits → 전투 보너스
     unit.traitBonuses = isMonster ? {} : calcEquipTraitBonuses(entry);
+    // 스탯 특성 적용: stat_str_up, stat_con_up, stat_int_up, stat_agi_up, stat_sense_up
+    if (!isMonster && unit.traitBonuses) {
+      const statMap = { stat_str_up:'str', stat_con_up:'con', stat_int_up:'int', stat_agi_up:'agi', stat_sense_up:'sense' };
+      Object.entries(statMap).forEach(([traitId, statKey]) => {
+        const val = Number(unit.traitBonuses[traitId] || 0);
+        if (val > 0) unit.stats[statKey] = (unit.stats[statKey] || 0) + val;
+      });
+    }
     return unit;
   }
 
