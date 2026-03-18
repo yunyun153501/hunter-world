@@ -792,7 +792,7 @@
     "element": "none",
     "buff": {
       "stats": {
-        "pDef": 2
+        "pdef": 2
       }
     },
     "duration": 3,
@@ -817,7 +817,7 @@
     "element": "none",
     "buff": {
       "stats": {
-        "mDef": 2
+        "mdef": 2
       }
     },
     "duration": 3,
@@ -864,14 +864,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "str": 2
-      }
-    },
     "duration": 0,
     "desc": "STR 패시브 영구 보너스 (E랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "str": 2
+    }
   },
   "passiveConE": {
     "id": "passiveConE",
@@ -889,14 +887,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "con": 2
-      }
-    },
     "duration": 0,
     "desc": "CON 패시브 영구 보너스 (E랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "con": 2
+    }
   },
   "passiveIntE": {
     "id": "passiveIntE",
@@ -914,14 +910,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "int": 2
-      }
-    },
     "duration": 0,
     "desc": "INT 패시브 영구 보너스 (E랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "int": 2
+    }
   },
   "passiveAgiE": {
     "id": "passiveAgiE",
@@ -939,14 +933,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "agi": 2
-      }
-    },
     "duration": 0,
     "desc": "AGI 패시브 영구 보너스 (E랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "agi": 2
+    }
   },
   "passiveSenseE": {
     "id": "passiveSenseE",
@@ -964,14 +956,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "sense": 2
-      }
-    },
     "duration": 0,
     "desc": "SENSE 패시브 영구 보너스 (E랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "sense": 2
+    }
   },
   "passivePdefE": {
     "id": "passivePdefE",
@@ -989,14 +979,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "pDef": 2
-      }
-    },
     "duration": 0,
     "desc": "PDEF 패시브 영구 보너스 (E랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "pdef": 2
+    }
   },
   "passiveMdefE": {
     "id": "passiveMdefE",
@@ -1014,14 +1002,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "mDef": 2
-      }
-    },
     "duration": 0,
     "desc": "MDEF 패시브 영구 보너스 (E랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "mdef": 2
+    }
   },
   "singleAttackPhysD": {
     "id": "singleAttackPhysD",
@@ -1816,7 +1802,7 @@
     "element": "none",
     "buff": {
       "stats": {
-        "pDef": 4
+        "pdef": 4
       }
     },
     "duration": 3,
@@ -1841,7 +1827,7 @@
     "element": "none",
     "buff": {
       "stats": {
-        "mDef": 4
+        "mdef": 4
       }
     },
     "duration": 3,
@@ -1888,14 +1874,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "str": 4
-      }
-    },
     "duration": 0,
     "desc": "STR 패시브 영구 보너스 (D랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "str": 4
+    }
   },
   "passiveConD": {
     "id": "passiveConD",
@@ -1913,14 +1897,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "con": 4
-      }
-    },
     "duration": 0,
     "desc": "CON 패시브 영구 보너스 (D랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "con": 4
+    }
   },
   "passiveIntD": {
     "id": "passiveIntD",
@@ -1938,14 +1920,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "int": 4
-      }
-    },
     "duration": 0,
     "desc": "INT 패시브 영구 보너스 (D랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "int": 4
+    }
   },
   "passiveAgiD": {
     "id": "passiveAgiD",
@@ -1963,14 +1943,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "agi": 4
-      }
-    },
     "duration": 0,
     "desc": "AGI 패시브 영구 보너스 (D랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "agi": 4
+    }
   },
   "passiveSenseD": {
     "id": "passiveSenseD",
@@ -1988,14 +1966,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "sense": 4
-      }
-    },
     "duration": 0,
     "desc": "SENSE 패시브 영구 보너스 (D랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "sense": 4
+    }
   },
   "passivePdefD": {
     "id": "passivePdefD",
@@ -2013,14 +1989,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "pDef": 4
-      }
-    },
     "duration": 0,
     "desc": "PDEF 패시브 영구 보너스 (D랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "pdef": 4
+    }
   },
   "passiveMdefD": {
     "id": "passiveMdefD",
@@ -2038,14 +2012,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "mDef": 4
-      }
-    },
     "duration": 0,
     "desc": "MDEF 패시브 영구 보너스 (D랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "mdef": 4
+    }
   },
   "singleAttackPhysC": {
     "id": "singleAttackPhysC",
@@ -2840,7 +2812,7 @@
     "element": "none",
     "buff": {
       "stats": {
-        "pDef": 6
+        "pdef": 6
       }
     },
     "duration": 3,
@@ -2865,7 +2837,7 @@
     "element": "none",
     "buff": {
       "stats": {
-        "mDef": 6
+        "mdef": 6
       }
     },
     "duration": 3,
@@ -2912,14 +2884,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "str": 6
-      }
-    },
     "duration": 0,
     "desc": "STR 패시브 영구 보너스 (C랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "str": 6
+    }
   },
   "passiveConC": {
     "id": "passiveConC",
@@ -2937,14 +2907,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "con": 6
-      }
-    },
     "duration": 0,
     "desc": "CON 패시브 영구 보너스 (C랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "con": 6
+    }
   },
   "passiveIntC": {
     "id": "passiveIntC",
@@ -2962,14 +2930,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "int": 6
-      }
-    },
     "duration": 0,
     "desc": "INT 패시브 영구 보너스 (C랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "int": 6
+    }
   },
   "passiveAgiC": {
     "id": "passiveAgiC",
@@ -2987,14 +2953,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "agi": 6
-      }
-    },
     "duration": 0,
     "desc": "AGI 패시브 영구 보너스 (C랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "agi": 6
+    }
   },
   "passiveSenseC": {
     "id": "passiveSenseC",
@@ -3012,14 +2976,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "sense": 6
-      }
-    },
     "duration": 0,
     "desc": "SENSE 패시브 영구 보너스 (C랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "sense": 6
+    }
   },
   "passivePdefC": {
     "id": "passivePdefC",
@@ -3037,14 +2999,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "pDef": 6
-      }
-    },
     "duration": 0,
     "desc": "PDEF 패시브 영구 보너스 (C랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "pdef": 6
+    }
   },
   "passiveMdefC": {
     "id": "passiveMdefC",
@@ -3062,14 +3022,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "mDef": 6
-      }
-    },
     "duration": 0,
     "desc": "MDEF 패시브 영구 보너스 (C랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "mdef": 6
+    }
   },
   "singleAttackPhysB": {
     "id": "singleAttackPhysB",
@@ -3864,7 +3822,7 @@
     "element": "none",
     "buff": {
       "stats": {
-        "pDef": 8
+        "pdef": 8
       }
     },
     "duration": 3,
@@ -3889,7 +3847,7 @@
     "element": "none",
     "buff": {
       "stats": {
-        "mDef": 8
+        "mdef": 8
       }
     },
     "duration": 3,
@@ -3936,14 +3894,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "str": 8
-      }
-    },
     "duration": 0,
     "desc": "STR 패시브 영구 보너스 (B랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "str": 8
+    }
   },
   "passiveConB": {
     "id": "passiveConB",
@@ -3961,14 +3917,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "con": 8
-      }
-    },
     "duration": 0,
     "desc": "CON 패시브 영구 보너스 (B랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "con": 8
+    }
   },
   "passiveIntB": {
     "id": "passiveIntB",
@@ -3986,14 +3940,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "int": 8
-      }
-    },
     "duration": 0,
     "desc": "INT 패시브 영구 보너스 (B랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "int": 8
+    }
   },
   "passiveAgiB": {
     "id": "passiveAgiB",
@@ -4011,14 +3963,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "agi": 8
-      }
-    },
     "duration": 0,
     "desc": "AGI 패시브 영구 보너스 (B랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "agi": 8
+    }
   },
   "passiveSenseB": {
     "id": "passiveSenseB",
@@ -4036,14 +3986,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "sense": 8
-      }
-    },
     "duration": 0,
     "desc": "SENSE 패시브 영구 보너스 (B랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "sense": 8
+    }
   },
   "passivePdefB": {
     "id": "passivePdefB",
@@ -4061,14 +4009,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "pDef": 8
-      }
-    },
     "duration": 0,
     "desc": "PDEF 패시브 영구 보너스 (B랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "pdef": 8
+    }
   },
   "passiveMdefB": {
     "id": "passiveMdefB",
@@ -4086,14 +4032,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "mDef": 8
-      }
-    },
     "duration": 0,
     "desc": "MDEF 패시브 영구 보너스 (B랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "mdef": 8
+    }
   },
   "singleAttackPhysA": {
     "id": "singleAttackPhysA",
@@ -4888,7 +4832,7 @@
     "element": "none",
     "buff": {
       "stats": {
-        "pDef": 11
+        "pdef": 11
       }
     },
     "duration": 3,
@@ -4913,7 +4857,7 @@
     "element": "none",
     "buff": {
       "stats": {
-        "mDef": 11
+        "mdef": 11
       }
     },
     "duration": 3,
@@ -4960,14 +4904,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "str": 11
-      }
-    },
     "duration": 0,
     "desc": "STR 패시브 영구 보너스 (A랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "str": 11
+    }
   },
   "passiveConA": {
     "id": "passiveConA",
@@ -4985,14 +4927,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "con": 11
-      }
-    },
     "duration": 0,
     "desc": "CON 패시브 영구 보너스 (A랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "con": 11
+    }
   },
   "passiveIntA": {
     "id": "passiveIntA",
@@ -5010,14 +4950,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "int": 11
-      }
-    },
     "duration": 0,
     "desc": "INT 패시브 영구 보너스 (A랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "int": 11
+    }
   },
   "passiveAgiA": {
     "id": "passiveAgiA",
@@ -5035,14 +4973,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "agi": 11
-      }
-    },
     "duration": 0,
     "desc": "AGI 패시브 영구 보너스 (A랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "agi": 11
+    }
   },
   "passiveSenseA": {
     "id": "passiveSenseA",
@@ -5060,14 +4996,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "sense": 11
-      }
-    },
     "duration": 0,
     "desc": "SENSE 패시브 영구 보너스 (A랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "sense": 11
+    }
   },
   "passivePdefA": {
     "id": "passivePdefA",
@@ -5085,14 +5019,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "pDef": 11
-      }
-    },
     "duration": 0,
     "desc": "PDEF 패시브 영구 보너스 (A랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "pdef": 11
+    }
   },
   "passiveMdefA": {
     "id": "passiveMdefA",
@@ -5110,14 +5042,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "mDef": 11
-      }
-    },
     "duration": 0,
     "desc": "MDEF 패시브 영구 보너스 (A랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "mdef": 11
+    }
   },
   "singleAttackPhysS": {
     "id": "singleAttackPhysS",
@@ -5912,7 +5842,7 @@
     "element": "none",
     "buff": {
       "stats": {
-        "pDef": 14
+        "pdef": 14
       }
     },
     "duration": 3,
@@ -5937,7 +5867,7 @@
     "element": "none",
     "buff": {
       "stats": {
-        "mDef": 14
+        "mdef": 14
       }
     },
     "duration": 3,
@@ -5984,14 +5914,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "str": 14
-      }
-    },
     "duration": 0,
     "desc": "STR 패시브 영구 보너스 (S랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "str": 14
+    }
   },
   "passiveConS": {
     "id": "passiveConS",
@@ -6009,14 +5937,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "con": 14
-      }
-    },
     "duration": 0,
     "desc": "CON 패시브 영구 보너스 (S랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "con": 14
+    }
   },
   "passiveIntS": {
     "id": "passiveIntS",
@@ -6034,14 +5960,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "int": 14
-      }
-    },
     "duration": 0,
     "desc": "INT 패시브 영구 보너스 (S랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "int": 14
+    }
   },
   "passiveAgiS": {
     "id": "passiveAgiS",
@@ -6059,14 +5983,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "agi": 14
-      }
-    },
     "duration": 0,
     "desc": "AGI 패시브 영구 보너스 (S랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "agi": 14
+    }
   },
   "passiveSenseS": {
     "id": "passiveSenseS",
@@ -6084,14 +6006,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "sense": 14
-      }
-    },
     "duration": 0,
     "desc": "SENSE 패시브 영구 보너스 (S랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "sense": 14
+    }
   },
   "passivePdefS": {
     "id": "passivePdefS",
@@ -6109,14 +6029,12 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "pDef": 14
-      }
-    },
     "duration": 0,
     "desc": "PDEF 패시브 영구 보너스 (S랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "pdef": 14
+    }
   },
   "passiveMdefS": {
     "id": "passiveMdefS",
@@ -6134,13 +6052,11 @@
     ],
     "damageType": "magic",
     "element": "none",
-    "buff": {
-      "stats": {
-        "mDef": 14
-      }
-    },
     "duration": 0,
     "desc": "MDEF 패시브 영구 보너스 (S랭크)",
-    "cooldown": 0
+    "cooldown": 0,
+    "passiveBonuses": {
+      "mdef": 14
+    }
   }
 }
