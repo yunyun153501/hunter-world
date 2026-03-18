@@ -4671,8 +4671,6 @@ function getBuffedStat(unit, statKey) {
     const cursePct = getCursePenalty(unit);
     if (cursePct > 0) mul *= (1 - cursePct);
     if (unit.species === 'beast' && target && Number(target.statuses.bleed || 0) > 0) mul *= Number(unit.bonusVsBleeding || 1.2);
-    // 소환수 보너스: 제피르 소환 시 질풍격 ×1.2
-    if (skill && skill.id === 'galeStrike' && hasSummonBuff(unit, 'zephyr')) mul *= 1.2;
     return mul;
   }
   function getEffectiveDefense(unit, kind) {
@@ -4727,8 +4725,6 @@ function getBuffedStat(unit, statKey) {
     if (Number(unit.cooldowns && unit.cooldowns[skill.id] || 0) > 0) return false;
     // 침묵: 스킬 사용 불가 (기본 공격만 가능)
     if (Number(unit.statuses && unit.statuses.silence || 0) > 0) return false;
-    // 대지의 치유: 정령 소환 시에만 사용 가능
-    if (skill.id === 'earthHeal' && !hasSummonBuff(unit, 'zephyr') && !hasSummonBuff(unit, 'bark')) return false;
     // 몬스터는 MP/SP 비용 무시 (쿨타임만 적용)
     if (unit.isMonster) return true;
     const cost = getSkillCost(unit, skill);
@@ -5065,11 +5061,6 @@ function getBuffedStat(unit, statKey) {
       if (!type) return;
       // CC 확률 판정
       let ccChance = skill.cc.chance != null ? Number(skill.cc.chance) : 1.0;
-      // 소환수 보너스: 바크 소환 시 뿌리속박 CC +10%
-      if (skill.id === 'rootBind') {
-        const caster = runtime ? (runtime.party.concat(runtime.enemies)).find(u => u.name === sourceName) : null;
-        if (caster && hasSummonBuff(caster, 'bark')) ccChance = Math.min(1.0, ccChance + 0.10);
-      }
       if (ccChance < 1.0 && Math.random() > ccChance) return;
       if (unitHasImmunity(target, type)) {
         addRoundHighlight(summary, `${target.name}은(는) ${type} 면역`);
@@ -5375,13 +5366,7 @@ function getBuffedStat(unit, statKey) {
       const target = enemyBoss || enemyElite;
       if (!target.dead) return { type:'skill', skillId:tauntEnemy.id, target:target.uid };
     }
-    // 소환 스킬 (제피르, 바크) - 아직 소환 안 된 경우 우선
-    const summonSkill = skillPool.find(sk => sk.buff && sk.buff.summon && !hasSummonBuff(unit, sk.buff.summon));
-    if (summonSkill && Math.random() < 0.7) {
-      return { type:'skill', skillId:summonSkill.id, target:summonSkill.target === 'allAllies' ? 'allAllies' : unit.uid };
-    }
-
-    const buffSkill = skillPool.find(sk => sk.category === 'buff' && sk.id !== 'taunt' && !hasBuff(unit, sk.id) && !(sk.buff && sk.buff.forcedTaunt) && !(sk.buff && sk.buff.summon));
+    const buffSkill = skillPool.find(sk => sk.category === 'buff' && sk.id !== 'taunt' && !hasBuff(unit, sk.id) && !(sk.buff && sk.buff.forcedTaunt));
     if (buffSkill && (pos.includes('서포터') || pos.includes('원거리') || pos.includes('힐러') || Math.random() < 0.2)) {
       return { type:'skill', skillId:buffSkill.id, target:buffSkill.target === 'allAllies' ? 'allAllies' : unit.uid };
     }

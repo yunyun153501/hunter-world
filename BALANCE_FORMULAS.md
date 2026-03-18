@@ -144,7 +144,6 @@ rawBase = monsterBaseDamage × (스킬 사용 시 monsterSkillMul, 기본공격 
 
 1. **저주(Curse)** — `×(1 - cursePenalty)` (등급별 10~30% 감소)
 2. **야수 vs 출혈 대상** — `×1.2`
-3. **소환수 보너스** — 제피르 소환 시 질풍격 `×1.2`
 
 ---
 
