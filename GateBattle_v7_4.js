@@ -442,6 +442,40 @@ const ARMOR_SUBTYPES = {
   robe:    { label:'로브',   defMul:[0.40,0.50], statPool:['agi','int','sense'], atkMul:0, statBonusMul:0.20 }
 };
 const ARMOR_SUBTYPE_KEYS = ['heavy','light','leather','robe'];
+
+// ── 장비 이름 생성 테이블 ──────────────────────────────────────────────────────
+const EQUIP_RANK_PREFIX = {
+  E: ['낡은','조악한','투박한','해진','흠집난','허름한'],
+  D: ['평범한','실용적인','손질된','무난한','균형잡힌'],
+  C: ['정교한','견고한','세련된','숙련된','우수한'],
+  B: ['희귀한','탁월한','고급','뛰어난','정예의'],
+  A: ['영웅의','고결한','위엄의','찬란한','축복받은'],
+  S: ['전설의','신화의','초월한','불멸의','천상의']
+};
+const EQUIP_NAME_SUFFIXES = {
+  weapon: ['검','대검','창','활','대궁','석궁','완드','지팡이','로드','도끼','쌍검','단검','레이피어','총','저격총','권갑','스파이크','투창','투척단검'],
+  subweapon: ['방패','화살','수정구','예비단검','신발','장갑','보호대'],
+  accessory: ['귀걸이','반지','목걸이','벨트','표식'],
+  armor_heavy: ['강철갑옷','판금갑옷','백은중갑','중갑'],
+  armor_light: ['사슬갑옷','전술경갑','백은경갑','경갑'],
+  armor_leather: ['기동조끼','가죽외피','사냥꾼조끼','가죽갑옷'],
+  armor_robe: ['로브','예복','법의','마도복']
+};
+function generateEquipName(rank, part, armorSubtypeKey, traitLabel) {
+  const prefixes = EQUIP_RANK_PREFIX[rank] || EQUIP_RANK_PREFIX.E;
+  let prefix;
+  if (part === 'weapon' && rank === 'E') {
+    prefix = '협회지급';
+  } else {
+    prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+  }
+  let suffKey = part;
+  if (part === 'armor' && armorSubtypeKey) suffKey = 'armor_' + armorSubtypeKey;
+  const suffArr = EQUIP_NAME_SUFFIXES[suffKey] || EQUIP_NAME_SUFFIXES[part] || [part];
+  const suff = suffArr[Math.floor(Math.random() * suffArr.length)];
+  return `${prefix} ${suff}${traitLabel ? ` [${traitLabel}]` : ''}`;
+}
+
 // Accessory base stats by rank
 const ACCESSORY_STAT_BY_RANK = {
   E: { totalStatSum:0,   traits:1, enhanceStat:1 },
@@ -4286,17 +4320,9 @@ function buildDropEquipment(rank, forcePart) {
     const subKey = ARMOR_SUBTYPE_KEYS[Math.floor(Math.random() * ARMOR_SUBTYPE_KEYS.length)];
     armorSubtype = { key: subKey, ...ARMOR_SUBTYPES[subKey] };
   }
-  const nameSuffixes = { weapon:['검','창','활','완드','도끼'], subweapon:['방패'], accessory:['반지','목걸이','팔찌'] };
-  let suff;
-  if (part === 'armor' && armorSubtype) {
-    suff = armorSubtype.label;
-  } else {
-    const suffArr = nameSuffixes[part] || [partLabel];
-    suff = suffArr[Math.floor(Math.random() * suffArr.length)];
-  }
   // 희귀도 자동 판정
   const { rarity: autoRarity, traitTier: autoTier } = assignEquipRarity(part, traits[0] || '');
-  const name = `${r}급 드랍 ${suff}${hasTrait ? ` [${traitName}]` : ''}`;
+  const name = generateEquipName(r, part, armorSubtype ? armorSubtype.key : null, hasTrait ? traitName : '');
   return {
     id: `drop_equip_${r.toLowerCase()}_${part}_${uid}`,
     name,
@@ -6552,20 +6578,12 @@ function seedNpcAuctionListings() {
       const askPrice = Math.round(marketPrice * ratio);
       const uid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + i;
       const _armorSub = part === 'armor' ? (() => { const k = ARMOR_SUBTYPE_KEYS[Math.floor(Math.random()*ARMOR_SUBTYPE_KEYS.length)]; return {key:k,...ARMOR_SUBTYPES[k]}; })() : null;
-      const nameSuffixes = { weapon:['검','창','활','완드','도끼'], subweapon:['방패'], accessory:['반지','목걸이','팔찌'] };
-      let suff;
-      if (part === 'armor' && _armorSub) {
-        suff = _armorSub.label;
-      } else {
-        const suffArr = nameSuffixes[part] || [EQUIP_PART_LABELS[part]||part];
-        suff = suffArr[Math.floor(Math.random() * suffArr.length)];
-      }
       // 희귀도 자동 판정: 실제 특성 ID 기반
       const { rarity: npcRarity, traitTier: npcTier } = assignEquipRarity(part, traitId);
-      const traitLabel = hasTrait ? ` [${traitName}]` : '';
+      const equipNameStr = generateEquipName(rank, part, _armorSub ? _armorSub.key : null, hasTrait ? traitName : '');
       const item = {
         id: `npc_drop_equip_${rank.toLowerCase()}_${part}_${uid}`,
-        name: `${rank}급 드랍 ${suff}${traitLabel}`,
+        name: equipNameStr,
         part, rank, rarity: npcRarity, traitTier: npcTier,
         enhance: 0, infuse: hasTrait ? 1 : 0, maxInfuse, traits: hasTrait ? [traitId] : [],
         durability: 100, maxDurability: 100, price: marketPrice,
@@ -7362,21 +7380,13 @@ function seedNpcUsedListings() {
     const usedPrice = Math.round(marketPrice * conditionMul);
     const uid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + i;
     const _armorSub = part === 'armor' ? (() => { const k = ARMOR_SUBTYPE_KEYS[Math.floor(Math.random()*ARMOR_SUBTYPE_KEYS.length)]; return {key:k,...ARMOR_SUBTYPES[k]}; })() : null;
-    const nameSuffixes = { weapon:['검','창','활','완드','도끼'], subweapon:['방패'], accessory:['반지','목걸이','팔찌'] };
-    let suff;
-    if (part === 'armor' && _armorSub) {
-      suff = _armorSub.label;
-    } else {
-      const suffArr = nameSuffixes[part] || [EQUIP_PART_LABELS[part]||part];
-      suff = suffArr[Math.floor(Math.random() * suffArr.length)];
-    }
     const enhLabel = enhance > 0 ? ` +${enhance}` : '';
-    const traitLabel = hasTrait ? ` [${traitName}]` : '';
     // 희귀도 자동 판정
     const { rarity: usedRarity, traitTier: usedTier } = assignEquipRarity(part, traits[0] || '');
+    const equipNameStr = generateEquipName(rank, part, _armorSub ? _armorSub.key : null, hasTrait ? traitName : '') + enhLabel;
     const item = {
       id: `npc_used_${rank.toLowerCase()}_${part}_${uid}`,
-      name: `${rank}급 ${suff}${enhLabel}${traitLabel}`,
+      name: equipNameStr,
       part, rank, rarity: usedRarity, traitTier: usedTier, enhance, infuse: traits.length, maxInfuse, traits,
       durability: dur, maxDurability: maxDur, price: marketPrice,
       category: 'equipment', isDropped: true, stackable: false,
@@ -9619,7 +9629,7 @@ function renderCommandPanel(runtime) {
             <label>희귀도<select class="gb-input" id="gb-skill-rarity" style="${rarityStyle(item.rarity||'Normal')}">
               ${RARITY_LIST.map(r => `<option value="${r}" ${(item.rarity||'Normal')===r?'selected':''} style="color:${rarityColor(r)}">${r}</option>`).join('')}
             </select></label>
-            <label>카테고리<select class="gb-input" id="gb-skill-category">${['singleAttack','aoeAttack','singleCC','aoeCC','singleHeal','aoeHeal','buff','utility'].map(v=>optionHtml(v,v,item.category===v)).join('')}</select></label>
+            <label>카테고리<select class="gb-input" id="gb-skill-category">${['singleAttack','aoeAttack','singleCC','aoeCC','singleHeal','aoeHeal','buff','passive','utility'].map(v=>optionHtml(v,v,item.category===v)).join('')}</select></label>
             <label>대상<select class="gb-input" id="gb-skill-target">${['singleEnemy','allEnemies','rowFront','rowMid','rowBack','rowFrontMid','rowMidBack','singleAlly','allAllies','self'].map(v=>optionHtml(v,v,item.target===v)).join('')}</select></label>
             <label>계수<input class="gb-input" id="gb-skill-coef" type="number" step="0.001" value="${escapeHtml(item.coef)}" /></label>
             <label>MP 비용<input class="gb-input" id="gb-skill-mp" type="number" value="${escapeHtml(item.mp)}" /></label>
@@ -9738,7 +9748,7 @@ function renderCommandPanel(runtime) {
       infuse:0, traits:[], durability:100,
       atk:0, pdef:0, mdef:0, stats:{ str:0, con:0, int:0, agi:0, sense:0 },
       note:'', price:0, resistType:'', resistPct:0, statusType:'',
-      rarity:'Normal', specialEffect:null
+      rarity:'Normal', specialEffect:null, armorSubtype:''
     });
 
     // Auto-preview calculated values
@@ -9870,6 +9880,9 @@ function renderCommandPanel(runtime) {
           <div class="gb-sub" style="margin-top:4px;">🛡 방어구 종류: 중갑(방어90~100%,STR/CON,ATK-10%) · 경갑(방어70~80%,STR/CON/AGI) · 가죽(방어50~60%,STR/AGI/INT/SEN,스탯+10%) · 로브(방어40~50%,AGI/INT/SEN,스탯+20%)</div>
           <div class="gb-sub" style="color:#94a3b8;">⚗️ 저항은 희귀재료 인퓨즈로 부여 (DB에서 직접 수정 가능). 기본 저항 없음.</div>
           <div class="gb-grid two">
+            <label>방어구 종류<select class="gb-input" id="gb-eq-armor-subtype">
+              ${ARMOR_SUBTYPE_KEYS.map(k => `<option value="${k}" ${(item.armorSubtype||'')=== k?'selected':''}>${ARMOR_SUBTYPES[k].label} (방어${Math.round(ARMOR_SUBTYPES[k].defMul[0]*100)}~${Math.round(ARMOR_SUBTYPES[k].defMul[1]*100)}%${ARMOR_SUBTYPES[k].atkMul ? ', ATK'+Math.round(ARMOR_SUBTYPES[k].atkMul*100)+'%' : ''}${ARMOR_SUBTYPES[k].statBonusMul ? ', 스탯+'+Math.round(ARMOR_SUBTYPES[k].statBonusMul*100)+'%' : ''})</option>`).join('')}
+            </select></label>
             <label>물리방어<input class="gb-input" id="gb-eq-pdef" type="number" value="${Number(item.pdef||0)}" /></label>
             <label>마법방어<input class="gb-input" id="gb-eq-mdef" type="number" value="${Number(item.mdef||0)}" /></label>
             <label>저항 타입 (인퓨즈 결과)<select class="gb-input" id="gb-eq-resist-type">
@@ -10572,6 +10585,12 @@ async function saveMaterialTraitFromForm() {
       rarity: fieldValue('#gb-eq-rarity') || 'Normal',
       stats: { str:0, con:0, int:0, agi:0, sense:0 }
     };
+    // Armor subtype
+    if (part === 'armor') {
+      const armorSub = fieldValue('#gb-eq-armor-subtype') || 'light';
+      item.armorSubtype = armorSub;
+      item.armorStatBonusMul = ARMOR_SUBTYPES[armorSub] ? ARMOR_SUBTYPES[armorSub].statBonusMul : 0;
+    }
     // Special material effect
     const smeType = fieldValue('#gb-eq-sme-type');
     const smeEffect = fieldValue('#gb-eq-sme-effect');
