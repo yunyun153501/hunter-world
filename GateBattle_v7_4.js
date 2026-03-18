@@ -11020,6 +11020,8 @@ async function saveMaterialTraitFromForm() {
       model.state.auctionRefreshCount = (model.state.auctionRefreshCount || 0) + 1;
       if (!Array.isArray(model.db.auctionListings)) model.db.auctionListings = [];
       model.db.auctionListings = model.db.auctionListings.filter(l => !l.isNpc);
+      if (!Array.isArray(model.db.auctionRareMats)) model.db.auctionRareMats = [];
+      model.db.auctionRareMats = model.db.auctionRareMats.filter(l => !l.isNpc);
       seedNpcAuctionListings();
       await saveDb(); await saveState(); renderApp();
       toast(`🔄 NPC 경매 목록 갱신 완료 (${model.state.auctionRefreshCount}/3)`);
@@ -11124,10 +11126,12 @@ async function saveMaterialTraitFromForm() {
         const bidState = model.state.auctionBid;
         if (!bidState) throw new Error('경매 데이터가 없다.');
         const auctionId = bidState.listingId;
-        if (!Array.isArray(model.db.auctionListings)) throw new Error('경매 목록이 없다.');
-        const idx = model.db.auctionListings.findIndex(l => l.id === auctionId);
+        // 희귀재료 경매인지 장비 경매인지 구분
+        const listArr = bidState.isRareMat ? (model.db.auctionRareMats || []) : (model.db.auctionListings || []);
+        if (!Array.isArray(listArr)) throw new Error('경매 목록이 없다.');
+        const idx = listArr.findIndex(l => l.id === auctionId);
         if (idx < 0) throw new Error('해당 경매 물품이 이미 없다. (다른 사람이 낙찰)');
-        const listing = model.db.auctionListings[idx];
+        const listing = listArr[idx];
         const inv = getActiveInventory();
         if (Number(inv.gold||0) < bidState.finalPrice) throw new Error(`소지금 부족 (${getActiveLabel()}: 필요 ${bidState.finalPrice.toLocaleString('en-US')}원)`);
         inv.gold = Number(inv.gold||0) - bidState.finalPrice;
@@ -11141,7 +11145,7 @@ async function saveMaterialTraitFromForm() {
           if (!buyItem.unitWeightG) buyItem.unitWeightG = EQUIP_WEIGHT_G[buyItem.part] || 1000;
         }
         grantActiveInventoryItem(buyItem);
-        model.db.auctionListings.splice(idx, 1);
+        listArr.splice(idx, 1);
         model.state.auctionBid = null;
         await saveDb(); await saveState(); renderApp();
         const fmt = n => n >= 1e8 ? `${(n/1e8).toFixed(2)}억원` : n >= 10000 ? `${Math.round(n/10000)}만원` : `${n.toLocaleString('en-US')}원`;
