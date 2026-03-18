@@ -10776,12 +10776,12 @@ async function saveMaterialTraitFromForm() {
         agi: Number(fieldValue('#gb-persona-agi') || 5),
         sense: Number(fieldValue('#gb-persona-sense') || 5),
       },
-      hp: Number(fieldValue('#gb-persona-hp') || 200),
-      mp: Number(fieldValue('#gb-persona-mp') || 80),
-      sp: Number(fieldValue('#gb-persona-sp') || 80),
-      atk: Number(fieldValue('#gb-persona-atk') || 5),
-      pdef: Number(fieldValue('#gb-persona-pdef') || 3),
-      mdef: Number(fieldValue('#gb-persona-mdef') || 3),
+      hp: Number(fieldValue('#gb-persona-hp') || 0),
+      mp: Number(fieldValue('#gb-persona-mp') || 0),
+      sp: Number(fieldValue('#gb-persona-sp') || 0),
+      atk: Number(fieldValue('#gb-persona-atk') || 0),
+      pdef: Number(fieldValue('#gb-persona-pdef') || 0),
+      mdef: Number(fieldValue('#gb-persona-mdef') || 0),
       damageType: fieldValue('#gb-persona-dmgtype') || 'magic',
       attackStat: fieldValue('#gb-persona-atkstat') || 'int',
       skills: fieldValue('#gb-persona-skills').split(',').map(s=>s.trim()).filter(Boolean),
@@ -10790,6 +10790,10 @@ async function saveMaterialTraitFromForm() {
       totalExp: Number(existing.totalExp || 0),
       note: fieldValue('#gb-persona-note') || '',
     });
+    // HP/MP/SP가 0이면 스탯 기반 자동 계산
+    if (item.hp <= 0) item.hp = 100 + (item.stats.con - 10) * 10 + (item.stats.str - 10) * 3;
+    if (item.mp <= 0) item.mp = 100 + (item.stats.int - 10) * 10 + (item.stats.sense - 10) * 3;
+    if (item.sp <= 0) item.sp = 100 + (item.stats.agi - 10) * 10 + (item.stats.sense - 10) * 3;
     if (!item.name) throw new Error('페르소나 이름이 비어 있다.');
     upsertById(model.db.personas, item);
     model.state.selected.personas = id;
@@ -11706,7 +11710,7 @@ async function saveMaterialTraitFromForm() {
         const id = ev.currentTarget.getAttribute('data-equip-shop-buy') || '';
         const eq = (model.db.equipments || []).find(e => e.id === id);
         if (!eq) throw new Error('장비를 찾을 수 없다.');
-        const price = Number(eq.price || calcEquipEnhancedPrice(calcEquipBasePrice(eq.rank, eq.part), eq.enhance||0, eq.rank));
+        const price = (eq.price != null && eq.price !== '' && Number(eq.price) >= 0) ? Number(eq.price) : calcEquipEnhancedPrice(calcEquipBasePrice(eq.rank, eq.part), eq.enhance||0, eq.rank);
         const inv = getActiveInventory();
         if (Number(inv.gold || 0) < price) throw new Error(`소지금 부족 (${getActiveLabel()}: ${Number(inv.gold||0).toLocaleString('en-US')}원 / 필요 ${price.toLocaleString('en-US')}원)`);
         inv.gold = Number(inv.gold || 0) - price;
