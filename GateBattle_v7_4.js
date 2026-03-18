@@ -9561,22 +9561,57 @@ function renderCommandPanel(runtime) {
     const customAccordionCats = catOrder.filter(c => customByCat[c] && customByCat[c].length);
     const etcCustom = customByCat['etc'];
     if (etcCustom && etcCustom.length) customAccordionCats.push('etc');
+    function renderCustomSkillRow(sk) {
+      const cat = catLabels[sk.category] || sk.category;
+      const grade = sk.grade || '?';
+      const rarity = sk.rarity && sk.rarity !== 'Normal' ? ` <span class="gb-badge" style="background:#a855f7;color:#fff;">${escapeHtml(sk.rarity)}</span>` : '';
+      const costs = sk.costs || {};
+      const costParts = [];
+      if (costs.mp || sk.mp) costParts.push('MP:' + (costs.mp || sk.mp));
+      if (costs.sp || sk.sp) costParts.push('SP:' + (costs.sp || sk.sp));
+      const costStr = costParts.length ? costParts.join(' / ') : '';
+      const coefStr = sk.coef != null && sk.coef !== 0 ? '계수:' + sk.coef : (sk.baseSingleCoef != null ? '기본계수:' + sk.baseSingleCoef + ' (광역CC→½)' : '');
+      const byRankStr = sk.byRank ? Object.entries(sk.byRank).map(([g, v]) => {
+        const parts = [];
+        if (v.coef != null) parts.push('계수:' + v.coef);
+        if (v.costs) { if (v.costs.mp) parts.push('MP:' + v.costs.mp); if (v.costs.sp) parts.push('SP:' + v.costs.sp); }
+        if (v.buff && v.buff.stats) parts.push('버프:' + Object.entries(v.buff.stats).map(([s,n])=>s.toUpperCase()+'+'+n).join(','));
+        if (v.passiveBonuses) parts.push('패시브:' + Object.entries(v.passiveBonuses).map(([s,n])=>s.toUpperCase()+'+'+n).join(','));
+        return parts.length ? g + '(' + parts.join(', ') + ')' : '';
+      }).filter(Boolean).join(' | ') : '';
+      const extras = [];
+      if (sk.damageType) extras.push(sk.damageType === 'physical' ? '물리' : '마법');
+      if (sk.element && sk.element !== 'none') extras.push('속성:' + sk.element);
+      if (sk.cc) extras.push('CC:' + sk.cc.type + ' ' + sk.cc.turns + '턴');
+      if (sk.buff && sk.buff.stats) extras.push('버프:' + Object.entries(sk.buff.stats).map(([s,n])=>s.toUpperCase()+'+'+n).join(','));
+      if (sk.buff && sk.buff.threatBonus) extras.push('위협+' + sk.buff.threatBonus);
+      if (sk.duration) extras.push(sk.duration + '턴');
+      if (sk.resourceRestore) extras.push('회복:' + Object.entries(sk.resourceRestore).map(([k,v])=>k.toUpperCase()+'+'+v).join(','));
+      if (sk.passiveBonuses) extras.push('패시브:' + Object.entries(sk.passiveBonuses).map(([s,n])=>s.toUpperCase()+'+'+n).join(','));
+      if (sk.statTypes) extras.push('스탯:' + (Array.isArray(sk.statTypes) ? sk.statTypes : [sk.statTypes]).join('/'));
+      if (sk.cooldown) extras.push('쿨타임:' + sk.cooldown + '턴');
+      const extraStr = extras.join(' · ');
+      const isActive = sk.id === model.state.selected.skills;
+      return `<div class="gb-skill-row" data-select-type="skills" data-id="${escapeHtml(sk.id)}" style="padding:6px 0;border-bottom:1px solid rgba(148,163,184,0.1);cursor:pointer;${isActive?'background:#1e293b;border-radius:6px;padding-left:6px;':''}" title="클릭하면 편집기로 불러옵니다">
+        <div><strong>${escapeHtml(sk.name)}</strong> <span class="gb-badge">${escapeHtml(grade)}</span>${rarity} <span class="gb-badge">${escapeHtml(cat)}</span> <span class="gb-badge">${escapeHtml(sk.id)}</span></div>
+        <div style="font-size:12px;margin-top:2px;">${coefStr ? `<span style="color:#3b82f6;font-weight:600;">${escapeHtml(coefStr)}</span>` : ''}${costStr ? ` <span style="color:#f59e0b;">[${escapeHtml(costStr)}]</span>` : ''}</div>
+        ${byRankStr ? `<div class="gb-sub" style="font-size:11px;margin-top:2px;">📈 성장: ${escapeHtml(byRankStr)}</div>` : ''}
+        ${extraStr ? `<div class="gb-sub" style="font-size:11px;margin-top:1px;">${escapeHtml(extraStr)}</div>` : ''}
+        ${sk.desc ? `<div class="gb-skill-desc" style="margin-top:2px;">${escapeHtml(sk.desc)}</div>` : ''}
+      </div>`;
+    }
     const list = customFiltered.length ? customAccordionCats.map(catKey => {
       const label = catKey === 'etc' ? '기타' : (catLabels[catKey] || catKey);
       const icon = catKey === 'etc' ? '📋' : (catIcons[catKey] || '📋');
       const items = customByCat[catKey];
-      const rows = items.map(c => {
-        const rStyle = rarityStyle(c.rarity);
-        const rBadge = c.rarity && c.rarity !== 'Normal' ? ' <span class="gb-badge" style="background:'+rarityColor(c.rarity)+';color:#000;font-size:10px;">'+escapeHtml(c.rarity)+'</span>' : '';
-        return `<button class="gb-list-item ${c.id===model.state.selected.skills?'is-active':''}" data-select-type="skills" data-id="${escapeHtml(c.id)}" style="${rStyle}">${escapeHtml(c.name)}${rBadge} <span class="gb-sub">[${escapeHtml(c.id)}]</span></button>`;
-      }).join('');
+      const rows = items.map(renderCustomSkillRow).join('');
       return `<div class="gb-skill-accordion">
         <div class="gb-skill-accordion-header" data-accordion-cat="custom_${escapeHtml(catKey)}">
           <span>${icon} ${escapeHtml(label)} <span class="gb-sub">(${items.length}종)</span></span>
           <span class="gb-skill-accordion-arrow">▶</span>
         </div>
         <div class="gb-skill-accordion-body" data-accordion-body="custom_${escapeHtml(catKey)}" style="display:none;">
-          ${rows}
+          <div class="gb-skill-list">${rows}</div>
         </div>
       </div>`;
     }).join('') : '';
@@ -9751,6 +9786,13 @@ function renderCommandPanel(runtime) {
     const maxInfuse = EQUIP_MAX_INFUSE[part] || 1;
     const autoBasePrice = calcEquipBasePrice(rank, part);
     const autoEnhPrice = calcEquipEnhancedPrice(autoBasePrice, enhance, rank);
+    // Trait bonus price: each trait adds tier-based rare material price
+    const itemTraits = item.traits || [];
+    let traitPriceBonus = 0;
+    itemTraits.forEach(tid => {
+      traitPriceBonus += getRareMatTierPrice(rank, tid);
+    });
+    const autoTotalPrice = autoEnhPrice + traitPriceBonus;
     const rangeText = (() => {
       const r = EQUIP_PRICE_RANGE[rank];
       if (!r) return '';
@@ -9785,11 +9827,16 @@ function renderCommandPanel(runtime) {
     const accessoryStat = ACCESSORY_STAT_BY_RANK[rank] || {};
 
     const priceDisplay = (() => {
-      const p = Number(item.price || autoEnhPrice);
+      const p = Number(item.price || autoTotalPrice);
       if (p >= 1e8) return `${(p/1e8).toFixed(2)}억원`;
       if (p >= 10000) return `${Math.round(p/10000)}만원`;
       return `${p.toLocaleString('en-US')}원`;
     })();
+    const traitPriceText = traitPriceBonus > 0 ? (() => {
+      if (traitPriceBonus >= 1e8) return `+${(traitPriceBonus/1e8).toFixed(2)}억`;
+      if (traitPriceBonus >= 10000) return `+${Math.round(traitPriceBonus/10000)}만`;
+      return `+${traitPriceBonus.toLocaleString('en-US')}원`;
+    })() : '';
 
     return `
       <div class="gb-grid db">
@@ -9807,7 +9854,24 @@ function renderCommandPanel(runtime) {
         </div>
         <div class="gb-panel">
           <div class="gb-section-title">장비 편집</div>
-          <div class="gb-sub" style="color:#94a3b8;">등급별 시세: <strong>${escapeHtml(rangeText)}</strong> | 자동 기준가: <strong>${escapeHtml(priceDisplay)}</strong></div>
+          ${item.id ? (() => {
+            const partLabel = EQUIP_PART_LABELS[part] || part;
+            const rarityLabel = item.rarity && item.rarity !== 'Normal' ? item.rarity : '일반';
+            const traitCount = itemTraits.length;
+            const enhStr = enhance > 0 ? ` +${enhance}강` : '';
+            const infuseStr = Number(item.infuse || 0) > 0 ? ` · 주입 ${item.infuse}회` : '';
+            const traitStr = traitCount > 0 ? ` · 특성 ${traitCount}개` : '';
+            const smeStr = item.specialEffect && item.specialEffect.effectId ? ` · ✨특수효과` : '';
+            const autoRareHint = (item.specialEffect && item.specialEffect.effectId && (part === 'weapon' || part === 'armor') && (!item.rarity || item.rarity === 'Normal')) ? ' <span style="color:#f59e0b;">→ 저장 시 Rare 자동 적용</span>' : '';
+            return '<div style="background:#1a1d2e;border:1px solid rgba(148,163,184,0.15);border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:13px;">' +
+              '<strong style="color:#60a5fa;">' + escapeHtml(item.name || item.id) + '</strong> ' +
+              '<span class="gb-badge">' + escapeHtml(rank) + '</span> ' +
+              '<span style="color:' + rarityColor(item.rarity || 'Normal') + ';">' + escapeHtml(rarityLabel) + '</span> ' +
+              escapeHtml(partLabel) + enhStr +
+              '<div class="gb-sub" style="margin-top:2px;">' + escapeHtml(`내구도 ${item.durability != null ? item.durability : 100}%${infuseStr}${traitStr}${smeStr}`) + autoRareHint + '</div>' +
+            '</div>';
+          })() : ''}
+          <div class="gb-sub" style="color:#94a3b8;">등급별 시세: <strong>${escapeHtml(rangeText)}</strong> | 자동 기준가: <strong>${escapeHtml(priceDisplay)}</strong>${traitPriceText ? ` <span style="color:#a78bfa;">(특성 ${escapeHtml(traitPriceText)})</span>` : ''}</div>
           <div class="gb-grid two" style="margin-top:8px;">
             <label>ID<input class="gb-input" id="gb-eq-id" value="${escapeHtml(item.id)}" /></label>
             <label>이름<input class="gb-input" id="gb-eq-name" value="${escapeHtml(item.name)}" /></label>
@@ -9875,6 +9939,8 @@ function renderCommandPanel(runtime) {
           <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(148,163,184,0.15);">
             <div class="gb-section-title">✨ 특수효과 (Special Effect)</div>
             <div class="gb-sub">특성주입과 별개로 무기/장비에 추가되는 특수 옵션. 버프=자신 강화, 디버프=적에게 받는 피해 증가.</div>
+            <div class="gb-sub" style="color:#f59e0b;">💡 무기/방어구에 특수효과 추가 시 자동으로 Rare 등급 적용. 확률·수치 0이면 등급에 맞게 자동 설정됨.</div>
+            <div class="gb-sub" style="color:#60a5fa;">📌 보조무기: 주입 2회 고정 / 악세서리: 주입 1회 고정</div>
             <div class="gb-grid two" style="margin-top:6px;">
               <label>효과 종류<select class="gb-input" id="gb-eq-sme-type">
                 <option value="" ${!(item.specialEffect&&item.specialEffect.type)?'selected':''}>없음</option>
@@ -10522,12 +10588,16 @@ async function saveMaterialTraitFromForm() {
     const durability = Math.max(0, Math.min(100, Number(fieldValue('#gb-eq-durability')||100)));
     const priceInput = Number(fieldValue('#gb-eq-price')||0);
     const autoPrice = calcEquipEnhancedPrice(calcEquipBasePrice(rank, part), enhance, rank);
-    const price = priceInput > 0 ? priceInput : autoPrice;
-    // Collect traits
+    // Add trait tier price bonus
     const traits = EQUIP_TRAIT_TYPES.filter(t => {
       const el = document.getElementById(`gb-eq-trait-${t}`);
       return el && el.checked;
     });
+    let traitPriceBonus = 0;
+    traits.forEach(tid => {
+      traitPriceBonus += getRareMatTierPrice(rank, tid);
+    });
+    const price = priceInput > 0 ? priceInput : (autoPrice + traitPriceBonus);
     const item = {
       id,
       name: fieldValue('#gb-eq-name') || id,
@@ -10553,15 +10623,41 @@ async function saveMaterialTraitFromForm() {
     const smeType = fieldValue('#gb-eq-sme-type');
     const smeEffect = fieldValue('#gb-eq-sme-effect');
     if (smeType && smeEffect) {
+      let smeChance = Number(fieldValue('#gb-eq-sme-chance')||0);
+      let smeValue = Number(fieldValue('#gb-eq-sme-value')||0);
+      // Auto-fill: chance=0 → rank-based default (E:10, D:15, C:20, B:25, A:30, S:40)
+      if (smeChance <= 0) {
+        const defaultChance = {E:10,D:15,C:20,B:25,A:30,S:40};
+        smeChance = defaultChance[rank] || 20;
+      }
+      // Auto-fill: value=0 → use trait scale value for current rank
+      if (smeValue <= 0) {
+        const traitDef = (DEFAULT_RARE_MATERIAL_PACK.traits || []).find(t => t.id === smeEffect);
+        if (traitDef && traitDef.scale) {
+          const scaleTable = (DEFAULT_RARE_MATERIAL_PACK.valueScales || {})[traitDef.scale];
+          if (scaleTable && scaleTable[rank] != null) smeValue = scaleTable[rank];
+        }
+        if (smeValue <= 0) {
+          const fallback = (DEFAULT_RARE_MATERIAL_PACK.valueScales.percentSmall || {})[rank] || 3;
+          smeValue = fallback;
+        }
+      }
       item.specialEffect = {
         type: smeType,
         effectId: smeEffect,
-        chance: Math.max(0, Math.min(100, Number(fieldValue('#gb-eq-sme-chance')||0))),
-        value: Number(fieldValue('#gb-eq-sme-value')||0)
+        chance: Math.max(0, Math.min(100, smeChance)),
+        value: smeValue
       };
+      // Auto-set rarity to Rare when special effect is present on weapon/armor
+      if ((part === 'weapon' || part === 'armor') && (item.rarity === 'Normal' || !item.rarity)) {
+        item.rarity = 'Rare';
+      }
     } else {
       item.specialEffect = null;
     }
+    // Subweapon: always infuse=2, accessory: always infuse=1
+    if (part === 'subweapon') item.infuse = 2;
+    if (part === 'accessory') item.infuse = 1;
     if (!Array.isArray(model.db.equipments)) model.db.equipments = [];
     upsertById(model.db.equipments, item);
     model.state.selected.equipment = id;
