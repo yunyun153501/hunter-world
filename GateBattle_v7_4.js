@@ -9551,11 +9551,35 @@ function renderCommandPanel(runtime) {
         </div>
       </div>`;
     }).join('');
-    const list = (model.db.customSkills || []).filter(c => !BUILTIN_SKILLS[c.id]).map(c => {
-      const rStyle = rarityStyle(c.rarity);
-      const rBadge = c.rarity && c.rarity !== 'Normal' ? ' <span class="gb-badge" style="background:'+rarityColor(c.rarity)+';color:#000;font-size:10px;">'+escapeHtml(c.rarity)+'</span>' : '';
-      return `<button class="gb-list-item ${c.id===model.state.selected.skills?'is-active':''}" data-select-type="skills" data-id="${escapeHtml(c.id)}" style="${rStyle}">${escapeHtml(c.name)}${rBadge} <span class="gb-sub">[${escapeHtml(c.id)}]</span></button>`;
-    }).join('');
+    const customFiltered = (model.db.customSkills || []).filter(c => !BUILTIN_SKILLS[c.id]);
+    const customByCat = {};
+    customFiltered.forEach(c => {
+      const catKey = c.category || 'etc';
+      if (!customByCat[catKey]) customByCat[catKey] = [];
+      customByCat[catKey].push(c);
+    });
+    const customAccordionCats = catOrder.filter(c => customByCat[c] && customByCat[c].length);
+    const etcCustom = customByCat['etc'];
+    if (etcCustom && etcCustom.length) customAccordionCats.push('etc');
+    const list = customFiltered.length ? customAccordionCats.map(catKey => {
+      const label = catKey === 'etc' ? '기타' : (catLabels[catKey] || catKey);
+      const icon = catKey === 'etc' ? '📋' : (catIcons[catKey] || '📋');
+      const items = customByCat[catKey];
+      const rows = items.map(c => {
+        const rStyle = rarityStyle(c.rarity);
+        const rBadge = c.rarity && c.rarity !== 'Normal' ? ' <span class="gb-badge" style="background:'+rarityColor(c.rarity)+';color:#000;font-size:10px;">'+escapeHtml(c.rarity)+'</span>' : '';
+        return `<button class="gb-list-item ${c.id===model.state.selected.skills?'is-active':''}" data-select-type="skills" data-id="${escapeHtml(c.id)}" style="${rStyle}">${escapeHtml(c.name)}${rBadge} <span class="gb-sub">[${escapeHtml(c.id)}]</span></button>`;
+      }).join('');
+      return `<div class="gb-skill-accordion">
+        <div class="gb-skill-accordion-header" data-accordion-cat="custom_${escapeHtml(catKey)}">
+          <span>${icon} ${escapeHtml(label)} <span class="gb-sub">(${items.length}종)</span></span>
+          <span class="gb-skill-accordion-arrow">▶</span>
+        </div>
+        <div class="gb-skill-accordion-body" data-accordion-body="custom_${escapeHtml(catKey)}" style="display:none;">
+          ${rows}
+        </div>
+      </div>`;
+    }).join('') : '';
     const isEditingBuiltin = item.id && BUILTIN_SKILLS[item.id];
     const editorTitle = isEditingBuiltin ? `내장 스킬 편집 — <span style="color:#3b82f6;">${escapeHtml(item.name || item.id)}</span>` : '커스텀 스킬 편집';
     return `
@@ -9564,7 +9588,7 @@ function renderCommandPanel(runtime) {
         ${builtinAccordion}
       </div>` : ''}
       <div class="gb-grid db" style="margin-top:12px;">
-        <div class="gb-panel"><div class="gb-section-title">커스텀 스킬 목록</div>${list || '<div class="gb-sub">등록된 커스텀 스킬 없음.</div>'}<div class="gb-btn-row"><button class="gb-btn" id="gb-skill-new">새 스킬</button><button class="gb-btn danger" id="gb-skill-clear-all">스킬 전체삭제</button></div></div>
+        <div class="gb-panel"><div class="gb-section-title">커스텀 스킬 목록 <span class="gb-sub">(카테고리를 클릭하여 펼치기)</span></div>${list || '<div class="gb-sub">등록된 커스텀 스킬 없음.</div>'}<div class="gb-btn-row"><button class="gb-btn" id="gb-skill-new">새 스킬</button><button class="gb-btn danger" id="gb-skill-clear-all">스킬 전체삭제</button></div></div>
         <div class="gb-panel">
           <div class="gb-section-title">${editorTitle}</div>
           <div class="gb-grid two">
@@ -12719,7 +12743,7 @@ async function saveMaterialTraitFromForm() {
     style.textContent = `
       #${UI_ID} { position:fixed; inset:0; z-index:9999; font-family: Inter, Pretendard, sans-serif; pointer-events:none; }
       #${UI_ID} .hidden { display:none; }
-      #${UI_ID} .gb-shell { background:#0f1117; color:#e2e8f0; height:100%; overflow:auto; padding:18px 18px 100px; pointer-events:auto; }
+      #${UI_ID} .gb-shell { background:#0f1117; color:#e2e8f0; height:100%; overflow:auto; padding:18px 18px 48px; pointer-events:auto; box-sizing:border-box; }
       #${UI_ID} .gb-header { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; margin-bottom:16px; }
       #${UI_ID} .gb-title { font-size:22px; font-weight:800; }
       #${UI_ID} .gb-sub { color:#94a3b8; font-size:12px; line-height:1.45; }
