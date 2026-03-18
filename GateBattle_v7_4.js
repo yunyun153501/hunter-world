@@ -1208,18 +1208,13 @@ const RARE_FAMILY_PRESETS = {
     if (position.includes('근거리')) { dmgT += 0.04; }
     const hp = Math.round(rangeValue(table.hp[0], table.hp[1], hpT));
     const dmg = Math.round(rangeValue(table.dmg[0], table.dmg[1], dmgT));
-    const damageType = (entry && entry.damageType === 'magic') ? 'magic' : 'physical';
-    const rankIdx = gradeIndex(rank);
-    const resPack = MONSTER_RESOURCE_TABLE[damageType];
-    const mp = resPack ? resPack.mp[rankIdx] : 0;
-    const sp = resPack ? resPack.sp[rankIdx] : 0;
     return {
       kind,
       hp,
       damage:dmg,
       skillMul:Number(table.skill || 1),
-      mp,
-      sp,
+      mp:0,
+      sp:0,
       tableHp:table.hp.slice(),
       tableDmg:table.dmg.slice()
     };
@@ -1333,9 +1328,9 @@ const RARE_FAMILY_PRESETS = {
   const SPECIES_DEFAULTS = {
     undead: { speciesLabel:'언데드', defaultElement:'dark', immunities:['poison','bleed','curse'], damageTakenMods:{ physical:1.10 } },
     ghost: { speciesLabel:'고스트', defaultElement:'dark', immunities:['poison','bleed','curse'], damageTakenMods:{ physical:0.50, magic:1.25 } },
-    beast: { speciesLabel:'야수', defaultElement:'wind', bonusVsBleeding:1.20, aloneDamageTaken:1.10 },
+    beast: { speciesLabel:'야수', defaultElement:'wind', immunities:['slow'], bonusVsBleeding:1.20, aloneDamageTaken:1.10 },
     plant: { speciesLabel:'식물', defaultElement:'earth', immunities:['bleed'], regenPct:0.03, regenBlockedBy:['burn'] },
-    slime: { speciesLabel:'슬라임', defaultElement:'water', immunities:['bleed'], damageTakenMods:{ physical:0.70, magic:1.10 } },
+    slime: { speciesLabel:'슬라임', defaultElement:'water', immunities:['slow'], damageTakenMods:{ physical:0.70, magic:1.10 } },
     construct: { speciesLabel:'구조체', defaultElement:'electric', immunities:['poison','bleed','sleep'], damageTakenMods:{ magic:0.80, physical:1.15 } },
     elemental: { speciesLabel:'정령', defaultElement:'none' },
     demon: { speciesLabel:'악마', defaultElement:'fire', immunities:['burn'], damageTakenMods:{ dark:0.70 } },
@@ -3789,7 +3784,7 @@ function buildDropEquipment(rank, forcePart) {
     note: hasTrait ? `게이트 드랍. 특성: ${traitName} | 특성주입 최대 ${maxInfuse}회` : `게이트 드랍. 특성주입 최대 ${maxInfuse}회`,
     atk: part === 'weapon' ? (WEAPON_BASE_ATK[r] || 5) : 0,
     pdef: part === 'armor' ? Math.round((ARMOR_STAT_BY_RANK[r]||{defRange:[0,5]}).defRange[1] * 0.5) : (part === 'subweapon' ? Math.round((ARMOR_STAT_BY_RANK[r]||{defRange:[0,5]}).defRange[1] * 0.25) : 0),
-    mdef: part === 'armor' ? Math.round((ARMOR_STAT_BY_RANK[r]||{defRange:[0,5]}).defRange[1] * 0.3) : 0,
+    mdef: part === 'armor' ? Math.round((ARMOR_STAT_BY_RANK[r]||{defRange:[0,5]}).defRange[1] * 0.5) : 0,
     mainStat: part === 'weapon' ? (Math.random() < 0.5 ? 'str' : 'int') : (part === 'armor' ? 'con' : 'str'),
     resistType: '',
     resistPct: 0
@@ -4489,14 +4484,31 @@ function getBuffedStat(unit, statKey) {
     if (Number(unit.statuses && unit.statuses.silence || 0) > 0) return false;
     // 대지의 치유: 정령 소환 시에만 사용 가능
     if (skill.id === 'earthHeal' && !hasSummonBuff(unit, 'zephyr') && !hasSummonBuff(unit, 'bark')) return false;
+    // 몬스터는 MP/SP 비용 무시 (쿨타임만 적용)
+    if (unit.isMonster) return true;
     const cost = getSkillCost(unit, skill);
     return unit.mp >= cost.mp && unit.sp >= cost.sp;
   }
+  // 몬스터 스킬 쿨타임 결정: 일반=기본공격1/스킬2, 엘리트·보스=기본공격1/스킬2/광역3
+  function getMonsterSkillCooldown(unit, skill) {
+    const cat = skill.category || '';
+    if (cat === 'aoeAttack' || cat === 'aoeCC' || cat === 'aoeHeal') return 3;
+    if (cat !== 'passive') return 2;  // 단일공격/CC/힐/버프/유틸리티 = 2턴 쿨타임
+    return 0;
+  }
   function paySkillCost(unit, skill) {
     const cost = getSkillCost(unit, skill);
-    unit.mp = Math.max(0, unit.mp - cost.mp);
-    unit.sp = Math.max(0, unit.sp - cost.sp);
-    if (skill.cooldown) unit.cooldowns[skill.id] = Number(skill.cooldown);
+    if (!unit.isMonster) {
+      unit.mp = Math.max(0, unit.mp - cost.mp);
+      unit.sp = Math.max(0, unit.sp - cost.sp);
+    }
+    // 몬스터: 쿨타임 적용 (MP/SP 소모 없음)
+    if (unit.isMonster) {
+      const cd = getMonsterSkillCooldown(unit, skill);
+      if (cd > 0) unit.cooldowns[skill.id] = cd;
+    } else {
+      if (skill.cooldown) unit.cooldowns[skill.id] = Number(skill.cooldown);
+    }
     return cost;
   }
   function critChance(unit) {
@@ -5132,6 +5144,10 @@ function getBuffedStat(unit, statKey) {
     const utilityBuff = skillPool.find(sk => sk.category === 'utility' && sk.buff && !hasBuff(unit, sk.id));
     if (utilityBuff && unit.hp / unit.maxHp <= 0.5 && Math.random() < 0.6) return { type:'skill', skillId:utilityBuff.id, target:unit.uid };
     const singleAtk = skillPool.filter(sk => sk.category === 'singleAttack').sort((a,b)=>(b.coef||0)-(a.coef||0))[0];
+    // 몬스터: 기본공격 쿨타임 중이면 스킬 사용, 스킬 쿨타임 중이면 기본공격
+    const basicOnCooldown = unit.isMonster && Number(unit.cooldowns && unit.cooldowns['basicAttack'] || 0) > 0;
+    if (basicOnCooldown && singleAtk) return { type:'skill', skillId:singleAtk.id, target:(choosePriorityTarget(unit, foes, singleAtk) || {}).uid };
+    if (!basicOnCooldown && unit.isMonster) return { type:'basic', target:(choosePriorityTarget(unit, foes, null) || {}).uid };
     if (singleAtk) return { type:'skill', skillId:singleAtk.id, target:(choosePriorityTarget(unit, foes, singleAtk) || {}).uid };
     return { type:'basic', target:(choosePriorityTarget(unit, foes, null) || {}).uid };
   }
@@ -5177,6 +5193,8 @@ function getBuffedStat(unit, statKey) {
         actor.lastAction = `기본 공격 → ${target.name} 빗나감`;
         addRoundHighlight(summary, `${actor.name}의 공격이 빗나갔다`);
         pushBattleLog(runtime, `${actor.name}의 기본 공격이 ${target.name}에게 빗나감`);
+        // 몬스터 기본공격 쿨타임 1턴
+        if (actor.isMonster) actor.cooldowns['basicAttack'] = 1;
         return;
       }
       const dmg = computeDamage(actor, target, skill, hit.crit);
@@ -5193,6 +5211,8 @@ function getBuffedStat(unit, statKey) {
       if (hit.crit) addRoundHighlight(summary, `${actor.name} 치명타`);
       pushDamageEventLog(runtime, actor, target, '기본 공격', dmg, hit.crit, target.dead);
       pushHpShiftLog(runtime, target, hpBefore);
+      // 몬스터 기본공격 쿨타임 1턴
+      if (actor.isMonster) actor.cooldowns['basicAttack'] = 1;
       return;
     }
 
@@ -6009,7 +6029,7 @@ function seedNpcAuctionListings() {
         stackKey: `equipment:npc_${uid}`, note: `NPC 경매 등록${hasTrait ? `. 특성: ${traitName}` : ''}`,
         atk: part === 'weapon' ? (WEAPON_BASE_ATK[rank] || 5) : 0,
         pdef: part === 'armor' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.5) : (part === 'subweapon' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.25) : 0),
-        mdef: part === 'armor' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.3) : 0,
+        mdef: part === 'armor' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.5) : 0,
         mainStat: part === 'weapon' ? (Math.random() < 0.5 ? 'str' : 'int') : (part === 'armor' ? 'con' : 'str'),
         resistType: '', resistPct: 0
       };
@@ -6812,7 +6832,7 @@ function seedNpcUsedListings() {
       note: `NPC 중고 등록${hasTrait ? `. 특성: ${traitName}` : ''}`,
       atk: part === 'weapon' ? (WEAPON_BASE_ATK[rank] || 5) : 0,
       pdef: part === 'armor' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.5) : (part === 'subweapon' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.25) : 0),
-      mdef: part === 'armor' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.3) : 0,
+      mdef: part === 'armor' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.5) : 0,
       mainStat: part === 'weapon' ? (Math.random() < 0.5 ? 'str' : 'int') : (part === 'armor' ? 'con' : 'str'),
       resistType: '', resistPct: 0
     };
@@ -10015,7 +10035,16 @@ async function saveMaterialTraitFromForm() {
       renderApp();
     });
     on('[data-go]', 'click', async (ev) => {
-      model.state.view = ev.currentTarget.getAttribute('data-go');
+      const target = ev.currentTarget.getAttribute('data-go');
+      // 게이트 진행 중에는 gate/battle 외 다른 화면 이동 차단
+      if (model.state.gate && model.state.gate.run) {
+        const allowed = ['gate', 'battle'];
+        if (!allowed.includes(target)) {
+          alert('⚠️ 게이트 진행 중에는 다른 화면으로 이동할 수 없습니다. 후퇴하거나 클리어 후 이용해 주세요.');
+          return;
+        }
+      }
+      model.state.view = target;
       await saveState();
       renderApp();
     });
