@@ -10967,7 +10967,7 @@ async function saveMaterialTraitFromForm() {
     on('[data-go]', 'click', async (ev) => {
       const target = ev.currentTarget.getAttribute('data-go');
       // 게이트 진행 중에는 gate/battle 외 다른 화면 이동 차단
-      if (model.state.gate && model.state.gate.run) {
+      if (activeGateRun()) {
         const allowed = ['gate', 'battle', 'party'];
         if (!allowed.includes(target)) {
           alert('⚠️ 게이트 진행 중에는 다른 화면으로 이동할 수 없습니다. 후퇴하거나 클리어 후 이용해 주세요.');
