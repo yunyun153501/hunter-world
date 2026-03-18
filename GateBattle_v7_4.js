@@ -1418,6 +1418,19 @@ const RARE_FAMILY_PRESETS = {
         meta.onHitTurns = hardCcTypes.includes(elSt) ? 1 : 2;
       }
     }
+    // 정령 보스/엘리트: baseElement가 없으면(variable) 랜덤 속성 배정 후 상태이상 부여
+    if (!meta.onHitStatus && (kind === 'boss' || kind === 'elite') && meta.species === 'elemental') {
+      const elKeys = Object.keys(ELEMENT_STATUS_MAP);
+      const randEl = elKeys[Math.floor(Math.random() * elKeys.length)];
+      const elSt = ELEMENT_STATUS_MAP[randEl];
+      if (elSt && normStatus(elSt)) {
+        meta.baseElement = randEl;
+        const hardCcTypes = ['stun','bind','sleep','freeze','paralyze'];
+        meta.onHitStatus = elSt;
+        meta.onHitChance = hardCcTypes.includes(elSt) ? 0.18 : 0.28;
+        meta.onHitTurns = hardCcTypes.includes(elSt) ? 1 : 2;
+      }
+    }
     if (Array.isArray(item.immunities)) meta = mergeMeta(meta, { immunities:item.immunities });
     if (item.damageTakenMods) meta = mergeMeta(meta, { damageTakenMods:item.damageTakenMods });
     if (item.bonusVsBleeding) meta = mergeMeta(meta, { bonusVsBleeding:item.bonusVsBleeding });
