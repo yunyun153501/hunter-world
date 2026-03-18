@@ -57,7 +57,7 @@
 
 > 장비 특성, 재료 특수효과, 스킬 특수효과가 하나의 통합 시스템으로 운영됩니다.
 
-### 특성 종류 (42종)
+### 특성 종류 (58종)
 
 **공격 (12종)**
 | ID | 라벨 | 디버프 |
@@ -91,21 +91,37 @@
 | light_resist | 빛 속성 저항 |
 | dark_resist | 어둠 속성 저항 |
 
-**상태이상 부여 (4종)**
-| ID | 라벨 |
-|----|------|
-| poison_apply | 독 부여 확률 증가 |
-| bleed_apply | 출혈 부여 확률 증가 |
-| burn_apply | 화상 부여 확률 증가 |
-| curse_apply | 저주 부여 확률 증가 |
+**상태이상 부여 (12종)**
+| ID | 라벨 | 티어 |
+|----|------|:---:|
+| stun_apply | 기절 부여 확률 증가 | 1 |
+| freeze_apply | 빙결 부여 확률 증가 | 1 |
+| paralyze_apply | 마비 부여 확률 증가 | 1 |
+| sleep_apply | 수면 부여 확률 증가 | 1 |
+| poison_apply | 독 부여 확률 증가 | 2 |
+| bleed_apply | 출혈 부여 확률 증가 | 2 |
+| burn_apply | 화상 부여 확률 증가 | 2 |
+| curse_apply | 저주 부여 확률 증가 | 2 |
+| bind_apply | 속박 부여 확률 증가 | 2 |
+| silence_apply | 침묵 부여 확률 증가 | 2 |
+| blind_apply | 실명 부여 확률 증가 | 2 |
+| slow_apply | 둔화 부여 확률 증가 | 3 |
 
-**상태이상 저항 (4종)**
-| ID | 라벨 |
-|----|------|
-| poison_resist | 독 저항 |
-| bleed_resist | 출혈 저항 |
-| burn_resist | 화상 저항 |
-| curse_resist | 저주 저항 |
+**상태이상 저항 (12종)**
+| ID | 라벨 | 티어 |
+|----|------|:---:|
+| stun_resist | 기절 저항 | 3 |
+| freeze_resist | 빙결 저항 | 3 |
+| paralyze_resist | 마비 저항 | 3 |
+| sleep_resist | 수면 저항 | 3 |
+| poison_resist | 독 저항 | 4 |
+| bleed_resist | 출혈 저항 | 4 |
+| burn_resist | 화상 저항 | 4 |
+| curse_resist | 저주 저항 | 4 |
+| bind_resist | 속박 저항 | 4 |
+| silence_resist | 침묵 저항 | 4 |
+| blind_resist | 실명 저항 | 4 |
+| slow_resist | 둔화 저항 | 4 |
 
 **지원 (5종)**
 | ID | 라벨 |
@@ -141,7 +157,7 @@
 |------|:---:|:---:|:---:|:---:|:---:|:---:|
 | **효과(%)** | 2 | 4 | 6 | 8 | 10 | 12 |
 
-> 적용 특성: 8종 속성 피해(_damage), 8종 속성 저항(_resist), 4종 상태이상 부여(_apply), 4종 상태이상 저항(_resist)
+> 적용 특성: 8종 속성 피해(_damage), 8종 속성 저항(_resist), 12종 상태이상 부여(_apply), 12종 상태이상 저항(_resist)
 
 **critChance** (크리티컬 확률)
 
@@ -179,7 +195,7 @@
 
 | 등급 | E | D | C | B | A | S |
 |------|:---:|:---:|:---:|:---:|:---:|:---:|
-| **고정값** | +1 | +2 | +3 | +5 | +7 | +10 |
+| **고정값** | +2 | +4 | +6 | +8 | +11 | +14 |
 
 > 적용 특성: stat_str_up, stat_con_up, stat_int_up, stat_agi_up, stat_sense_up — 전투 시작 시 스탯에 직접 합산
 
