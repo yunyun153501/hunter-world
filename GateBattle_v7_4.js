@@ -6841,17 +6841,20 @@ function renderAuctionHouseHtml() {
             const it = l.item;
             const mktPrice = l.marketPrice || it.price || it.suggestedPrice || 0;
             const isEquip = it.category === 'equipment';
-            const traitTxt = isEquip && (it.traits||[]).length ? `<span class="gb-badge" style="background:#7c3aed;">${(it.traits||[]).map(t=>equipTraitDisplay(t, it.rank)).join(', ')}</span>` : (!isEquip && it.traitId ? `<span class="gb-badge" style="background:#7c3aed;">${escapeHtml(equipTraitDisplay(it.traitId, it.rank))}</span>` : '');
+            const isSkillbook = it.category === 'skillbook';
+            const traitTxt = isEquip && (it.traits||[]).length ? `<span class="gb-badge" style="background:#7c3aed;">${(it.traits||[]).map(t=>equipTraitDisplay(t, it.rank)).join(', ')}</span>` : (!isEquip && !isSkillbook && it.traitId ? `<span class="gb-badge" style="background:#7c3aed;">${escapeHtml(equipTraitDisplay(it.traitId, it.rank))}</span>` : '');
             const npcBadge = l.isNpc ? '<span class="gb-badge">NPC</span>' : '<span class="gb-badge" style="background:#0284c7;">플레이어</span>';
+            const catBadge = isEquip ? `<span class="gb-badge">${escapeHtml(EQUIP_PART_LABELS[it.part]||it.part||'')}</span>` : isSkillbook ? `<span class="gb-badge" style="background:#d97706;">📖 스킬북 T${it.skillTier||'?'}</span>` : '<span class="gb-badge">희귀재료</span>';
             return `<div class="gb-unit" style="margin-bottom:6px;padding:8px;border:1px solid rgba(148,163,184,0.15);border-radius:6px;">
               <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
                 <div>
                   <strong style="${rarityStyle(it.rarity)}">${escapeHtml(it.name||it.id)}</strong>
                   <span class="gb-badge">${escapeHtml(it.rank||'E')}</span>
-                  ${isEquip ? `<span class="gb-badge">${escapeHtml(EQUIP_PART_LABELS[it.part]||it.part||'')}</span>` : '<span class="gb-badge">희귀재료</span>'}
+                  ${catBadge}
                   ${isEquip && it.rarity && it.rarity !== 'Normal' ? `<span class="gb-badge" style="background:${rarityColor(it.rarity)};color:#000;">${escapeHtml(it.rarity)}</span>` : ''}
                   ${npcBadge} ${traitTxt}
                   ${isEquip ? `<div class="gb-sub">${it.atk ? 'ATK+'+it.atk+' | ' : ''}${it.pdef ? 'PDEF+'+it.pdef+' | ' : ''}${it.mdef ? 'MDEF+'+it.mdef+' | ' : ''}주입 최대 ${it.maxInfuse||1}회 | 내구 ${it.durability||100}/${it.maxDurability||100}</div>` : ''}
+                  ${isSkillbook ? `<div class="gb-sub">${escapeHtml(it.note||'')}</div>` : ''}
                   <div class="gb-sub">시장가: ${fmt(mktPrice)}</div>
                 </div>
                 <button class="gb-btn primary" data-auction-bid="${escapeHtml(l.id)}" data-auction-bid-mkt="${mktPrice}" style="white-space:nowrap;">🔨 경매 참여</button>
@@ -7357,23 +7360,26 @@ function renderEquipShopHtml() {
   const selRank = model.state.shopEquipRank || '';
   const selPart = model.state.shopEquipPart || '';
 
-  const rankBtns = ['', ...GRADE_ORDER].map(r =>
+  const rankBtns = ['', 'E', 'D', 'C'].map(r =>
     `<button class="gb-btn ${selRank===r?'primary':''}" data-equip-shop-rank="${escapeHtml(r)}">${r||'전체'}</button>`
   ).join('');
   const partBtns = ['', ...EQUIP_PARTS].map(p =>
     `<button class="gb-btn ${selPart===p?'primary':''}" data-equip-shop-part="${escapeHtml(p)}">${p ? EQUIP_PART_LABELS[p] : '전체'}</button>`
   ).join('');
 
+  // 장비상점: 노말 아이템만, E~C급만 판매
+  const SHOP_ALLOWED_RANKS = ['E','D','C'];
   const filtered = eqs.filter(e =>
     (!selRank || e.rank === selRank) && (!selPart || e.part === selPart) && !e.statusType &&
-    (!e.rarity || (e.rarity !== 'Unique' && e.rarity !== 'Legendary'))
+    (!e.rarity || e.rarity === 'Normal') &&
+    SHOP_ALLOWED_RANKS.includes(e.rank)
   );
 
   const itemsHtml = filtered.length === 0
     ? '<div class="gb-sub">조건에 맞는 장비가 없다.</div>'
     : filtered.map(e => {
         const price = Number(e.price || calcEquipEnhancedPrice(calcEquipBasePrice(e.rank, e.part), e.enhance||0, e.rank));
-        const canAfford = gold >= price;
+        const canAfford = price === 0 || gold >= price;
         const traitTags = (e.traits||[]).map(t => `<span class="gb-badge">${escapeHtml(equipTraitDisplay(t, e.rank))}</span>`).join(' ');
         const atkLine = e.part==='weapon' ? `ATK+${e.atk||WEAPON_BASE_ATK[e.rank]||0}` : e.part==='subweapon' ? `물리방어+${e.pdef||0} / ATK${-Math.ceil((e.pdef||0)/2)}` : e.part==='armor' ? `물리방어+${e.pdef||0} / 마법방어+${e.mdef||0}${e.resistType?` / ${escapeHtml(EQUIP_TRAIT_LABELS[''+e.resistType]||e.resistType)} 저항 ${e.resistPct||0}%`:''}` : e.part==='accessory' ? (e.traits&&e.traits.length ? `특성: ${(e.traits||[]).map(t=>equipTraitDisplay(t,e.rank)).join(', ')}` : '특성 없음') : '';
         const fmt = n => n >= 1e8 ? `${(n/1e8).toFixed(2)}억` : n >= 10000 ? `${Math.round(n/10000)}만` : n.toLocaleString('en-US');
@@ -7391,7 +7397,7 @@ function renderEquipShopHtml() {
             </div>
             <div>
               <button class="gb-btn tiny${canAfford?'':' danger'}" data-equip-shop-buy="${escapeHtml(e.id)}" ${canAfford?'':'disabled'}>
-                ₩${fmt(price)}
+                ${price === 0 ? '🆓 무료' : `₩${fmt(price)}`}
               </button>
             </div>
           </div>
@@ -7401,7 +7407,7 @@ function renderEquipShopHtml() {
   return `
     <div class="gb-panel">
       <div class="gb-section-title">⚔️ 장비상점</div>
-      <div class="gb-sub">무기, 방어구, 보조무기, 악세서리 구매 (신품 +0)</div>
+      <div class="gb-sub">E~C급 노말 장비 판매 (협회지급 E급 무기는 무료)</div>
       <div class="gb-sub">소지금: ₩${gold.toLocaleString('en-US')}</div>
       <div class="gb-btn-row" style="margin-top:6px;flex-wrap:wrap;">
         <span class="gb-sub" style="align-self:center;">등급:</span> ${rankBtns}
