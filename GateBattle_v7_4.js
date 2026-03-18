@@ -4223,12 +4223,28 @@ function beginGateRunFromSelectedGate() {
   model.state.view = 'gate';
   return true;
 }
+// ── 동명 유닛 구분용 (A, B, C …) ──
+function numberDuplicateUnits(units) {
+  if (!Array.isArray(units)) return;
+  const nameCount = {};
+  units.forEach(u => { nameCount[u.name] = (nameCount[u.name] || 0) + 1; });
+  const nameIdx = {};
+  const SUFFIX = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  units.forEach(u => {
+    if (nameCount[u.name] > 1) {
+      const i = nameIdx[u.name] = (nameIdx[u.name] || 0);
+      u.name = `${u.name} ${SUFFIX[i] || (i+1)}`;
+      nameIdx[u.name.split(' ').slice(0,-1).join(' ')] = i + 1;
+    }
+  });
+}
 function buildBattleFromEntries(partyEntries, enemyEntries) {
   const runtime = buildDefaultRuntime();
   runtime.party = (partyEntries || []).map((e, idx) => buildUnit(e, 'party', idx)).slice(0, MAX_PARTY);
   runtime.enemies = (enemyEntries || []).map((e, idx) => buildUnit(e, 'enemies', idx)).slice(0, MAX_ENEMIES);
   if (!runtime.party.length) throw new Error('파티가 비어 있다.');
   if (!runtime.enemies.length) throw new Error('적이 비어 있다.');
+  numberDuplicateUnits(runtime.enemies);
   runtime.started = true;
   model.state.runtime = runtime;
 }
@@ -4843,6 +4859,9 @@ function retreatFromGateRun(run) {
   run.postBattle = null;
   run.pendingBattleRoomId = '';
   pushGateLog(run, '게이트에서 후퇴했다.');
+  // 게이트 진행 상태를 완전히 해제하여 후퇴 후 즉시 게이트에서 나올 수 있게 함
+  const gs = gateStateSafe();
+  gs.run = null;
   model.state.view = 'gate';
   model.state.runtime = buildDefaultRuntime();
 }
@@ -6278,6 +6297,7 @@ function getBuffedStat(unit, statKey) {
     runtime.enemies = enemies.slice(0, MAX_ENEMIES);
     if (!runtime.party.length) throw new Error('파티 슬롯이 비어 있다.');
     if (!runtime.enemies.length) throw new Error('적 슬롯이 비어 있다.');
+    numberDuplicateUnits(runtime.enemies);
     runtime.started = true;
     runtime.finished = false;
     model.state.runtime = runtime;
@@ -7527,7 +7547,7 @@ function renderEquipShopHtml() {
   const itemsHtml = filtered.length === 0
     ? '<div class="gb-sub">조건에 맞는 장비가 없다.</div>'
     : filtered.map(e => {
-        const price = Number(e.price || calcEquipEnhancedPrice(calcEquipBasePrice(e.rank, e.part), e.enhance||0, e.rank));
+        const price = (e.price != null && e.price !== '' && Number(e.price) >= 0) ? Number(e.price) : calcEquipEnhancedPrice(calcEquipBasePrice(e.rank, e.part), e.enhance||0, e.rank);
         const canAfford = price === 0 || gold >= price;
         const traitTags = (e.traits||[]).map(t => `<span class="gb-badge">${escapeHtml(equipTraitDisplay(t, e.rank))}</span>`).join(' ');
         const atkLine = e.part==='weapon' ? `ATK+${e.atk||WEAPON_BASE_ATK[e.rank]||0}` : e.part==='subweapon' ? (Number(e.pdef||0)>0 ? `물리방어+${e.pdef} / ATK${-Math.ceil(e.pdef/2)}` : '특수효과 전용') : e.part==='armor' ? `${e.armorSubtype && ARMOR_SUBTYPES[e.armorSubtype] ? '['+ARMOR_SUBTYPES[e.armorSubtype].label+'] ' : ''}물리방어+${e.pdef||0} / 마법방어+${e.mdef||0}${e.resistType?` / ${escapeHtml(EQUIP_TRAIT_LABELS[''+e.resistType]||e.resistType)} 저항 ${e.resistPct||0}%`:''}` : e.part==='accessory' ? (e.traits&&e.traits.length ? `특성: ${(e.traits||[]).map(t=>equipTraitDisplay(t,e.rank)).join(', ')}` : '특성 없음') : '';
@@ -10018,11 +10038,28 @@ function renderCommandPanel(runtime) {
     ).join('');
 
     const filteredEqs = partFilter ? eqs.filter(e => e.part === partFilter) : eqs;
-    const list = filteredEqs.map(e => {
-      const label = `${e.name || e.id} [${EQUIP_PART_LABELS[e.part]||e.part}/${e.rank}+${e.enhance||0}]`;
-      const rStyle = rarityStyle(e.rarity);
-      return `<button class="gb-list-item ${e.id===sel?'is-active':''}" data-select-type="equipment" data-id="${escapeHtml(e.id)}" style="${rStyle}">${escapeHtml(label)}${e.rarity && e.rarity !== 'Normal' ? ' <span class="gb-badge" style="background:'+rarityColor(e.rarity)+';color:#000;font-size:10px;">'+escapeHtml(e.rarity)+'</span>' : ''}</button>`;
-    }).join('');
+    // 장비 목록을 부위별 + 등급별 접는 방식(details/summary)으로 그룹화
+    const listHtml = (() => {
+      if (!filteredEqs.length) return '<div class="gb-sub">등록된 장비 없음.</div>';
+      const grouped = {};
+      filteredEqs.forEach(e => {
+        const key = `${EQUIP_PART_LABELS[e.part]||e.part}`;
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(e);
+      });
+      return Object.entries(grouped).map(([groupLabel, items]) => {
+        const hasActive = items.some(e => e.id === sel);
+        const rows = items.map(e => {
+          const label = `${e.name || e.id} [${e.rank}+${e.enhance||0}]`;
+          const rStyle = rarityStyle(e.rarity);
+          return `<button class="gb-list-item ${e.id===sel?'is-active':''}" data-select-type="equipment" data-id="${escapeHtml(e.id)}" style="${rStyle}">${escapeHtml(label)}${e.rarity && e.rarity !== 'Normal' ? ' <span class="gb-badge" style="background:'+rarityColor(e.rarity)+';color:#000;font-size:10px;">'+escapeHtml(e.rarity)+'</span>' : ''}</button>`;
+        }).join('');
+        return `<details ${hasActive ? 'open' : ''} style="margin-bottom:4px;border:1px solid rgba(148,163,184,0.12);border-radius:6px;">
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 8px;font-size:0.9em;">${escapeHtml(groupLabel)} (${items.length})</summary>
+          <div style="max-height:200px;overflow-y:auto;padding:2px 4px;">${rows}</div>
+        </details>`;
+      }).join('');
+    })();
 
     const traitsHtml = EQUIP_TRAIT_TYPES.map(t => {
       const hasTrait = (item.traits || []).includes(t);
@@ -10056,7 +10093,7 @@ function renderCommandPanel(runtime) {
             <button class="gb-btn ${!partFilter?'primary':''}" data-eq-part-filter="">전체</button>
             ${partList}
           </div>
-          <div style="margin-top:6px;">${list || '<div class="gb-sub">등록된 장비 없음.</div>'}</div>
+          <div style="margin-top:6px;">${listHtml}</div>
           <div class="gb-btn-row" style="margin-top:8px;">
             <button class="gb-btn" id="gb-eq-new">새 장비</button>
             <button class="gb-btn" id="gb-eq-export">내보내기</button>
@@ -10931,7 +10968,7 @@ async function saveMaterialTraitFromForm() {
       const target = ev.currentTarget.getAttribute('data-go');
       // 게이트 진행 중에는 gate/battle 외 다른 화면 이동 차단
       if (model.state.gate && model.state.gate.run) {
-        const allowed = ['gate', 'battle'];
+        const allowed = ['gate', 'battle', 'party'];
         if (!allowed.includes(target)) {
           alert('⚠️ 게이트 진행 중에는 다른 화면으로 이동할 수 없습니다. 후퇴하거나 클리어 후 이용해 주세요.');
           return;
@@ -12568,6 +12605,12 @@ async function saveMaterialTraitFromForm() {
       try {
         const run = getGateRun();
         if (!run) throw new Error('진행 중인 게이트가 없다.');
+        // 이미 전투가 진행 중이면 중복 진입 방지
+        const rt = model.state.runtime;
+        if (rt && rt.started && !rt.finished) {
+          toast('⚠️ 이미 전투가 진행 중입니다.', true);
+          return;
+        }
         enterGateRoom(run);
         await saveState();
         renderApp();
@@ -12667,6 +12710,11 @@ async function saveMaterialTraitFromForm() {
     });
     on('#gb-start-battle', 'click', async () => {
       try {
+        // 게이트 진행 중에는 전투탭 전투시작 차단 (게이트가 초기화되는 것 방지)
+        if (activeGateRun()) {
+          toast('⚠️ 게이트 진행 중에는 전투 탭에서 전투를 시작할 수 없습니다. 게이트 내 전투를 이용하세요.', true);
+          return;
+        }
         model.db.battleSetup.partySlots = readPartySlotsFromUI();
         model.db.battleSetup.enemySlots = readEnemySlotsFromUI();
         buildBattleFromSetup();
@@ -13085,17 +13133,42 @@ async function saveMaterialTraitFromForm() {
         const equips = model.db.equipments || [];
         const item = equips.find(e => e.id === sel);
         if (!item) throw new Error('선택된 장비를 찾을 수 없습니다.');
-        // 커스텀 장비를 인벤토리에 추가
-        if (!Array.isArray(model.state.inventory)) model.state.inventory = [];
-        const invItem = Object.assign({}, item, {
+        // 커스텀 장비를 공용 인벤토리에 추가 (addInventoryItem → model.db.inventory)
+        const invItem = {
           category: 'equipment',
           stackable: false,
           unitWeightG: EQUIP_WEIGHT_G[item.part] || 1000,
-          stackKey: `equipment:custom_${item.id}_${Date.now()}`
-        });
-        model.state.inventory.push(invItem);
-        await saveState();
-        toast(`📦 ${item.name || item.id} → 인벤토리 추가 완료`);
+          stackKey: `equipment:custom_${item.id}_${Date.now()}`,
+          name: item.name || item.id,
+          part: item.part,
+          rank: item.rank,
+          rarity: item.rarity || 'Normal',
+          enhance: item.enhance || 0,
+          infuse: item.infuse || 0,
+          maxInfuse: item.maxInfuse || 2,
+          traits: Array.isArray(item.traits) ? item.traits.slice() : [],
+          durability: item.durability != null ? item.durability : 100,
+          maxDurability: item.maxDurability != null ? item.maxDurability : 100,
+          atk: item.atk || 0,
+          pdef: item.pdef || 0,
+          mdef: item.mdef || 0,
+          mainStat: item.mainStat || '',
+          resistType: item.resistType || '',
+          resistPct: item.resistPct || 0,
+          specialEffect: item.specialEffect || '',
+          specialEffectChance: item.specialEffectChance || 0,
+          specialEffectValue: item.specialEffectValue || 0,
+          statusEffect: item.statusEffect || '',
+          statusEffectChance: item.statusEffectChance || 0,
+          armorSubtype: item.armorSubtype || '',
+          price: item.price || 0,
+          note: item.note || '',
+          count: 1
+        };
+        const res = addInventoryItem(invItem);
+        if (!res.ok) pushInventoryOverflow(invItem);
+        await saveDb();
+        toast(`📦 ${item.name || item.id} → 공용 인벤토리 ${res.ok ? '추가 완료' : '(오버플로우에 추가됨)'}`);
       } catch (e) { toast(e.message || String(e), true); }
     });
     on('#gb-eq-export', 'click', async () => {
