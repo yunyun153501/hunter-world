@@ -418,6 +418,24 @@ const EQUIP_PRICE_RANGE = {
 const EQUIP_PART_PRICE_MUL = { weapon:[0.8,1.0], armor:[0.6,0.75], subweapon:[0.4,0.55], accessory:[0.25,0.40] };
 // Skill book: ×5 equipment price
 const SKILL_BOOK_PRICE_MUL = 5;
+// Skill book tier assignment by category (T1=best performance, T4=utility)
+// T1: aoeAttack, aoeCC — game-changing AoE skills
+// T2: singleAttack, singleCC — strong single-target combat
+// T3: aoeHeal, buff — team support skills
+// T4: singleHeal, passive, utility — utility/passive skills
+const SKILL_BOOK_TIERS = {
+  aoeAttack: 1, aoeCC: 1,
+  singleAttack: 2, singleCC: 2,
+  aoeHeal: 3, buff: 3,
+  singleHeal: 4, passive: 4, utility: 4
+};
+// Skillbook price = reference equipment price × SKILL_BOOK_PRICE_MUL
+// Tier determines which part's price to use: T1=weapon, T2=armor, T3=subweapon, T4=accessory
+const SKILL_BOOK_TIER_PART = { 1:'weapon', 2:'armor', 3:'subweapon', 4:'accessory' };
+function calcSkillBookPrice(rank, tier) {
+  const part = SKILL_BOOK_TIER_PART[tier] || 'accessory';
+  return Math.round(calcEquipBasePrice(rank, part) * SKILL_BOOK_PRICE_MUL);
+}
 
 // Max enhancement by part
 const EQUIP_MAX_ENHANCE = { weapon:5, subweapon:0, armor:5, accessory:5 };
@@ -2076,76 +2094,101 @@ const RARE_FAMILY_PRESETS = {
   }
 
   function buildSampleEquipments() {
-    // Sample equipment catalog: E/D/C rank, all 4 parts
-    return [
-      // ── E등급 무기 ──────────────────────────────────────────────
-      { id:'eq_e_weapon_01', name:'협회 지급 대검', part:'weapon', rank:'E',
-        enhance:0, infuse:0, maxInfuse:2, traits:[], durability:100, maxDurability:100,
-        atk:5, pdef:0, mdef:0, mainStat:'str', resistType:'', resistPct:0,
-        price:500000, note:'협회에서 신규 헌터에게 대량 보급하는 표준 규격 대검.' },
-      { id:'eq_e_weapon_02', name:'E급 단검', part:'weapon', rank:'E',
-        enhance:0, infuse:0, maxInfuse:2, traits:[], durability:100, maxDurability:100,
-        atk:5, pdef:0, mdef:0, mainStat:'agi', resistType:'', resistPct:0,
-        price:400000, note:'빠른 연속공격에 특화된 경량 단검.' },
-      // ── E등급 보조무기 ──────────────────────────────────────────
-      { id:'eq_e_subweapon_01', name:'낡은 방패', part:'subweapon', rank:'E',
-        enhance:0, infuse:0, maxInfuse:1, traits:[], durability:100, maxDurability:100,
-        atk:-1, pdef:2, mdef:0, mainStat:'con', resistType:'physical', resistPct:1,
-        price:350000, note:'보스 껍데기와 석재를 융합해 조잡하게 만든 방패.' },
-      // ── E등급 방어구 ──────────────────────────────────────────
-      { id:'eq_e_armor_01', name:'가죽 갑옷', part:'armor', rank:'E',
-        enhance:0, infuse:0, maxInfuse:2, traits:[], durability:100, maxDurability:100,
-        atk:0, pdef:3, mdef:2, mainStat:'con', resistType:'physical', resistPct:1,
-        price:450000, note:'기본 헌터 훈련복에 가죽 패딩을 덧댄 갑옷.' },
-      { id:'eq_e_armor_02', name:'강화 면 로브', part:'armor', rank:'E',
-        enhance:0, infuse:0, maxInfuse:2, traits:[], durability:100, maxDurability:100,
-        atk:0, pdef:1, mdef:4, mainStat:'int', resistType:'magic', resistPct:1,
-        price:450000, note:'마력이 주입된 직물로 제작된 마법사형 갑옷.' },
-      // ── E등급 악세서리 ──────────────────────────────────────────
-      { id:'eq_e_acc_01', name:'쇠반지', part:'accessory', rank:'E',
-        enhance:0, infuse:0, maxInfuse:1, traits:[], durability:100, maxDurability:100,
-        atk:0, pdef:0, mdef:0, mainStat:'str', resistType:'', resistPct:0,
-        price:280000, note:'물리 공격력을 소폭 강화하는 단순한 금속 반지.' },
-      // ── D등급 무기 ──────────────────────────────────────────────
-      { id:'eq_d_weapon_01', name:'강철 대검', part:'weapon', rank:'D',
-        enhance:0, infuse:0, maxInfuse:2, traits:[], durability:100, maxDurability:100,
-        atk:15, pdef:0, mdef:0, mainStat:'str', resistType:'', resistPct:0,
-        price:3000000, note:'D등급 던전에서 수거한 철광석으로 단조한 대검.' },
-      { id:'eq_d_weapon_02', name:'마법 지팡이', part:'weapon', rank:'D',
-        enhance:0, infuse:0, maxInfuse:2, traits:[], durability:100, maxDurability:100,
-        atk:15, pdef:0, mdef:0, mainStat:'int', resistType:'', resistPct:0,
-        price:3500000, note:'마력 증폭 크리스탈이 삽입된 D급 지팡이.' },
-      // ── D등급 보조무기 ──────────────────────────────────────────
-      { id:'eq_d_subweapon_01', name:'D급 철 방패', part:'subweapon', rank:'D',
-        enhance:0, infuse:0, maxInfuse:1, traits:[], durability:100, maxDurability:100,
-        atk:-3, pdef:6, mdef:0, mainStat:'con', resistType:'physical', resistPct:2,
-        price:2200000, note:'두꺼운 철판으로 만든 D급 표준 방패.' },
-      // ── D등급 방어구 ──────────────────────────────────────────
-      { id:'eq_d_armor_01', name:'체인 갑옷', part:'armor', rank:'D',
-        enhance:0, infuse:0, maxInfuse:2, traits:[], durability:100, maxDurability:100,
-        atk:0, pdef:10, mdef:5, mainStat:'con', resistType:'physical', resistPct:2,
-        price:2800000, note:'D급 금속 체인을 촘촘히 엮어 만든 갑옷. 총 스탯합 2.' },
-      // ── D등급 악세서리 ──────────────────────────────────────────
-      { id:'eq_d_acc_01', name:'헌터 인식표', part:'accessory', rank:'D',
-        enhance:0, infuse:0, maxInfuse:1, traits:[], durability:100, maxDurability:100,
-        atk:0, pdef:0, mdef:0, mainStat:'str', resistType:'', resistPct:0,
-        price:2000000, note:'D등급 헌터 공식 인식표. 총 스탯합 1.' },
-      // ── C등급 무기 ──────────────────────────────────────────────
-      { id:'eq_c_weapon_01', name:'미스릴 롱소드', part:'weapon', rank:'C',
-        enhance:0, infuse:0, maxInfuse:2, traits:[], durability:100, maxDurability:100,
-        atk:25, pdef:0, mdef:0, mainStat:'str', resistType:'', resistPct:0,
-        price:30000000, note:'C급 던전 보스에게서 얻은 미스릴로 제작.' },
-      // ── C등급 방어구 ──────────────────────────────────────────
-      { id:'eq_c_armor_01', name:'강화 플레이트', part:'armor', rank:'C',
-        enhance:0, infuse:0, maxInfuse:2, traits:[], durability:100, maxDurability:100,
-        atk:0, pdef:30, mdef:15, mainStat:'con', resistType:'physical', resistPct:3,
-        price:28000000, note:'C급 금속 플레이트 풀아머. 총 스탯합 5.' },
-      // ── C등급 악세서리 ──────────────────────────────────────────
-      { id:'eq_c_acc_01', name:'마력 증폭 반지', part:'accessory', rank:'C',
-        enhance:0, infuse:0, maxInfuse:1, traits:[], durability:100, maxDurability:100,
-        atk:0, pdef:0, mdef:0, mainStat:'int', resistType:'', resistPct:0,
-        price:25000000, note:'마법 피해를 증폭시키는 C급 마법 반지. 총 스탯합 3.' },
-    ];
+    const items = [];
+    const SHOP_RANKS = ['E','D','C'];
+    let idx = 0;
+    for (const rank of SHOP_RANKS) {
+      const baseAtk = WEAPON_BASE_ATK[rank] || 5;
+      const armorBase = ARMOR_STAT_BY_RANK[rank] || { defRange:[0,5], resistance:1 };
+      const maxDef = armorBase.defRange[1];
+      // ── 무기 5종 ──
+      const weaponSuffixes = ['검','대검','창','활','총'];
+      for (let w = 0; w < 5; w++) {
+        const isAssoc = (rank === 'E');
+        const prefix = isAssoc ? '협회지급' : EQUIP_RANK_PREFIX[rank][w % EQUIP_RANK_PREFIX[rank].length];
+        const suff = weaponSuffixes[w];
+        const atk = isAssoc ? baseAtk : Math.max(1, Math.round(baseAtk * (0.85 + Math.random() * 0.10)));
+        const price = isAssoc ? 0 : Math.round(calcEquipBasePrice(rank, 'weapon') * (0.85 + Math.random() * 0.10));
+        const mainStats = ['str','str','agi','int','agi'];
+        items.push({
+          id: `eq_${rank.toLowerCase()}_weapon_${String(++idx).padStart(2,'0')}`,
+          name: `${prefix} ${suff}`,
+          part: 'weapon', rank, rarity: 'Normal',
+          enhance: 0, infuse: 0, maxInfuse: 2, traits: [],
+          durability: 100, maxDurability: 100,
+          atk, pdef: 0, mdef: 0,
+          mainStat: mainStats[w], resistType: '', resistPct: 0,
+          price,
+          note: isAssoc ? '협회에서 신규 헌터에게 지급하는 표준 규격 무기.' : `${rank}급 표준 ${suff}.`
+        });
+      }
+      // ── 보조무기 3종 ──
+      const subSuffixes = ['방패','장갑','보호대'];
+      for (let s = 0; s < 3; s++) {
+        const prefix = EQUIP_RANK_PREFIX[rank][s % EQUIP_RANK_PREFIX[rank].length];
+        const suff = subSuffixes[s];
+        const pdef = Math.max(1, Math.round(maxDef * 0.25 * (0.85 + Math.random() * 0.10)));
+        const price = Math.round(calcEquipBasePrice(rank, 'subweapon') * (0.85 + Math.random() * 0.10));
+        items.push({
+          id: `eq_${rank.toLowerCase()}_subweapon_${String(++idx).padStart(2,'0')}`,
+          name: `${prefix} ${suff}`,
+          part: 'subweapon', rank, rarity: 'Normal',
+          enhance: 0, infuse: 0, maxInfuse: 1, traits: [],
+          durability: 100, maxDurability: 100,
+          atk: 0, pdef, mdef: 0,
+          mainStat: 'con', resistType: '', resistPct: 0,
+          price,
+          note: `${rank}급 보조무기.`
+        });
+      }
+      // ── 방어구: 종류별 2개씩 ──
+      for (const subKey of ARMOR_SUBTYPE_KEYS) {
+        const sub = ARMOR_SUBTYPES[subKey];
+        for (let a = 0; a < 2; a++) {
+          const prefix = EQUIP_RANK_PREFIX[rank][(a + ARMOR_SUBTYPE_KEYS.indexOf(subKey)) % EQUIP_RANK_PREFIX[rank].length];
+          const suffArr = EQUIP_NAME_SUFFIXES['armor_' + subKey] || [sub.label];
+          const suff = suffArr[a % suffArr.length];
+          const defMul = sub.defMul[0] + Math.random() * (sub.defMul[1] - sub.defMul[0]);
+          const pdef = Math.max(1, Math.round(maxDef * defMul * (0.85 + Math.random() * 0.10)));
+          const mdef = Math.max(1, Math.round(maxDef * defMul * (0.85 + Math.random() * 0.10)));
+          const atkPenalty = sub.atkMul ? Math.round(baseAtk * sub.atkMul) : 0;
+          const mainStat = sub.statPool[a % sub.statPool.length];
+          const price = Math.round(calcEquipBasePrice(rank, 'armor') * (0.85 + Math.random() * 0.10));
+          items.push({
+            id: `eq_${rank.toLowerCase()}_armor_${subKey}_${String(++idx).padStart(2,'0')}`,
+            name: `${prefix} ${suff}`,
+            part: 'armor', rank, rarity: 'Normal',
+            armorSubtype: subKey, armorStatBonusMul: sub.statBonusMul,
+            enhance: 0, infuse: 0, maxInfuse: 2, traits: [],
+            durability: 100, maxDurability: 100,
+            atk: atkPenalty, pdef, mdef,
+            mainStat, resistType: '', resistPct: armorBase.resistance || 0,
+            price,
+            note: `${rank}급 ${sub.label}.`
+          });
+        }
+      }
+      // ── 악세서리 8종 ──
+      const accSuffixes = ['귀걸이','반지','목걸이','벨트','표식','귀걸이','반지','목걸이'];
+      const accMainStats = ['str','int','agi','con','sense','str','int','agi'];
+      for (let ac = 0; ac < 8; ac++) {
+        const prefix = EQUIP_RANK_PREFIX[rank][ac % EQUIP_RANK_PREFIX[rank].length];
+        const suff = accSuffixes[ac];
+        const price = Math.round(calcEquipBasePrice(rank, 'accessory') * (0.85 + Math.random() * 0.10));
+        items.push({
+          id: `eq_${rank.toLowerCase()}_acc_${String(++idx).padStart(2,'0')}`,
+          name: `${prefix} ${suff}`,
+          part: 'accessory', rank, rarity: 'Normal',
+          enhance: 0, infuse: 0, maxInfuse: 1, traits: [],
+          durability: 100, maxDurability: 100,
+          atk: 0, pdef: 0, mdef: 0,
+          mainStat: accMainStats[ac], resistType: '', resistPct: 0,
+          price,
+          note: `${rank}급 악세서리.`
+        });
+      }
+    }
+    return items;
   }
 
   function buildDefaultDb() {
@@ -6538,85 +6581,122 @@ function seedNpcAuctionListings() {
   const npcCount = model.db.auctionListings.filter(l => l.isNpc).length;
   const needed = AUCTION_NPC_MAX - npcCount;
   if (needed <= 0) return;
-  const grades = ['E','E','E','D','D','D','C','C','B','A'];
-  const parts = EQUIP_PARTS;
+
+  // 등급 분배: D50% C40% B8% A1.9% S0.1% (E급 제외)
+  function pickAuctionRank() {
+    const r = Math.random() * 100;
+    if (r < 50) return 'D';
+    if (r < 90) return 'C';
+    if (r < 98) return 'B';
+    if (r < 99.9) return 'A';
+    return 'S';
+  }
+  // 부위 분배 가중치: weapon30 armor50 subweapon24 accessory24 skillbook2
+  const PART_WEIGHTS = [
+    { part:'weapon', w:30 }, { part:'armor', w:50 },
+    { part:'subweapon', w:24 }, { part:'accessory', w:24 },
+    { part:'skillbook', w:2 }
+  ];
+  const PART_TOTAL = PART_WEIGHTS.reduce((s,p)=>s+p.w,0);
+  function pickAuctionPart() {
+    let r = Math.random() * PART_TOTAL;
+    for (const p of PART_WEIGHTS) { r -= p.w; if (r <= 0) return p.part; }
+    return 'weapon';
+  }
+
   for (let i = 0; i < needed; i++) {
-    const rank = grades[Math.floor(Math.random() * grades.length)];
-    if (Math.random() < 0.70) {
-      // 드랍 장비 (보조무기·악세서리는 항상 특성, 무기·방어구는 20% 확률)
-      const part = parts[Math.floor(Math.random() * parts.length)];
-      const maxInfuseBase = EQUIP_MAX_INFUSE[part] || 1;
-      const builtInTrait = (part === 'subweapon' || part === 'accessory');
-      const hasTrait = builtInTrait ? true : (Math.random() < 0.20);
-      // 보조무기·악세서리: 80% 일반(tier3-4) / 20% 희귀(tier1-2) 풀에서 특성 선택
-      let traitId = '';
-      if (hasTrait) {
-        if (builtInTrait) {
-          const pool = Math.random() < 0.20 ? RARE_TRAIT_POOL : NORMAL_TRAIT_POOL;
-          traitId = pool[Math.floor(Math.random() * pool.length)];
-        } else {
-          traitId = EQUIP_TRAIT_TYPES[Math.floor(Math.random() * EQUIP_TRAIT_TYPES.length)];
-        }
-      }
-      const traitName = hasTrait ? (EQUIP_TRAIT_LABELS[traitId] || traitId) : '';
-      const maxInfuse = (hasTrait && !builtInTrait) ? maxInfuseBase + 1 : maxInfuseBase;
-      const basePrice = calcEquipRandomPrice(rank, part);
-      // 무기·방어구 특성 보너스: 희귀재료 기준가 × 1.25
-      // 보조무기·악세서리 내장 특성: 티어별 희귀재료 가격 차등 적용
-      let traitBonus = 0;
-      if (hasTrait && !builtInTrait) {
-        traitBonus = Math.round((RARE_MATERIAL_BASE_WON[rank] || RARE_MATERIAL_BASE_WON.E) * 1.25);
-      } else if (hasTrait && builtInTrait) {
-        const tier = TRAIT_TIER_MAP[traitId] || 3;
-        const tierPrices = RARE_PRICE_BY_RANK_TIER[rank] || RARE_PRICE_BY_RANK_TIER.E;
-        const tier4Price = tierPrices.tier4;
-        const tierPrice = tierPrices[`tier${tier}`] || tier4Price;
-        traitBonus = tierPrice - tier4Price;
-      }
-      const marketPrice = basePrice + traitBonus;
+    const rank = pickAuctionRank();
+    const partType = pickAuctionPart();
+    const uid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + i;
+
+    if (partType === 'skillbook') {
+      // ── 스킬북 매물 ──
+      const skillKeys = Object.keys(BUILTIN_SKILLS || {});
+      const matchingSkills = skillKeys.filter(k => {
+        const sk = BUILTIN_SKILLS[k];
+        return sk && sk.grade === rank;
+      });
+      if (matchingSkills.length === 0) continue; // no skills for this rank, skip
+      const pickedKey = matchingSkills[Math.floor(Math.random() * matchingSkills.length)];
+      const skill = BUILTIN_SKILLS[pickedKey];
+      const cat = skill.category || 'utility';
+      const tier = SKILL_BOOK_TIERS[cat] || 4;
+      const bookPrice = calcSkillBookPrice(rank, tier);
       const ratio = randomAuctionRatio();
-      const askPrice = Math.round(marketPrice * ratio);
-      const uid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + i;
-      const _armorSub = part === 'armor' ? (() => { const k = ARMOR_SUBTYPE_KEYS[Math.floor(Math.random()*ARMOR_SUBTYPE_KEYS.length)]; return {key:k,...ARMOR_SUBTYPES[k]}; })() : null;
-      // 희귀도 자동 판정: 실제 특성 ID 기반
-      const { rarity: npcRarity, traitTier: npcTier } = assignEquipRarity(part, traitId);
-      const equipNameStr = generateEquipName(rank, part, _armorSub ? _armorSub.key : null, hasTrait ? traitName : '');
+      const askPrice = Math.round(bookPrice * ratio);
       const item = {
-        id: `npc_drop_equip_${rank.toLowerCase()}_${part}_${uid}`,
-        name: equipNameStr,
-        part, rank, rarity: npcRarity, traitTier: npcTier,
-        enhance: 0, infuse: hasTrait ? 1 : 0, maxInfuse, traits: hasTrait ? [traitId] : [],
-        durability: 100, maxDurability: 100, price: marketPrice,
-        category: 'equipment', isDropped: true, stackable: false,
-        unitWeightG: EQUIP_WEIGHT_G[part] || 1000,
-        stackKey: `equipment:npc_${uid}`, note: `NPC 경매 등록${hasTrait ? `. 특성: ${traitName}` : ''}`,
-        atk: part === 'weapon' ? (WEAPON_BASE_ATK[rank] || 5) : (part === 'armor' && _armorSub && _armorSub.atkMul ? Math.round((WEAPON_BASE_ATK[rank] || 5) * _armorSub.atkMul) : 0),
-        pdef: part === 'armor' ? (() => { const base = (ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1]; const [lo,hi] = _armorSub ? _armorSub.defMul : [0.5,0.5]; const mul = lo + Math.random()*(hi-lo); return Math.round(base * mul); })() : (part === 'subweapon' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.25) : 0),
-        mdef: part === 'armor' ? (() => { const base = (ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1]; const [lo,hi] = _armorSub ? _armorSub.defMul : [0.5,0.5]; const mul = lo + Math.random()*(hi-lo); return Math.round(base * mul); })() : 0,
-        mainStat: part === 'weapon' ? (Math.random() < 0.5 ? 'str' : 'int') : (part === 'armor' && _armorSub ? _armorSub.statPool[Math.floor(Math.random() * _armorSub.statPool.length)] : (part === 'armor' ? 'con' : 'str')),
-        armorSubtype: _armorSub ? _armorSub.key : undefined,
-        armorStatBonusMul: _armorSub ? _armorSub.statBonusMul : undefined,
-        resistType: '', resistPct: 0
+        id: `npc_skillbook_${rank.toLowerCase()}_${uid}`,
+        name: `📖 ${skill.name || pickedKey} 스킬북`,
+        category: 'skillbook', rank, skillId: pickedKey,
+        skillCategory: cat, skillTier: tier,
+        price: bookPrice, stackable: false,
+        unitWeightG: 200,
+        note: `${rank}급 T${tier} 스킬북 [${cat}]`
       };
-      model.db.auctionListings.push({ id: `auc_npc_${uid}`, item, askPrice, marketPrice, priceRatio: ratio, isNpc: true, listedAt: Date.now() });
-    } else {
-      // 희귀재료 (NPC) — 티어별 가격 적용
-      const traitId = EQUIP_TRAIT_TYPES[Math.floor(Math.random() * EQUIP_TRAIT_TYPES.length)];
-      const traitName = EQUIP_TRAIT_LABELS[traitId] || traitId;
-      const traitLabel = equipTraitDisplay(traitId, rank);
-      const marketPrice = getRareMatTierPrice(rank, traitId);
-      const ratio = randomAuctionRatio();
-      const askPrice = Math.round(marketPrice * ratio);
-      const uid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + '_r' + i;
-      const item = {
-        id: `npc_rare_${rank.toLowerCase()}_${uid}`,
-        name: `${rank}급 희귀재료 [${traitLabel}]`,
-        category: 'rareMaterial', rank, count: 1, traitId, traitName,
-        suggestedPrice: marketPrice, stackable: true, stackKey: `rareMaterial:${rank}:${traitId}`,
-        note: traitName, unitWeightG: 100
-      };
-      model.db.auctionListings.push({ id: `auc_npc_${uid}`, item, askPrice, marketPrice, priceRatio: ratio, isNpc: true, listedAt: Date.now() });
+      model.db.auctionListings.push({ id: `auc_npc_${uid}`, item, askPrice, marketPrice: bookPrice, priceRatio: ratio, isNpc: true, listedAt: Date.now() });
+      continue;
     }
+
+    const part = partType;
+    // 희귀도: Normal 80% / Rare 20%
+    const isRare = Math.random() < 0.20;
+    const maxInfuseBase = EQUIP_MAX_INFUSE[part] || 1;
+    const builtInTrait = (part === 'subweapon' || part === 'accessory');
+
+    // 특성 결정: Rare면 항상 특성 보유, Normal이면 보조무기/악세는 80%확률 내장특성, 무기/방어구는 특성 없음
+    let hasTrait = false;
+    if (isRare) {
+      hasTrait = true;
+    } else if (builtInTrait) {
+      hasTrait = Math.random() < 0.80;
+    }
+
+    let traitId = '';
+    if (hasTrait) {
+      if (builtInTrait) {
+        const pool = Math.random() < 0.20 ? RARE_TRAIT_POOL : NORMAL_TRAIT_POOL;
+        traitId = pool[Math.floor(Math.random() * pool.length)];
+      } else {
+        traitId = EQUIP_TRAIT_TYPES[Math.floor(Math.random() * EQUIP_TRAIT_TYPES.length)];
+      }
+    }
+    const traitName = hasTrait ? (EQUIP_TRAIT_LABELS[traitId] || traitId) : '';
+    const maxInfuse = (hasTrait && !builtInTrait) ? maxInfuseBase + 1 : maxInfuseBase;
+    const basePrice = calcEquipRandomPrice(rank, part);
+    let traitBonus = 0;
+    if (hasTrait && !builtInTrait) {
+      traitBonus = Math.round((RARE_MATERIAL_BASE_WON[rank] || RARE_MATERIAL_BASE_WON.E) * 1.25);
+    } else if (hasTrait && builtInTrait) {
+      const tier = TRAIT_TIER_MAP[traitId] || 3;
+      const tierPrices = RARE_PRICE_BY_RANK_TIER[rank] || RARE_PRICE_BY_RANK_TIER.E;
+      const tier4Price = tierPrices.tier4;
+      const tierPrice = tierPrices[`tier${tier}`] || tier4Price;
+      traitBonus = tierPrice - tier4Price;
+    }
+    const marketPrice = basePrice + traitBonus;
+    const ratio = randomAuctionRatio();
+    const askPrice = Math.round(marketPrice * ratio);
+    const _armorSub = part === 'armor' ? (() => { const k = ARMOR_SUBTYPE_KEYS[Math.floor(Math.random()*ARMOR_SUBTYPE_KEYS.length)]; return {key:k,...ARMOR_SUBTYPES[k]}; })() : null;
+    const { rarity: npcRarity, traitTier: npcTier } = hasTrait ? assignEquipRarity(part, traitId) : { rarity: 'Normal', traitTier: 0 };
+    const equipNameStr = generateEquipName(rank, part, _armorSub ? _armorSub.key : null, hasTrait ? traitName : '');
+    const item = {
+      id: `npc_drop_equip_${rank.toLowerCase()}_${part}_${uid}`,
+      name: equipNameStr,
+      part, rank, rarity: isRare ? npcRarity : 'Normal', traitTier: npcTier,
+      enhance: 0, infuse: hasTrait ? 1 : 0, maxInfuse, traits: hasTrait ? [traitId] : [],
+      durability: 100, maxDurability: 100, price: marketPrice,
+      category: 'equipment', isDropped: true, stackable: false,
+      unitWeightG: EQUIP_WEIGHT_G[part] || 1000,
+      stackKey: `equipment:npc_${uid}`, note: `NPC 경매 등록${hasTrait ? `. 특성: ${traitName}` : ''}`,
+      atk: part === 'weapon' ? (WEAPON_BASE_ATK[rank] || 5) : (part === 'armor' && _armorSub && _armorSub.atkMul ? Math.round((WEAPON_BASE_ATK[rank] || 5) * _armorSub.atkMul) : 0),
+      pdef: part === 'armor' ? (() => { const base = (ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1]; const [lo,hi] = _armorSub ? _armorSub.defMul : [0.5,0.5]; const mul = lo + Math.random()*(hi-lo); return Math.round(base * mul); })() : (part === 'subweapon' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.25) : 0),
+      mdef: part === 'armor' ? (() => { const base = (ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1]; const [lo,hi] = _armorSub ? _armorSub.defMul : [0.5,0.5]; const mul = lo + Math.random()*(hi-lo); return Math.round(base * mul); })() : 0,
+      mainStat: part === 'weapon' ? (Math.random() < 0.5 ? 'str' : 'int') : (part === 'armor' && _armorSub ? _armorSub.statPool[Math.floor(Math.random() * _armorSub.statPool.length)] : (part === 'armor' ? 'con' : 'str')),
+      armorSubtype: _armorSub ? _armorSub.key : undefined,
+      armorStatBonusMul: _armorSub ? _armorSub.statBonusMul : undefined,
+      resistType: '', resistPct: 0
+    };
+    model.db.auctionListings.push({ id: `auc_npc_${uid}`, item, askPrice, marketPrice, priceRatio: ratio, isNpc: true, listedAt: Date.now() });
   }
 }
 
@@ -6771,7 +6851,7 @@ function renderAuctionHouseHtml() {
                   ${isEquip ? `<span class="gb-badge">${escapeHtml(EQUIP_PART_LABELS[it.part]||it.part||'')}</span>` : '<span class="gb-badge">희귀재료</span>'}
                   ${isEquip && it.rarity && it.rarity !== 'Normal' ? `<span class="gb-badge" style="background:${rarityColor(it.rarity)};color:#000;">${escapeHtml(it.rarity)}</span>` : ''}
                   ${npcBadge} ${traitTxt}
-                  ${isEquip ? `<div class="gb-sub">주입 최대 ${it.maxInfuse||1}회 | 내구 ${it.durability||100}/${it.maxDurability||100}</div>` : ''}
+                  ${isEquip ? `<div class="gb-sub">${it.atk ? 'ATK+'+it.atk+' | ' : ''}${it.pdef ? 'PDEF+'+it.pdef+' | ' : ''}${it.mdef ? 'MDEF+'+it.mdef+' | ' : ''}주입 최대 ${it.maxInfuse||1}회 | 내구 ${it.durability||100}/${it.maxDurability||100}</div>` : ''}
                   <div class="gb-sub">시장가: ${fmt(mktPrice)}</div>
                 </div>
                 <button class="gb-btn primary" data-auction-bid="${escapeHtml(l.id)}" data-auction-bid-mkt="${mktPrice}" style="white-space:nowrap;">🔨 경매 참여</button>
@@ -6785,7 +6865,7 @@ function renderAuctionHouseHtml() {
           <input class="gb-input" id="gb-auction-search" type="text" placeholder="이름·특성 검색..." value="${escapeHtml(model.state.auctionSearchQ||'')}" style="flex:1;">
         </div>
         <div class="gb-btn-row">${rankBtns}</div>
-        <button class="gb-btn" data-auction-refresh style="margin-bottom:8px;">🔄 NPC 목록 갱신</button>
+        <button class="gb-btn" data-auction-refresh style="margin-bottom:8px;">🔄 NPC 목록 갱신 (${(() => { const today = new Date().toISOString().slice(0,10); const cnt = (model.state.auctionRefreshDate === today) ? (model.state.auctionRefreshCount || 0) : 0; return `${3 - cnt}/3`; })()})</button>
         <div>${listingsHtml}</div>`;
     }
 
@@ -10775,11 +10855,22 @@ async function saveMaterialTraitFromForm() {
       await saveState(); renderApp();
     });
     on('[data-auction-refresh]', 'click', async () => {
+      // 하루 3회 제한
+      const today = new Date().toISOString().slice(0, 10);
+      if (!model.state.auctionRefreshDate || model.state.auctionRefreshDate !== today) {
+        model.state.auctionRefreshDate = today;
+        model.state.auctionRefreshCount = 0;
+      }
+      if ((model.state.auctionRefreshCount || 0) >= 3) {
+        toast('⚠️ 오늘 새로고침 횟수를 모두 사용했습니다 (3/3)');
+        return;
+      }
+      model.state.auctionRefreshCount = (model.state.auctionRefreshCount || 0) + 1;
       if (!Array.isArray(model.db.auctionListings)) model.db.auctionListings = [];
       model.db.auctionListings = model.db.auctionListings.filter(l => !l.isNpc);
       seedNpcAuctionListings();
-      await saveDb(); renderApp();
-      toast('🔄 NPC 경매 목록 갱신 완료');
+      await saveDb(); await saveState(); renderApp();
+      toast(`🔄 NPC 경매 목록 갱신 완료 (${model.state.auctionRefreshCount}/3)`);
     });
     // 검색박스 입력 — 한글 IME 조합 중에는 리렌더 방지
     let auctionSearchComposing = false;
