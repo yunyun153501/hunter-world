@@ -9215,22 +9215,27 @@ function renderCommandPanel(runtime) {
       };
     }
     const catLabels = { singleAttack:'단일공격', aoeAttack:'광역공격', singleCC:'단일CC', aoeCC:'광역CC', singleHeal:'힐', aoeHeal:'광역힐', buff:'버프', passive:'패시브', utility:'유틸' };
+    const catIcons = { singleAttack:'⚔️', aoeAttack:'💥', singleCC:'🔗', aoeCC:'🌀', singleHeal:'💚', aoeHeal:'🌿', buff:'✨', passive:'🛡️', utility:'🔧' };
     const customOverrides = new Set((model.db.customSkills || []).map(s => s.id));
-    const builtins = Object.values(BUILTIN_SKILLS).map(sk => {
+    // Group builtin skills by category
+    const builtinsByCategory = {};
+    Object.values(BUILTIN_SKILLS).forEach(sk => {
+      const catKey = sk.category || 'etc';
+      if (!builtinsByCategory[catKey]) builtinsByCategory[catKey] = [];
+      builtinsByCategory[catKey].push(sk);
+    });
+    function renderSkillRow(sk) {
       const cat = catLabels[sk.category] || sk.category;
       const grade = sk.grade || '?';
       const rarity = sk.rarity ? ` <span class="gb-badge" style="background:#a855f7;color:#fff;">${escapeHtml(sk.rarity)}</span>` : '';
       const isOverridden = customOverrides.has(sk.id);
       const overrideBadge = isOverridden ? ' <span class="gb-badge" style="background:#ef4444;color:#fff;">수정됨</span>' : '';
-      // 비용
       const costs = sk.costs || {};
       const costParts = [];
       if (costs.mp) costParts.push('MP:' + costs.mp);
       if (costs.sp) costParts.push('SP:' + costs.sp);
       const costStr = costParts.length ? costParts.join(' / ') : '';
-      // 계수
       const coefStr = sk.coef != null ? '계수:' + sk.coef : (sk.baseSingleCoef != null ? '기본계수:' + sk.baseSingleCoef + ' (광역CC→½)' : '');
-      // 성장형 byRank
       const byRankStr = sk.byRank ? Object.entries(sk.byRank).map(([g, v]) => {
         const parts = [];
         if (v.coef != null) parts.push('계수:' + v.coef);
@@ -9239,7 +9244,6 @@ function renderCommandPanel(runtime) {
         if (v.passiveBonuses) parts.push('패시브:' + Object.entries(v.passiveBonuses).map(([s,n])=>s.toUpperCase()+'+'+n).join(','));
         return parts.length ? g + '(' + parts.join(', ') + ')' : '';
       }).filter(Boolean).join(' | ') : '';
-      // 기타 정보
       const extras = [];
       if (sk.damageType) extras.push(sk.damageType === 'physical' ? '물리' : '마법');
       if (sk.element && sk.element !== 'none') extras.push('속성:' + sk.element);
@@ -9259,6 +9263,22 @@ function renderCommandPanel(runtime) {
         ${extraStr ? `<div class="gb-sub" style="font-size:11px;margin-top:1px;">${escapeHtml(extraStr)}</div>` : ''}
         <div class="gb-skill-desc" style="margin-top:2px;">${escapeHtml(sk.desc || '')}</div>
       </div>`;
+    }
+    const catOrder = ['singleAttack','aoeAttack','singleCC','aoeCC','singleHeal','aoeHeal','buff','passive','utility'];
+    const builtinAccordion = catOrder.filter(c => builtinsByCategory[c] && builtinsByCategory[c].length).map(catKey => {
+      const label = catLabels[catKey] || catKey;
+      const icon = catIcons[catKey] || '📋';
+      const items = builtinsByCategory[catKey];
+      const rows = items.map(renderSkillRow).join('');
+      return `<div class="gb-skill-accordion">
+        <div class="gb-skill-accordion-header" data-accordion-cat="${escapeHtml(catKey)}">
+          <span>${icon} ${escapeHtml(label)} <span class="gb-sub">(${items.length}종)</span></span>
+          <span class="gb-skill-accordion-arrow">▶</span>
+        </div>
+        <div class="gb-skill-accordion-body" data-accordion-body="${escapeHtml(catKey)}" style="display:none;">
+          <div class="gb-skill-list">${rows}</div>
+        </div>
+      </div>`;
     }).join('');
     const list = (model.db.customSkills || []).filter(c => !BUILTIN_SKILLS[c.id]).map(c => {
       const rStyle = rarityStyle(c.rarity);
@@ -9268,9 +9288,9 @@ function renderCommandPanel(runtime) {
     const isEditingBuiltin = item.id && BUILTIN_SKILLS[item.id];
     const editorTitle = isEditingBuiltin ? `내장 스킬 편집 — <span style="color:#3b82f6;">${escapeHtml(item.name || item.id)}</span>` : '커스텀 스킬 편집';
     return `
-      ${builtins ? `<div class="gb-panel">
-        <div class="gb-section-title">내장 스킬 <span class="gb-sub">(클릭하면 편집기에 불러옴)</span></div>
-        <div class="gb-skill-list">${builtins}</div>
+      ${builtinAccordion ? `<div class="gb-panel">
+        <div class="gb-section-title">내장 스킬 <span class="gb-sub">(카테고리를 클릭하여 펼치기 · 스킬 클릭시 편집기에 불러옴)</span></div>
+        ${builtinAccordion}
       </div>` : ''}
       <div class="gb-grid db" style="margin-top:12px;">
         <div class="gb-panel"><div class="gb-section-title">커스텀 스킬 목록</div>${list || '<div class="gb-sub">등록된 커스텀 스킬 없음.</div>'}<div class="gb-btn-row"><button class="gb-btn" id="gb-skill-new">새 스킬</button><button class="gb-btn danger" id="gb-skill-clear-all">스킬 전체삭제</button></div></div>
@@ -12334,6 +12354,22 @@ async function saveMaterialTraitFromForm() {
         toast('스킬 JSON 복사 완료');
       } catch (e) { toast('복사 실패', true); }
     });
+    // 내장 스킬 카테고리 아코디언 토글
+    on('[data-accordion-cat]', 'click', (ev) => {
+      const catKey = ev.currentTarget.getAttribute('data-accordion-cat');
+      const accordion = ev.currentTarget.closest('.gb-skill-accordion');
+      if (!accordion) return;
+      const body = accordion.querySelector('[data-accordion-body="' + catKey + '"]');
+      if (!body) return;
+      const isOpen = accordion.classList.contains('open');
+      if (isOpen) {
+        accordion.classList.remove('open');
+        body.style.display = 'none';
+      } else {
+        accordion.classList.add('open');
+        body.style.display = '';
+      }
+    });
     // 내장 스킬 클릭 → 편집기로 불러오기
     on('[data-load-builtin-skill]', 'click', async (ev) => {
       const skillId = ev.currentTarget.getAttribute('data-load-builtin-skill');
@@ -12478,6 +12514,12 @@ async function saveMaterialTraitFromForm() {
       #${UI_ID} [data-tooltip] { position:relative; }
       #${UI_ID} [data-tooltip]::after { content:attr(data-tooltip); position:absolute; bottom:calc(100% + 5px); left:50%; transform:translateX(-50%); background:#1e2130; color:#e2e8f0; font-size:11px; white-space:nowrap; padding:4px 8px; border-radius:6px; border:1px solid rgba(148,163,184,0.25); pointer-events:none; opacity:0; transition:opacity 0.15s; z-index:100; }
       #${UI_ID} [data-tooltip]:hover::after { opacity:1; }
+      #${UI_ID} .gb-skill-accordion { border:1px solid rgba(148,163,184,0.12); border-radius:10px; margin-bottom:6px; overflow:hidden; }
+      #${UI_ID} .gb-skill-accordion-header { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; cursor:pointer; background:#0d1017; font-size:14px; font-weight:700; user-select:none; transition:background 0.15s; }
+      #${UI_ID} .gb-skill-accordion-header:hover { background:#161b28; }
+      #${UI_ID} .gb-skill-accordion-arrow { font-size:10px; color:#94a3b8; transition:transform 0.2s; }
+      #${UI_ID} .gb-skill-accordion.open .gb-skill-accordion-arrow { transform:rotate(90deg); }
+      #${UI_ID} .gb-skill-accordion-body { padding:8px; background:#0b0d12; }
       @keyframes gb-blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
       @media (max-width: 1200px) {
         #${UI_ID} .gb-grid.two, #${UI_ID} .gb-grid.three, #${UI_ID} .gb-grid.four, #${UI_ID} .gb-grid.db, #${UI_ID} .gb-skill-list { grid-template-columns:1fr; }
