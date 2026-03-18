@@ -142,7 +142,7 @@ E등급 Boss 근거리물리(front열) 몬스터:
 ## 3. 회복 공식
 
 ```
-Heal = (2 × MainStat + 3 × ATK) × 스킬계수
+Heal = (MainStat × 0.7) × 스킬계수
 ```
 - 출혈 상태인 대상은 회복량 **50% 감소** (`bleedHealReduction`)
 
@@ -203,12 +203,12 @@ init = (AGI × 2) + SENSE + randInt(1, 10)
 
 ## 7. 속성 상성
 
-속성 순환 체인 (순서):
+속성 순환 체인 (A → B = A가 B를 이김):
 ```
-dark → light → ice → fire → water → earth → wind → electric → dark ...
+light → dark → electric → wind → earth → water → fire → ice → light (순환)
 ```
-- 체인에서 **이전(prev) 속성** 공격 시: **×1.25** (유리)
-- 체인에서 **다음(next) 속성** 공격 시: **×0.75** (불리)
+- 체인에서 **→ 방향** 공격 시: **×1.25** (유리)
+- 체인에서 **← 방향** 공격 시: **×0.75** (불리)
 - 같은 속성 또는 none: **×1.0**
 
 ---
