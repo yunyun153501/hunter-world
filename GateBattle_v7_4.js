@@ -34,13 +34,17 @@ try {
   // 특성 → 가격 티어 매핑 (rare_material_catalog 기준)
   const TRAIT_TIER_MAP = {
     crit_chance:1, crit_damage:1, physical_damage:1, magic_damage:1,
+    stun_apply:1, freeze_apply:1, paralyze_apply:1, sleep_apply:1,
     bleed_apply:2, burn_apply:2, curse_apply:2, poison_apply:2,
+    bind_apply:2, silence_apply:2, blind_apply:2,
     fire_damage:2, water_damage:2, ice_damage:2, earth_damage:2,
     wind_damage:2, lightning_damage:2, light_damage:2, dark_damage:2,
     stat_str_up:2, stat_con_up:2, stat_int_up:2, stat_agi_up:2, stat_sense_up:2,
     healing_done:3, magic_defense:3, physical_defense:3, shield_effect:3,
-    pdef_flat:3, mdef_flat:3,
+    pdef_flat:3, mdef_flat:3, slow_apply:3,
+    stun_resist:3, freeze_resist:3, paralyze_resist:3, sleep_resist:3,
     healing_received:4, bleed_resist:4, burn_resist:4, curse_resist:4,
+    bind_resist:4, silence_resist:4, blind_resist:4, slow_resist:4,
     fire_resist:4, water_resist:4, ice_resist:4, earth_resist:4,
     wind_resist:4, lightning_resist:4, light_resist:4, dark_resist:4,
     poison_resist:4, threat_up:4, threat_down:4,
@@ -85,8 +89,16 @@ try {
     light_resist:'+N% 빛 저항', dark_resist:'+N% 암흑 저항',
     poison_apply:'독 부여 +N%', bleed_apply:'출혈 부여 +N%',
     burn_apply:'화상 부여 +N%', curse_apply:'저주 부여 +N%',
+    stun_apply:'기절 부여 +N%', bind_apply:'속박 부여 +N%',
+    sleep_apply:'수면 부여 +N%', silence_apply:'침묵 부여 +N%',
+    slow_apply:'둔화 부여 +N%', blind_apply:'실명 부여 +N%',
+    freeze_apply:'빙결 부여 +N%', paralyze_apply:'마비 부여 +N%',
     poison_resist:'독 저항 +N%', bleed_resist:'출혈 저항 +N%',
     burn_resist:'화상 저항 +N%', curse_resist:'저주 저항 +N%',
+    stun_resist:'기절 저항 +N%', bind_resist:'속박 저항 +N%',
+    sleep_resist:'수면 저항 +N%', silence_resist:'침묵 저항 +N%',
+    slow_resist:'둔화 저항 +N%', blind_resist:'실명 저항 +N%',
+    freeze_resist:'빙결 저항 +N%', paralyze_resist:'마비 저항 +N%',
     healing_done:'+N% 치유량', healing_received:'+N% 받는 치유량',
     shield_effect:'+N% 보호막 효과',
     threat_up:'+N% 위협 증가', threat_down:'+N% 위협 감소',
@@ -106,10 +118,10 @@ try {
       physical_defense_up:'physical_defense', magic_defense_up:'magic_defense',
       healing_up:'healing_done', shield_up:'shield_effect',
     };
-    // 통합 특성 목록에서 자동 생성 (장비특성 42종 전체를 특수효과로 사용 가능)
+    // 통합 특성 목록에서 자동 생성 (장비특성 58종 전체를 특수효과로 사용 가능)
     const result = [];
     // 기존 EQUIP_TRAIT_TYPES에서 참조할 수 있도록 lazy init (EQUIP_TRAIT_TYPES는 아래에 정의됨)
-    // → 42종 전부를 특수효과 선택지로 제공
+    // → 58종 전부를 특수효과 선택지로 제공
     return { _legacyMap: legacyMap, _result: result, _init: false };
   })();
   // lazy init: EQUIP_TRAIT_TYPES 정의 후 호출
@@ -462,7 +474,7 @@ function calcForgeEnhancedUsedPrice(basePrice, enhance, part, rank) {
   return Math.round(enhanced * calcUsedEquipConditionMul(99, 99));
 }
 
-// 통합 특성 목록 (42종 = 기존 37종 + 스탯 5종)
+// 통합 특성 목록 (58종 = 기존 37종 + 스탯 5종 + 상태이상 부여/저항 16종)
 const EQUIP_TRAIT_TYPES = [
   // 공격
   'physical_damage','magic_damage',
@@ -474,10 +486,14 @@ const EQUIP_TRAIT_TYPES = [
   'pdef_flat','mdef_flat',
   'fire_resist','water_resist','ice_resist','earth_resist',
   'wind_resist','lightning_resist','light_resist','dark_resist',
-  // 상태이상 부여
+  // 상태이상 부여 (12종)
   'poison_apply','bleed_apply','burn_apply','curse_apply',
-  // 상태이상 저항
+  'stun_apply','bind_apply','sleep_apply','silence_apply',
+  'slow_apply','blind_apply','freeze_apply','paralyze_apply',
+  // 상태이상 저항 (12종)
   'poison_resist','bleed_resist','burn_resist','curse_resist',
+  'stun_resist','bind_resist','sleep_resist','silence_resist',
+  'slow_resist','blind_resist','freeze_resist','paralyze_resist',
   // 지원
   'healing_done','healing_received','shield_effect','threat_up','threat_down',
   // 스탯
@@ -487,7 +503,7 @@ const EQUIP_TRAIT_TYPES = [
 const RARE_TRAIT_POOL = EQUIP_TRAIT_TYPES.filter(t => (TRAIT_TIER_MAP[t] || 3) <= 2);
 const NORMAL_TRAIT_POOL = EQUIP_TRAIT_TYPES.filter(t => (TRAIT_TIER_MAP[t] || 3) > 2);
 const EQUIP_TRAIT_LABELS = {
-  // snake_case (42종 전체)
+  // snake_case (58종 전체)
   physical_damage:'물리 피해 증가', magic_damage:'마법 피해 증가',
   fire_damage:'불 속성 피해 증가', water_damage:'물 속성 피해 증가',
   ice_damage:'얼음 속성 피해 증가', earth_damage:'대지 속성 피해 증가',
@@ -502,8 +518,16 @@ const EQUIP_TRAIT_LABELS = {
   light_resist:'빛 속성 저항', dark_resist:'어둠 속성 저항',
   poison_apply:'독 부여 확률 증가', bleed_apply:'출혈 부여 확률 증가',
   burn_apply:'화상 부여 확률 증가', curse_apply:'저주 부여 확률 증가',
+  stun_apply:'기절 부여 확률 증가', bind_apply:'속박 부여 확률 증가',
+  sleep_apply:'수면 부여 확률 증가', silence_apply:'침묵 부여 확률 증가',
+  slow_apply:'둔화 부여 확률 증가', blind_apply:'실명 부여 확률 증가',
+  freeze_apply:'빙결 부여 확률 증가', paralyze_apply:'마비 부여 확률 증가',
   poison_resist:'독 저항', bleed_resist:'출혈 저항',
   burn_resist:'화상 저항', curse_resist:'저주 저항',
+  stun_resist:'기절 저항', bind_resist:'속박 저항',
+  sleep_resist:'수면 저항', silence_resist:'침묵 저항',
+  slow_resist:'둔화 저항', blind_resist:'실명 저항',
+  freeze_resist:'빙결 저항', paralyze_resist:'마비 저항',
   healing_done:'치유량 증가', healing_received:'받는 치유량 증가',
   shield_effect:'보호막 효과 증가',
   threat_up:'위협 수치 증가', threat_down:'위협 수치 감소',
@@ -839,7 +863,7 @@ function buildConvFoodItem(foodDef, count=1) {
 
 const DEFAULT_RARE_MATERIAL_PACK = {
   "version": 3,
-  "note": "GateBattle v7.8 — unified trait system (42 traits), statFlat scale added for 5 stat traits, SPECIAL_MATERIAL_EFFECTS auto-derived from EQUIP_TRAIT_TYPES.",
+  "note": "GateBattle v7.8 — unified trait system (58 traits), statFlat scale added for 5 stat traits, SPECIAL_MATERIAL_EFFECTS auto-derived from EQUIP_TRAIT_TYPES.",
   "valueScales": {
     "percentSmall": {
       "E": 1,
@@ -892,10 +916,10 @@ const DEFAULT_RARE_MATERIAL_PACK = {
     "statFlat": {
       "E": 2,
       "D": 4,
-      "C": 7,
-      "B": 10,
-      "A": 14,
-      "S": 20
+      "C": 6,
+      "B": 8,
+      "A": 11,
+      "S": 14
     }
   },
   "traits": [
@@ -1116,6 +1140,118 @@ const DEFAULT_RARE_MATERIAL_PACK = {
       "status": "curse"
     },
     {
+      "id": "stun_apply",
+      "name": "기절 부여 확률 증가",
+      "category": "status_apply",
+      "scale": "statusPercent",
+      "status": "stun"
+    },
+    {
+      "id": "bind_apply",
+      "name": "속박 부여 확률 증가",
+      "category": "status_apply",
+      "scale": "statusPercent",
+      "status": "bind"
+    },
+    {
+      "id": "sleep_apply",
+      "name": "수면 부여 확률 증가",
+      "category": "status_apply",
+      "scale": "statusPercent",
+      "status": "sleep"
+    },
+    {
+      "id": "silence_apply",
+      "name": "침묵 부여 확률 증가",
+      "category": "status_apply",
+      "scale": "statusPercent",
+      "status": "silence"
+    },
+    {
+      "id": "slow_apply",
+      "name": "둔화 부여 확률 증가",
+      "category": "status_apply",
+      "scale": "statusPercent",
+      "status": "slow"
+    },
+    {
+      "id": "blind_apply",
+      "name": "실명 부여 확률 증가",
+      "category": "status_apply",
+      "scale": "statusPercent",
+      "status": "blind"
+    },
+    {
+      "id": "freeze_apply",
+      "name": "빙결 부여 확률 증가",
+      "category": "status_apply",
+      "scale": "statusPercent",
+      "status": "freeze"
+    },
+    {
+      "id": "paralyze_apply",
+      "name": "마비 부여 확률 증가",
+      "category": "status_apply",
+      "scale": "statusPercent",
+      "status": "paralyze"
+    },
+    {
+      "id": "stun_resist",
+      "name": "기절 저항",
+      "category": "status_resist",
+      "scale": "statusPercent",
+      "status": "stun"
+    },
+    {
+      "id": "bind_resist",
+      "name": "속박 저항",
+      "category": "status_resist",
+      "scale": "statusPercent",
+      "status": "bind"
+    },
+    {
+      "id": "sleep_resist",
+      "name": "수면 저항",
+      "category": "status_resist",
+      "scale": "statusPercent",
+      "status": "sleep"
+    },
+    {
+      "id": "silence_resist",
+      "name": "침묵 저항",
+      "category": "status_resist",
+      "scale": "statusPercent",
+      "status": "silence"
+    },
+    {
+      "id": "slow_resist",
+      "name": "둔화 저항",
+      "category": "status_resist",
+      "scale": "statusPercent",
+      "status": "slow"
+    },
+    {
+      "id": "blind_resist",
+      "name": "실명 저항",
+      "category": "status_resist",
+      "scale": "statusPercent",
+      "status": "blind"
+    },
+    {
+      "id": "freeze_resist",
+      "name": "빙결 저항",
+      "category": "status_resist",
+      "scale": "statusPercent",
+      "status": "freeze"
+    },
+    {
+      "id": "paralyze_resist",
+      "name": "마비 저항",
+      "category": "status_resist",
+      "scale": "statusPercent",
+      "status": "paralyze"
+    },
+    {
       "id": "healing_done",
       "name": "치유량 증가",
       "category": "support",
@@ -1188,10 +1324,10 @@ const RARE_TRAIT_LEGACY_ALIASES = {
 };
 const RARE_FAMILY_PRESETS = {
   increasedHealing:['healing_done','healing_received','shield_effect'],
-  elementalDefense:['fire_resist','water_resist','ice_resist','earth_resist','wind_resist','lightning_resist','light_resist','dark_resist','poison_resist','bleed_resist','burn_resist','curse_resist'],
+  elementalDefense:['fire_resist','water_resist','ice_resist','earth_resist','wind_resist','lightning_resist','light_resist','dark_resist','poison_resist','bleed_resist','burn_resist','curse_resist','stun_resist','bind_resist','sleep_resist','silence_resist','slow_resist','blind_resist','freeze_resist','paralyze_resist'],
   physicalDefense:['physical_defense','threat_up'],
   magicDefense:['magic_defense','threat_down'],
-  elementalDamage:['fire_damage','water_damage','ice_damage','earth_damage','wind_damage','lightning_damage','light_damage','dark_damage','poison_apply','bleed_apply','burn_apply','curse_apply'],
+  elementalDamage:['fire_damage','water_damage','ice_damage','earth_damage','wind_damage','lightning_damage','light_damage','dark_damage','poison_apply','bleed_apply','burn_apply','curse_apply','stun_apply','bind_apply','sleep_apply','silence_apply','slow_apply','blind_apply','freeze_apply','paralyze_apply'],
   physicalDamage:['physical_damage','crit_chance','crit_damage'],
   magicDamage:['magic_damage','healing_done']
 };

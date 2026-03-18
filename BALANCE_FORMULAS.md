@@ -24,7 +24,7 @@
 16. [은신(Stealth) 시스템](#16-은신stealth-시스템)
 17. [몬스터 전투 테이블](#17-몬스터-전투-테이블)
 18. [장비 시스템](#18-장비-시스템)
-19. [통합 특성(Trait) 시스템 — 42종](#19-통합-특성trait-시스템--42종)
+19. [통합 특성(Trait) 시스템 — 58종](#19-통합-특성trait-시스템--58종)
 20. [특성 효과 수치 (등급별)](#20-특성-효과-수치-등급별)
 21. [특성 티어 분류 (TRAIT_TIER_MAP)](#21-특성-티어-분류-trait_tier_map)
 22. [희귀도(Rarity) 시스템](#22-희귀도rarity-시스템)
@@ -612,7 +612,7 @@ passiveMods: {
 
 ---
 
-## 19. 통합 특성(Trait) 시스템 — 42종
+## 19. 통합 특성(Trait) 시스템 — 58종
 
 > 장비 특성, 재료 특수효과, 스킬 특수효과가 하나의 통합 특성 시스템으로 운영됩니다.
 > 수치는 장비 등급(E~S)에 따라 스케일 테이블로 자동 적용.
@@ -651,23 +651,39 @@ passiveMods: {
 | `light_resist` | 빛 속성 저항 | statusPercent |
 | `dark_resist` | 어둠 속성 저항 | statusPercent |
 
-### 19.3 상태이상 부여 (4종)
+### 19.3 상태이상 부여 (12종)
 
-| ID | 이름 | 스케일 |
-|----|------|:---:|
-| `poison_apply` | 독 부여 확률 증가 | statusPercent |
-| `bleed_apply` | 출혈 부여 확률 증가 | statusPercent |
-| `burn_apply` | 화상 부여 확률 증가 | statusPercent |
-| `curse_apply` | 저주 부여 확률 증가 | statusPercent |
+| ID | 이름 | 스케일 | 티어 |
+|----|------|:---:|:---:|
+| `stun_apply` | 기절 부여 확률 증가 | statusPercent | 1 |
+| `freeze_apply` | 빙결 부여 확률 증가 | statusPercent | 1 |
+| `paralyze_apply` | 마비 부여 확률 증가 | statusPercent | 1 |
+| `sleep_apply` | 수면 부여 확률 증가 | statusPercent | 1 |
+| `poison_apply` | 독 부여 확률 증가 | statusPercent | 2 |
+| `bleed_apply` | 출혈 부여 확률 증가 | statusPercent | 2 |
+| `burn_apply` | 화상 부여 확률 증가 | statusPercent | 2 |
+| `curse_apply` | 저주 부여 확률 증가 | statusPercent | 2 |
+| `bind_apply` | 속박 부여 확률 증가 | statusPercent | 2 |
+| `silence_apply` | 침묵 부여 확률 증가 | statusPercent | 2 |
+| `blind_apply` | 실명 부여 확률 증가 | statusPercent | 2 |
+| `slow_apply` | 둔화 부여 확률 증가 | statusPercent | 3 |
 
-### 19.4 상태이상 저항 (4종)
+### 19.4 상태이상 저항 (12종)
 
-| ID | 이름 | 스케일 |
-|----|------|:---:|
-| `poison_resist` | 독 저항 | statusPercent |
-| `bleed_resist` | 출혈 저항 | statusPercent |
-| `burn_resist` | 화상 저항 | statusPercent |
-| `curse_resist` | 저주 저항 | statusPercent |
+| ID | 이름 | 스케일 | 티어 |
+|----|------|:---:|:---:|
+| `stun_resist` | 기절 저항 | statusPercent | 3 |
+| `freeze_resist` | 빙결 저항 | statusPercent | 3 |
+| `paralyze_resist` | 마비 저항 | statusPercent | 3 |
+| `sleep_resist` | 수면 저항 | statusPercent | 3 |
+| `poison_resist` | 독 저항 | statusPercent | 4 |
+| `bleed_resist` | 출혈 저항 | statusPercent | 4 |
+| `burn_resist` | 화상 저항 | statusPercent | 4 |
+| `curse_resist` | 저주 저항 | statusPercent | 4 |
+| `bind_resist` | 속박 저항 | statusPercent | 4 |
+| `silence_resist` | 침묵 저항 | statusPercent | 4 |
+| `blind_resist` | 실명 저항 | statusPercent | 4 |
+| `slow_resist` | 둔화 저항 | statusPercent | 4 |
 
 ### 19.5 지원 특성 (5종)
 
@@ -707,7 +723,7 @@ passiveMods: {
 |------|:---:|:---:|:---:|:---:|:---:|:---:|
 | **효과(%)** | 2 | 4 | 6 | 8 | 10 | 12 |
 
-**적용 특성**: 8종 속성 피해(fire/water/ice/earth/wind/lightning/light/dark_damage), 8종 속성 저항(fire/water/ice/earth/wind/lightning/light/dark_resist), 4종 상태이상 부여(poison/bleed/burn/curse_apply), 4종 상태이상 저항(poison/bleed/burn/curse_resist), shield_effect
+**적용 특성**: 8종 속성 피해(fire/water/ice/earth/wind/lightning/light/dark_damage), 8종 속성 저항(fire/water/ice/earth/wind/lightning/light/dark_resist), 12종 상태이상 부여(poison/bleed/burn/curse/stun/bind/sleep/silence/slow/blind/freeze/paralyze_apply), 12종 상태이상 저항(poison/bleed/burn/curse/stun/bind/sleep/silence/slow/blind/freeze/paralyze_resist), shield_effect
 
 ### critChance (크리티컬 확률)
 
@@ -747,7 +763,7 @@ passiveMods: {
 
 | 등급 | E | D | C | B | A | S |
 |------|:---:|:---:|:---:|:---:|:---:|:---:|
-| **고정값** | +1 | +2 | +3 | +5 | +7 | +10 |
+| **고정값** | +2 | +4 | +6 | +8 | +11 | +14 |
 
 **적용 특성**: stat_str_up, stat_con_up, stat_int_up, stat_agi_up, stat_sense_up
 
@@ -761,10 +777,10 @@ passiveMods: {
 
 | 티어 | 특성 | 설명 |
 |:---:|------|------|
-| **1** | crit_chance, crit_damage, physical_damage, magic_damage | 최고가치 (공격 핵심) |
-| **2** | 8종 속성 피해, 4종 상태이상 부여 | 고가치 (속성/상태이상) |
-| **3** | physical_defense, magic_defense, healing_done, shield_effect, pdef_flat, mdef_flat, 5종 스탯 증가 | 중가치 (방어/지원/스탯) |
-| **4** | 8종 속성 저항, 4종 상태이상 저항, healing_received, threat_up, threat_down | 저가치 (저항/유틸) |
+| **1** | crit_chance, crit_damage, physical_damage, magic_damage, stun/freeze/paralyze/sleep_apply | 최고가치 (공격 핵심 + 행동불가 부여) |
+| **2** | 8종 속성 피해, poison/bleed/burn/curse/bind/silence/blind_apply, 5종 스탯 증가 | 고가치 (속성/상태이상/스탯) |
+| **3** | physical_defense, magic_defense, healing_done, shield_effect, pdef_flat, mdef_flat, slow_apply, stun/freeze/paralyze/sleep_resist | 중가치 (방어/지원 + 행동불가 저항) |
+| **4** | 8종 속성 저항, poison/bleed/burn/curse/bind/silence/blind/slow_resist, healing_received, threat_up, threat_down | 저가치 (저항/유틸) |
 
 ### 레어리티 판정 규칙
 
@@ -789,7 +805,7 @@ passiveMods: {
 
 ## 23. 디버프 가능 특성 (10종)
 
-> 통합 특성 42종 중 피해 증가 계열 10종만 디버프로 전환 가능 (`TRAIT_CAN_DEBUFF`).
+> 통합 특성 58종 중 피해 증가 계열 10종만 디버프로 전환 가능 (`TRAIT_CAN_DEBUFF`).
 > 디버프 시 적에게 해당 속성 "받는 피해 증가" 효과를 적용합니다.
 
 | ID | 버프 효과 | 디버프 효과 |

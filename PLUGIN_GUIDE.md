@@ -385,14 +385,14 @@ dark → light → ice → fire → water → earth → wind → electric → da
 
 ---
 
-### 5.1 통합 특성 (Trait) 시스템 — 42종
+### 5.1 통합 특성 (Trait) 시스템 — 58종
 
 장비 특성, 재료 특수효과, 스킬 특수효과가 하나의 **통합 특성 시스템**으로 운영됩니다.
-총 **42종**이며, **4개 티어**로 구분됩니다. 수치는 장비 등급(E~S)에 따라 자동 적용됩니다.
+총 **58종**이며, **4개 티어**로 구분됩니다. 수치는 장비 등급(E~S)에 따라 자동 적용됩니다.
 
 > 💡 **통합 특성**: 장비 주입, 스킬 특수효과, 장비 기본 특성이 모두 동일한 특성 ID와 수치 체계를 사용합니다.
 > - **디버프**: 10종(물리/마법/8속성 피해 증가)만 디버프로 전환 가능 (`canDebuff`)
-> - **버프**: 42종 모두 버프로 사용 가능
+> - **버프**: 58종 모두 버프로 사용 가능
 
 #### 🗡️ 공격 특성 (12종)
 
@@ -428,23 +428,39 @@ dark → light → ice → fire → water → earth → wind → electric → da
 | `light_resist` | 빛 저항 | 4 | statusPercent |
 | `dark_resist` | 암흑 저항 | 4 | statusPercent |
 
-#### 💀 상태이상 적용 특성 (4종)
+#### 💀 상태이상 적용 특성 (12종)
 
 | ID | 이름 | 티어 | 스케일 |
 |----|------|:----:|:------:|
+| `stun_apply` | 기절 부여 확률 | 1 | statusPercent |
+| `freeze_apply` | 빙결 부여 확률 | 1 | statusPercent |
+| `paralyze_apply` | 마비 부여 확률 | 1 | statusPercent |
+| `sleep_apply` | 수면 부여 확률 | 1 | statusPercent |
 | `poison_apply` | 독 부여 확률 | 2 | statusPercent |
 | `bleed_apply` | 출혈 부여 확률 | 2 | statusPercent |
 | `burn_apply` | 화상 부여 확률 | 2 | statusPercent |
 | `curse_apply` | 저주 부여 확률 | 2 | statusPercent |
+| `bind_apply` | 속박 부여 확률 | 2 | statusPercent |
+| `silence_apply` | 침묵 부여 확률 | 2 | statusPercent |
+| `blind_apply` | 실명 부여 확률 | 2 | statusPercent |
+| `slow_apply` | 둔화 부여 확률 | 3 | statusPercent |
 
-#### 🛡️ 상태이상 저항 특성 (4종)
+#### 🛡️ 상태이상 저항 특성 (12종)
 
 | ID | 이름 | 티어 | 스케일 |
 |----|------|:----:|:------:|
+| `stun_resist` | 기절 저항 | 3 | statusPercent |
+| `freeze_resist` | 빙결 저항 | 3 | statusPercent |
+| `paralyze_resist` | 마비 저항 | 3 | statusPercent |
+| `sleep_resist` | 수면 저항 | 3 | statusPercent |
 | `poison_resist` | 독 저항 | 4 | statusPercent |
 | `bleed_resist` | 출혈 저항 | 4 | statusPercent |
 | `burn_resist` | 화상 저항 | 4 | statusPercent |
 | `curse_resist` | 저주 저항 | 4 | statusPercent |
+| `bind_resist` | 속박 저항 | 4 | statusPercent |
+| `silence_resist` | 침묵 저항 | 4 | statusPercent |
+| `blind_resist` | 실명 저항 | 4 | statusPercent |
+| `slow_resist` | 둔화 저항 | 4 | statusPercent |
 
 #### 💚 지원 특성 (5종)
 
@@ -460,20 +476,20 @@ dark → light → ice → fire → water → earth → wind → electric → da
 
 | ID | 이름 | 티어 | 스케일 | 효과 |
 |----|------|:----:|:------:|------|
-| `stat_str_up` | STR 증가 | 3 | statFlat | HP +3N, ATK +0.2N |
-| `stat_con_up` | CON 증가 | 3 | statFlat | HP +10N |
-| `stat_int_up` | INT 증가 | 3 | statFlat | MP +10N, ATK +0.3N |
-| `stat_agi_up` | AGI 증가 | 3 | statFlat | SP +10N, 행동순서 +2N, 크리확률 +0.25N% |
-| `stat_sense_up` | SENSE 증가 | 3 | statFlat | MP +3N, SP +3N, 명중률 +0.5N%, 크리확률 +0.25N% |
+| `stat_str_up` | STR 증가 | 2 | statFlat | HP +3N, ATK +0.2N |
+| `stat_con_up` | CON 증가 | 2 | statFlat | HP +10N |
+| `stat_int_up` | INT 증가 | 2 | statFlat | MP +10N, ATK +0.3N |
+| `stat_agi_up` | AGI 증가 | 2 | statFlat | SP +10N, 행동순서 +2N, 크리확률 +0.25N% |
+| `stat_sense_up` | SENSE 증가 | 2 | statFlat | MP +3N, SP +3N, 명중률 +0.5N%, 크리확률 +0.25N% |
 
 #### 🎯 티어 분류
 
 | 티어 | 등급 | 포함 특성 |
 |:----:|------|-----------|
-| **Tier 1** | 🔴 희귀 | crit_chance, crit_damage, physical_damage, magic_damage |
-| **Tier 2** | 🟠 희귀 | 속성 피해 증가 (8종), 상태이상 적용 (4종) |
-| **Tier 3** | 🟢 일반 | physical_defense, magic_defense, pdef_flat, mdef_flat, healing_done, shield_effect, 스탯 증가 (5종) |
-| **Tier 4** | ⬜ 일반 | 속성 저항 (8종), 상태이상 저항 (4종), healing_received, threat_up, threat_down |
+| **Tier 1** | 🔴 희귀 | crit_chance, crit_damage, physical_damage, magic_damage, stun_apply, freeze_apply, paralyze_apply, sleep_apply |
+| **Tier 2** | 🟠 희귀 | 속성 피해 증가 (8종), poison/bleed/burn/curse/bind/silence/blind_apply, 스탯 증가 (5종) |
+| **Tier 3** | 🟢 일반 | physical_defense, magic_defense, pdef_flat, mdef_flat, healing_done, shield_effect, slow_apply, stun/freeze/paralyze/sleep_resist |
+| **Tier 4** | ⬜ 일반 | 속성 저항 (8종), poison/bleed/burn/curse/bind/silence/blind/slow_resist, healing_received, threat_up, threat_down |
 
 #### 📊 특성 효과 수치 (등급별)
 
@@ -485,7 +501,7 @@ dark → light → ice → fire → water → earth → wind → electric → da
 | **critDamage** | 5% | 10% | 15% | 20% | 25% | 35% | 크리티컬 피해 |
 | **threatPercent** | 10% | 20% | 30% | 40% | 50% | 60% | 위협 수치 |
 | **defenseFlat** | +3 | +8 | +20 | +35 | +50 | +70 | 물리/마법 방어력 (고정값) |
-| **statFlat** | +1 | +2 | +3 | +5 | +7 | +10 | 스탯 증가 (고정값) |
+| **statFlat** | +2 | +4 | +6 | +8 | +11 | +14 | 스탯 증가 (고정값) |
 
 #### 🔴 디버프 가능 특성 (10종)
 
@@ -1119,10 +1135,10 @@ dark → light → ice → fire → water → earth → wind → electric → da
 | 기본 스탯 수 | 5종 (STR, CON, INT, AGI, SENSE) |
 | 속성 수 | 8종 (순환 상성) |
 | 종족 수 | 10종 |
-| 통합 특성 수 | 42종 (4티어, 디버프 10종 포함) |
+| 통합 특성 수 | 58종 (4티어, 디버프 10종 포함) |
 | 물약 종류 수 | 42종 (7타입 × 6등급) |
 | 물약 일일 한도 | 5회 (6회째 효율 20%) |
-| 특수재료효과 수 | → 통합 특성에 포함 (42종) |
+| 특수재료효과 수 | → 통합 특성에 포함 (58종) |
 | 스킬 카테고리 | 8종 |
 | 게이트 방 타입 | 8종 |
 | 장비 슬롯 | 4+1 (무기/보조/방어구/악세/가방) |
