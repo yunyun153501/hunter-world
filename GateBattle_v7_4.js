@@ -20,9 +20,10 @@ try {
   // 등급별 주스탯 상한선
   const STAT_CAP_BY_RANK = { E:25, D:40, C:60, B:80, A:100, S:150 };
   const DAMAGE_ELEMENTS = ['none', 'water', 'fire', 'ice', 'earth', 'wind', 'electric', 'dark', 'light'];
-  const STATUS_KEYS = ['stun', 'bind', 'sleep', 'poison', 'bleed', 'burn', 'curse', 'silence', 'slow'];
+  const STATUS_KEYS = ['stun', 'bind', 'sleep', 'poison', 'bleed', 'burn', 'curse', 'silence', 'slow', 'blind', 'freeze', 'paralyze'];
   const STATUS_DOT_KEYS = ['poison', 'burn'];
   const ELEMENT_CHAIN = ['dark', 'light', 'ice', 'fire', 'water', 'earth', 'wind', 'electric'];
+  const ELEMENT_STATUS_MAP = { light:'blind', dark:'curse', fire:'burn', water:'slow', earth:'stun', wind:'bleed', ice:'freeze', electric:'paralyze' };
 
   // ── 희귀도 (Rarity) ──
   const RARITY_LIST = ['Normal','Rare','Unique','Legendary'];
@@ -572,8 +573,8 @@ const PARTY_BAGS = {
   bag_A: { id:'bag_A', name:'A급 게이트백팩',     rank:'A', slotBonus:24, weightMul:0.80, maxWeightBonusG:25000 },
   bag_S: { id:'bag_S', name:'S급 마정공간백팩',   rank:'S', slotBonus:28, weightMul:0.70, maxWeightBonusG:30000 },
 };
-const INVENTORY_BASE_SLOTS = 8;
-const INVENTORY_BASE_MAX_WEIGHT_G = 6000;
+const INVENTORY_BASE_SLOTS = 4;
+const INVENTORY_BASE_MAX_WEIGHT_G = 3000;
 const PERSONAL_INV_BASE_SLOTS = 8;
 const PERSONAL_INV_BASE_MAX_WEIGHT_G = 6000;
 const SHARED_INV_BAG_RATIO = 0.20; // 가방 보너스의 20%만 공용인벤에 적용
@@ -639,26 +640,39 @@ function buildPotionItem(potionDef, count=1) {
   return { id: potionDef.id, name: potionDef.name, category:'potion', type: potionDef.type, grade: potionDef.grade, rank: potionDef.targetRank || '', count:Math.max(1,Number(count||1)), unitWeightG:potionDef.weight||200, stackable:true, stackKey:`potion:${potionDef.id}`, note: potionDef.note||'', effectValue: potionDef.effectValue||0, effectDuration: potionDef.effectDuration||0, targetRank: potionDef.targetRank||'', price: potionDef.price||0 };
 }
 
-const POTION_DAILY_MAX = 5;
+const POTION_DAILY_MAX_RECOVERY = 5;  // 일반 회복포션 (HP/MP/SP) 일일 제한
+const POTION_DAILY_MAX_BUFF = 3;      // 버프포션 일일 제한
+// 해제포션 (antidote, cc_cure, curse_cure)은 사용 제한 없음
 
 function getPotionUsesToday() {
   const gd = model.db.gameDate || { year:2026, month:1, day:1 };
   const key = `${gd.year}-${gd.month}-${gd.day}`;
   if (!model.db.potionDailyUse || model.db.potionDailyUse.dateKey !== key) {
-    model.db.potionDailyUse = { dateKey: key, count: 0 };
+    model.db.potionDailyUse = { dateKey: key, count: 0, recovery: 0, buff: 0 };
   }
+  // 이전 데이터 호환: recovery/buff 필드가 없으면 추가
+  if (model.db.potionDailyUse.recovery == null) model.db.potionDailyUse.recovery = model.db.potionDailyUse.count || 0;
+  if (model.db.potionDailyUse.buff == null) model.db.potionDailyUse.buff = 0;
   return model.db.potionDailyUse;
 }
 
 function usePotionOnUnit(potionItem, targetUnit) {
   const daily = getPotionUsesToday();
-  if (daily.count > POTION_DAILY_MAX) throw new Error('오늘은 더 이상 물약을 사용할 수 없다. (일일 한도 초과)');
+  const type = potionItem.type;
+  const isRecovery = ['hp', 'mp', 'sp'].includes(type);
+  const isBuff = type === 'buff';
+  const isCure = ['antidote', 'cc_cure', 'curse_cure'].includes(type);
+
+  // 일일 제한 확인
+  if (isRecovery && daily.recovery > POTION_DAILY_MAX_RECOVERY) throw new Error('오늘은 더 이상 회복 물약을 사용할 수 없다. (일일 한도 초과)');
+  if (isBuff && daily.buff >= POTION_DAILY_MAX_BUFF) throw new Error('오늘은 더 이상 버프 물약을 사용할 수 없다. (일일 한도 초과)');
+  // 해제포션은 제한 없음
 
   let efficiency = 1.0;
-  if (daily.count === POTION_DAILY_MAX) efficiency = 0.2;
+  // 일반 회복포션: 6회째 사용 시 20% 효율
+  if (isRecovery && daily.recovery === POTION_DAILY_MAX_RECOVERY) efficiency = 0.2;
 
   const isPartyState = targetUnit.currentHp !== undefined;
-  const type = potionItem.type;
   let resultMsg = '';
 
   if (type === 'hp') {
@@ -694,27 +708,37 @@ function usePotionOnUnit(potionItem, targetUnit) {
   } else if (type === 'antidote') {
     if (targetUnit.debuffs) targetUnit.debuffs = targetUnit.debuffs.filter(d => d.type !== 'poison');
     if (targetUnit.statusEffects) targetUnit.statusEffects = targetUnit.statusEffects.filter(s => s.type !== 'poison');
-    resultMsg = `${targetUnit.name}: 독 해제` + (efficiency < 1 ? ' (부작용: 효율 20%)' : '');
+    resultMsg = `${targetUnit.name}: 독 해제`;
   } else if (type === 'cc_cure') {
-    if (targetUnit.debuffs) targetUnit.debuffs = targetUnit.debuffs.filter(d => !['stun','sleep','bind'].includes(d.type));
-    if (targetUnit.statusEffects) targetUnit.statusEffects = targetUnit.statusEffects.filter(s => !['stun','sleep','bind'].includes(s.type));
+    if (targetUnit.debuffs) targetUnit.debuffs = targetUnit.debuffs.filter(d => !['stun','sleep','bind','freeze','paralyze'].includes(d.type));
+    if (targetUnit.statusEffects) targetUnit.statusEffects = targetUnit.statusEffects.filter(s => !['stun','sleep','bind','freeze','paralyze'].includes(s.type));
     if (targetUnit.cc) targetUnit.cc = null;
-    resultMsg = `${targetUnit.name}: CC 해제` + (efficiency < 1 ? ' (부작용: 효율 20%)' : '');
+    resultMsg = `${targetUnit.name}: CC 해제`;
   } else if (type === 'curse_cure') {
     if (targetUnit.debuffs) targetUnit.debuffs = targetUnit.debuffs.filter(d => d.type !== 'curse');
     if (targetUnit.statusEffects) targetUnit.statusEffects = targetUnit.statusEffects.filter(s => s.type !== 'curse');
-    resultMsg = `${targetUnit.name}: 저주 해제` + (efficiency < 1 ? ' (부작용: 효율 20%)' : '');
+    resultMsg = `${targetUnit.name}: 저주 해제`;
   } else if (type === 'buff') {
     const statBoost = Math.floor((potionItem.effectValue || 0) * efficiency);
     const duration = potionItem.effectDuration || 3;
     if (!targetUnit.buffs) targetUnit.buffs = {};
     targetUnit.buffs.potionBuff = { statBoost, turnsLeft: duration, from: potionItem.name };
-    resultMsg = `${targetUnit.name}: 주스탯 +${statBoost} (${duration}턴)` + (efficiency < 1 ? ' (부작용: 효율 20%)' : '');
+    resultMsg = `${targetUnit.name}: 주스탯 +${statBoost} (${duration}턴)`;
   }
 
+  // 사용 횟수 증가
   daily.count++;
-  if (daily.count > POTION_DAILY_MAX) {
-    resultMsg += ' ⚠️ 오늘은 더 이상 물약을 사용할 수 없다!';
+  if (isRecovery) {
+    daily.recovery++;
+    if (daily.recovery > POTION_DAILY_MAX_RECOVERY) {
+      resultMsg += ' ⚠️ 오늘은 더 이상 회복 물약을 사용할 수 없다!';
+    }
+  }
+  if (isBuff) {
+    daily.buff++;
+    if (daily.buff >= POTION_DAILY_MAX_BUFF) {
+      resultMsg += ' ⚠️ 오늘의 버프 물약 사용 한도에 도달했다!';
+    }
   }
   return resultMsg;
 }
@@ -1229,7 +1253,10 @@ const RARE_FAMILY_PRESETS = {
       '화상':'burn', 'burn':'burn',
       '저주':'curse', 'curse':'curse',
       '침묵':'silence', 'silence':'silence',
-      '둔화':'slow', 'slow':'slow'
+      '둔화':'slow', 'slow':'slow',
+      '실명':'blind', 'blind':'blind',
+      '빙결':'freeze', 'freeze':'freeze',
+      '마비':'paralyze', 'paralyze':'paralyze'
     };
     return map[s] || '';
   }
@@ -1370,9 +1397,25 @@ const RARE_FAMILY_PRESETS = {
     if (prefixMatch) {
       const st = normStatus(prefixMatch[1]);
       if (st) {
-        const defaultChance = ['stun','bind','sleep'].includes(st) ? 0.18 : 0.28;
-        const defaultTurns = ['stun','bind','sleep'].includes(st) ? 1 : 2;
-        meta.onHitStatus = st; meta.onHitChance = defaultChance; meta.onHitTurns = defaultTurns;
+        const ccTypes = ['stun','bind','sleep','freeze','paralyze','blind'];
+        const defaultChance = ccTypes.includes(st) ? 0.18 : 0.28;
+        const defaultTurns = ccTypes.includes(st) ? 1 : 2;
+        // 정령은 30% 확률로만 상태이상 부여 능력 보유
+        const isElemental = meta.species === 'elemental';
+        if (!isElemental || Math.random() < 0.3) {
+          meta.onHitStatus = st; meta.onHitChance = defaultChance; meta.onHitTurns = defaultTurns;
+        }
+      }
+    }
+    // 보스/엘리트: 접두효과 없어도 기본속성 기반 상태이상 부여 (ELEMENT_STATUS_MAP)
+    const kind = String(item.kind || '').toLowerCase();
+    if (!meta.onHitStatus && (kind === 'boss' || kind === 'elite') && meta.baseElement && meta.baseElement !== 'none') {
+      const elSt = ELEMENT_STATUS_MAP[meta.baseElement];
+      if (elSt && normStatus(elSt)) {
+        const ccTypes = ['stun','bind','sleep','freeze','paralyze','blind'];
+        meta.onHitStatus = elSt;
+        meta.onHitChance = ccTypes.includes(elSt) ? 0.18 : 0.28;
+        meta.onHitTurns = ccTypes.includes(elSt) ? 1 : 2;
       }
     }
     if (Array.isArray(item.immunities)) meta = mergeMeta(meta, { immunities:item.immunities });
@@ -1383,7 +1426,7 @@ const RARE_FAMILY_PRESETS = {
     if (item.regenBlockedBy) meta = mergeMeta(meta, { regenBlockedBy:item.regenBlockedBy });
     if (item.onHitStatus) meta = mergeMeta(meta, { onHitStatus:item.onHitStatus, onHitChance:item.onHitChance, onHitTurns:item.onHitTurns });
 
-    const immRe = /(독|출혈|기절|속박|수면|화상|저주)\s*면역/g;
+    const immRe = /(독|출혈|기절|속박|수면|화상|저주|실명|빙결|마비)\s*면역/g;
     let m;
     while ((m = immRe.exec(note))) {
       const st = normStatus(m[1]);
@@ -1429,7 +1472,10 @@ const RARE_FAMILY_PRESETS = {
       sleep:{ turns:2, chance:0.16, power:0 },
       stun:{ turns:1, chance:0.16, power:0 },
       silence:{ turns:3, chance:0.20, power:0 },
-      slow:{ turns:3, chance:0.25, power:0 }
+      slow:{ turns:3, chance:0.25, power:0 },
+      blind:{ turns:2, chance:0.20, power:0 },
+      freeze:{ turns:1, chance:0.16, power:0 },
+      paralyze:{ turns:1, chance:0.16, power:0 }
     };
     return Object.assign({ turns:2, chance:0.2, power:0 }, map[st] || {});
   }
@@ -1555,7 +1601,7 @@ const RARE_FAMILY_PRESETS = {
       customSkills: [
         { id:'skill_guide', name:'⭐ 스킬가이드', grade:'E', category:'singleAttack', target:'singleEnemy',
           costs:{ mp:0, sp:0 }, coef:1.0, damageType:'physical', element:'none', statTypes:['str'], duration:0,
-          desc:'【스킬 만드는 법】\n1. "새 스킬" 클릭 → ID/이름 입력\n2. 각 항목을 설정 후 저장\n\n【카테고리 설명】\nsingleAttack = 단일 공격 (적 1체)\naoeAttack = 광역 공격 (전체 적)\nsingleCC = 단일 CC (적 1체 + 행동방해)\naoeCC = 광역 CC (전체 적 + 행동방해)\nsingleHeal = 단일 회복 (아군 1체)\naoeHeal = 광역 회복 (전체 아군)\nbuff = 버프 (자신/아군 강화)\nutility = 유틸리티 (자원/상태 관리)\n\n【은신(stealth) 버프 만드는 법】\n은신은 buff 카테고리 스킬로 만듭니다.\n1. 카테고리: buff\n2. 대상: self (자기 자신)\n3. 버프 스탯: 원하는 스탯 (예: agi +5)\n4. 지속 턴: 원하는 턴수 (예: 3)\n5. 은신 체크박스: 체크 ✓\n효과: 은신 중에는 모든 공격 대상에서 제외됩니다.\n  보스를 포함한 모든 적의 공격에서 은신이 적용됩니다.\n  은신 상태에서 공격하면 즉시 은신이 해제됩니다.\n  지속 턴이 끝나도 자동 해제됩니다.\n\n【특수효과 설정법】\n장비와 스킬에 특수효과를 추가할 수 있습니다.\n1. 효과 종류: 버프(자신/아군 강화) 또는 디버프(적에게 받는 피해 증가)\n2. 발동확률: 0~100% (장비는 피격/공격 시, 스킬은 사용 시)\n3. 효과 선택: 버프는 다양한 효과, 디버프는 받는 피해 증가만 선택 가능\n4. 효과 수치: 효과의 크기 (%, 절대값 등)\n버프: 자신이나 아군의 해당 효과 증가\n디버프: 적에게 받는 피해 증가 적용 (물리/마법/속성별 받는 피해 증가)\n\n【대상 설명】\nsingleEnemy = 적 1체\nallEnemies = 전체 적 (광역)\nrowFront = 전열 적만 (전열 광역)\nrowMid = 중열 적만\nrowBack = 후열 적만\nrowFrontMid = 전열+중열 적\nrowMidBack = 중열+후열 적\nsingleAlly = 아군 1체\nallAllies = 전체 아군\nself = 자기 자신\n※ 열 공격: 해당 열이 비면 가장 앞 열의 적을 공격\n\n【CC 종류 설명】\nstun = 기절 (행동불가, 1턴, 이후 5턴 면역)\nbind = 속박 (감각-50%, 명중률-50%)\nsleep = 수면 (행동불가, 피격 시 해제, 이후 5턴 면역)\nsilence = 침묵 (스킬 사용불가)\nslow = 둔화 (명중률-30%, 회피율-50%)\n※ CC 확률: 비우면 100%. 0~1 사이 소수로 입력 (예: 0.3=30%)\n\n【상태이상 설명 및 기본 확률/턴수】\npoison = 독 — 확률28%, 3턴, 최대3중첩\n  효과: 매턴 방어무시 DoT (기본값×계수×0.2×중첩수)\nbleed = 출혈 — 확률28%, 3턴\n  효과: 발동 시 해당 공격 피해의 30% 추가피해(1회)\n  + 3턴간 받는 회복량 50% 감소\nburn = 화상 — 확률28%, 5턴, 최대5중첩\n  효과: 매턴 방어무시 DoT (기본값×계수×0.12×중첩수)\n  + 받는 데미지 +10% (중첩 무관)\ncurse = 저주 — 확률24%, 3턴\n  효과: 등급별 공격력 감소 + 받는 피해 증가 (E:10%~S:30%)\nsilence = 침묵 — 확률20%, 3턴\n  효과: 스킬 사용불가 (기본공격만 가능)\nslow = 둔화 — 확률25%, 3턴\n  효과: 명중률 -30%, 회피율 -50%\nbind = 속박 — 확률18%, 2턴\n  효과: 감각(SENSE) -50%, 명중률 -50% (크리율도 함께 감소)\n  둔화보다 명중 감소폭이 크고, 감각 감소로 크리티컬률도 하락\n\n※ 상태이상 확률: 비우면 위 기본값 자동 적용\n0~1 사이 소수로 입력 (예: 0.5=50%)\n\n【등급별 계수 — 순수 공격 (단일 기준)】\n하한 → 상한\nE: 1.2 → 1.5\nD: 1.92 → 2.4\nC: 2.88 → 3.6\nB: 4.8 → 6.0\nA: 7.68 → 9.6\nS: 11.52 → 14.4\n광역/열공격 = 단일 × 0.58\n\n【CC/상태이상 스킬 추천 계수】\n상태이상이 붙는 스킬은 직접 데미지를 낮추는 대신\n상태이상 효과로 총 가치를 보상하는 구조.\n추천: 순수공격 하한값 × 0.8 (20% 약화)\n\n단일 CC/상태이상 추천계수 (기본확률일 경우):\nE: 0.96 / D: 1.54 / C: 2.30\nB: 3.84 / A: 6.14 / S: 9.22\n\n광역 CC/상태이상 추천계수 (단일×0.58):\nE: 0.56 / D: 0.89 / C: 1.33\nB: 2.23 / A: 3.56 / S: 5.35\n\n※ 밸런스 기준:\n직접피해 + 상태이상 효과(DoT/추가피해/디버프)\n총합이 최소 상한계수급 이상이면 적절.\n독/화상: 총합≈상한의 102%\n출혈: 직접+즉시추가≈상한의 83% + 회복량50%감소 유틸\n상태이상이 강할수록 계수를 더 낮춰도 됨.\n\n【데미지 공식】\n기본값 = (2 × 주스탯) + (3 × ATK)\n최종데미지 = 기본값 × 계수 × 크리배율 × 속성배율\n※ 크리티컬: ×1.5 / 속성유리: ×1.25 / 속성불리: ×0.75\n\n【상태이상 효과 공식】\n독(DoT): 매턴 기본값 × 계수 × 0.2 × 중첩수 (최대3)\n화상(DoT): 매턴 기본값 × 계수 × 0.12 × 중첩수 (최대5)\n  + 받는 데미지 +10% (중첩 무관)\n출혈: 발동 시 해당 공격 피해의 30% 추가피해(1회)\n  + 3턴간 받는 회복량 50% 감소\n저주: 등급별 공격력 감소 + 받는 피해 증가 (E:10%~S:30%)\n\n【E급 예시 (주스탯15, ATK5)】\n기본값 = (2×15)+(3×5) = 45\n상한 직접피해 = 45×1.5 = 67.5\n\n■ 순수 단일공격 (계수1.35): 45×1.35 = 60.75\n■ 순수 광역공격 (계수0.78): 45×0.78 = 35.10\n\n■ 단일CC/상태이상 (추천계수0.96):\n  직접피해: 45×0.96 = 43.20\n  독1중첩 3턴합: 45×0.96×0.2×3 = 25.92\n  → 총합: 43.20+25.92 = 69.12 (상한의 102%) ✓\n  화상1중첩 5턴합: 45×0.96×0.12×5 = 25.92\n  → 총합: 43.20+25.92 = 69.12 + 피격+10% ✓\n  출혈 즉시추가: 43.20×0.3 = 12.96\n  → 총합: 43.20+12.96 = 56.16 (상한83%) + 회복량50%감소 ✓\n\n■ 광역CC/상태이상 (추천계수0.56):\n  직접피해: 45×0.56 = 25.20 (각 적)\n  독1중첩 3턴합: 45×0.56×0.2×3 = 15.12\n  → 총합: 25.20+15.12 = 40.32/적\n  출혈 즉시추가: 25.20×0.3 = 7.56\n  → 총합: 25.20+7.56 = 32.76/적 + 회복량50%감소\n\n이 스킬은 삭제해도 됩니다.' }
+          desc:'【스킬 만드는 법】\n1. "새 스킬" 클릭 → ID/이름 입력\n2. 각 항목을 설정 후 저장\n\n【카테고리 설명】\nsingleAttack = 단일 공격 (적 1체)\naoeAttack = 광역 공격 (전체 적)\nsingleCC = 단일 CC (적 1체 + 행동방해)\naoeCC = 광역 CC (전체 적 + 행동방해)\nsingleHeal = 단일 회복 (아군 1체)\naoeHeal = 광역 회복 (전체 아군)\nbuff = 버프 (자신/아군 강화)\nutility = 유틸리티 (자원/상태 관리)\n\n【은신(stealth) 버프 만드는 법】\n은신은 buff 카테고리 스킬로 만듭니다.\n1. 카테고리: buff\n2. 대상: self (자기 자신)\n3. 버프 스탯: 원하는 스탯 (예: agi +5)\n4. 지속 턴: 원하는 턴수 (예: 3)\n5. 은신 체크박스: 체크 ✓\n효과: 은신 중에는 모든 공격 대상에서 제외됩니다.\n  보스를 포함한 모든 적의 공격에서 은신이 적용됩니다.\n  은신 상태에서 공격하면 즉시 은신이 해제됩니다.\n  지속 턴이 끝나도 자동 해제됩니다.\n\n【특수효과 설정법】\n장비와 스킬에 특수효과를 추가할 수 있습니다.\n1. 효과 종류: 버프(자신/아군 강화) 또는 디버프(적에게 받는 피해 증가)\n2. 발동확률: 0~100% (장비는 피격/공격 시, 스킬은 사용 시)\n3. 효과 선택: 버프는 다양한 효과, 디버프는 받는 피해 증가만 선택 가능\n4. 효과 수치: 효과의 크기 (%, 절대값 등)\n버프: 자신이나 아군의 해당 효과 증가\n디버프: 적에게 받는 피해 증가 적용 (물리/마법/속성별 받는 피해 증가)\n\n【대상 설명】\nsingleEnemy = 적 1체\nallEnemies = 전체 적 (광역)\nrowFront = 전열 적만 (전열 광역)\nrowMid = 중열 적만\nrowBack = 후열 적만\nrowFrontMid = 전열+중열 적\nrowMidBack = 중열+후열 적\nsingleAlly = 아군 1체\nallAllies = 전체 아군\nself = 자기 자신\n※ 열 공격: 해당 열이 비면 가장 앞 열의 적을 공격\n\n【CC 종류 설명】\nstun = 기절 (행동불가, 1턴, 이후 5턴 면역)\nbind = 속박 (감각-50%, 명중률-50%)\nsleep = 수면 (행동불가, 피격 시 해제, 이후 5턴 면역)\nsilence = 침묵 (스킬 사용불가)\nslow = 둔화 (명중률-30%, 회피율-50%)\nblind = 실명 (명중률-60%)\nfreeze = 빙결 (행동불가, 1턴, 이후 5턴 면역)\nparalyze = 마비 (행동불가, 1턴, 이후 5턴 면역)\n※ CC 확률: 비우면 100%. 0~1 사이 소수로 입력 (예: 0.3=30%)\n\n【속성-상태이상 매칭】\n빛→실명, 어둠→저주, 불→화상, 물→둔화, 대지→기절, 바람→출혈, 얼음→빙결, 전기→마비\n\n【상태이상 설명 및 기본 확률/턴수】\npoison = 독 — 확률28%, 3턴, 최대3중첩\n  효과: 매턴 방어무시 DoT (기본값×계수×0.2×중첩수)\nbleed = 출혈 — 확률28%, 3턴\n  효과: 발동 시 해당 공격 피해의 30% 추가피해(1회)\n  + 3턴간 받는 회복량 50% 감소\nburn = 화상 — 확률28%, 5턴, 최대5중첩\n  효과: 매턴 방어무시 DoT (기본값×계수×0.12×중첩수)\n  + 받는 데미지 +10% (중첩 무관)\ncurse = 저주 — 확률24%, 3턴\n  효과: 등급별 공격력 감소 + 받는 피해 증가 (E:10%~S:30%)\nsilence = 침묵 — 확률20%, 3턴\n  효과: 스킬 사용불가 (기본공격만 가능)\nslow = 둔화 — 확률25%, 3턴\n  효과: 명중률 -30%, 회피율 -50%\nbind = 속박 — 확률18%, 2턴\n  효과: 감각(SENSE) -50%, 명중률 -50% (크리율도 함께 감소)\n  둔화보다 명중 감소폭이 크고, 감각 감소로 크리티컬률도 하락\n\n※ 상태이상 확률: 비우면 위 기본값 자동 적용\n0~1 사이 소수로 입력 (예: 0.5=50%)\n\n【등급별 계수 — 순수 공격 (단일 기준)】\n하한 → 상한\nE: 1.2 → 1.5\nD: 1.92 → 2.4\nC: 2.88 → 3.6\nB: 4.8 → 6.0\nA: 7.68 → 9.6\nS: 11.52 → 14.4\n광역/열공격 = 단일 × 0.58\n\n【CC/상태이상 스킬 추천 계수】\n상태이상이 붙는 스킬은 직접 데미지를 낮추는 대신\n상태이상 효과로 총 가치를 보상하는 구조.\n추천: 순수공격 하한값 × 0.8 (20% 약화)\n\n단일 CC/상태이상 추천계수 (기본확률일 경우):\nE: 0.96 / D: 1.54 / C: 2.30\nB: 3.84 / A: 6.14 / S: 9.22\n\n광역 CC/상태이상 추천계수 (단일×0.58):\nE: 0.56 / D: 0.89 / C: 1.33\nB: 2.23 / A: 3.56 / S: 5.35\n\n※ 밸런스 기준:\n직접피해 + 상태이상 효과(DoT/추가피해/디버프)\n총합이 최소 상한계수급 이상이면 적절.\n독/화상: 총합≈상한의 102%\n출혈: 직접+즉시추가≈상한의 83% + 회복량50%감소 유틸\n상태이상이 강할수록 계수를 더 낮춰도 됨.\n\n【데미지 공식】\n기본값 = (2 × 주스탯) + (3 × ATK)\n최종데미지 = 기본값 × 계수 × 크리배율 × 속성배율\n※ 크리티컬: ×1.5 / 속성유리: ×1.25 / 속성불리: ×0.75\n\n【상태이상 효과 공식】\n독(DoT): 매턴 기본값 × 계수 × 0.2 × 중첩수 (최대3)\n화상(DoT): 매턴 기본값 × 계수 × 0.12 × 중첩수 (최대5)\n  + 받는 데미지 +10% (중첩 무관)\n출혈: 발동 시 해당 공격 피해의 30% 추가피해(1회)\n  + 3턴간 받는 회복량 50% 감소\n저주: 등급별 공격력 감소 + 받는 피해 증가 (E:10%~S:30%)\n\n【E급 예시 (주스탯15, ATK5)】\n기본값 = (2×15)+(3×5) = 45\n상한 직접피해 = 45×1.5 = 67.5\n\n■ 순수 단일공격 (계수1.35): 45×1.35 = 60.75\n■ 순수 광역공격 (계수0.78): 45×0.78 = 35.10\n\n■ 단일CC/상태이상 (추천계수0.96):\n  직접피해: 45×0.96 = 43.20\n  독1중첩 3턴합: 45×0.96×0.2×3 = 25.92\n  → 총합: 43.20+25.92 = 69.12 (상한의 102%) ✓\n  화상1중첩 5턴합: 45×0.96×0.12×5 = 25.92\n  → 총합: 43.20+25.92 = 69.12 + 피격+10% ✓\n  출혈 즉시추가: 43.20×0.3 = 12.96\n  → 총합: 43.20+12.96 = 56.16 (상한83%) + 회복량50%감소 ✓\n\n■ 광역CC/상태이상 (추천계수0.56):\n  직접피해: 45×0.56 = 25.20 (각 적)\n  독1중첩 3턴합: 45×0.56×0.2×3 = 15.12\n  → 총합: 25.20+15.12 = 40.32/적\n  출혈 즉시추가: 25.20×0.3 = 7.56\n  → 총합: 25.20+7.56 = 32.76/적 + 회복량50%감소\n\n이 스킬은 삭제해도 됩니다.' }
       ],
       rareMaterialPack: deepClone(DEFAULT_RARE_MATERIAL_PACK),
       rareMaterialCatalog: [],
@@ -1805,7 +1851,7 @@ function buildDefaultState() {
       skills: Array.isArray(entry.skills) ? entry.skills.slice() : [],
       ai: entry.ai || null,
       buffs: Array.isArray(entry.buffs) ? deepClone(entry.buffs) : [],
-      statuses: Object.assign({ stun:0, bind:0, sleep:0, poison:0, bleed:0, burn:0, curse:0, poisonStacks:0, poisonPower:0, bleedPower:0, burnStacks:0, burnPower:0, stunResistTimer:0, sleepResistTimer:0, bleedHealReduction:0 }, deepClone(entry.statuses || {})),
+      statuses: Object.assign({ stun:0, bind:0, sleep:0, poison:0, bleed:0, burn:0, curse:0, blind:0, freeze:0, paralyze:0, poisonStacks:0, poisonPower:0, bleedPower:0, burnStacks:0, burnPower:0, stunResistTimer:0, sleepResistTimer:0, freezeResistTimer:0, paralyzeResistTimer:0, bleedHealReduction:0 }, deepClone(entry.statuses || {})),
       cooldowns: {},
       lastAction:'',
       dead:false,
@@ -4212,14 +4258,14 @@ function currentGatePrompt(run) {
     const potions = inv.items.filter(it => it.category === 'potion');
     if (!potions.length) return '<div class="gb-panel"><div class="gb-sub">소지 중인 물약이 없다.</div><div class="gb-btn-row"><button class="gb-btn" id="gb-pb-potion-close">닫기</button></div></div>';
     const daily = getPotionUsesToday();
-    const remaining = Math.max(0, POTION_DAILY_MAX - daily.count);
+    const remaining = Math.max(0, POTION_DAILY_MAX_RECOVERY - daily.recovery);
     const party = (run.partyState || []).filter(u => Number(u.currentHp || u.hp || 0) > 0);
     const potionOpts = potions.map(p => `<option value="${escapeHtml(p.stackKey)}">${escapeHtml(p.name)} x${p.count} — ${escapeHtml(p.note||'')}</option>`).join('');
     const targetOpts = party.map((u, i) => `<option value="${i}">${escapeHtml(u.name)} (HP ${Math.floor(Number(u.currentHp||0))}/${Math.floor(Number(u.hp||0))})</option>`).join('');
     return `
       <div class="gb-panel">
         <div class="gb-section-title">🧪 물약 사용 (전투 후)</div>
-        <div class="gb-sub">남은 일일 사용 횟수: ${remaining}/${POTION_DAILY_MAX}${daily.count >= POTION_DAILY_MAX ? ' ⚠️ 한도 도달 — 다음 사용 시 효율 20%' : ''}</div>
+        <div class="gb-sub">회복포션: ${remaining}/${POTION_DAILY_MAX_RECOVERY + 1}회 남음${daily.recovery >= POTION_DAILY_MAX_RECOVERY ? ' ⚠️ 다음 사용 시 효율 20%' : ''}${daily.recovery > POTION_DAILY_MAX_RECOVERY ? ' (한도초과)' : ''} | 버프포션: ${Math.max(0, POTION_DAILY_MAX_BUFF - daily.buff)}/${POTION_DAILY_MAX_BUFF}회 | 해제포션: 무제한</div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;">
           <select class="gb-input" id="gb-pb-potion-select">${potionOpts}</select>
           <span style="color:#94a3b8;">→</span>
@@ -4459,6 +4505,8 @@ function getBuffedStat(unit, statKey) {
       if (Number(attacker.statuses.bind || 0) > 0) accuracy *= 0.5;
       // 둔화된 몬스터: 명중률 -30%
       if (Number(attacker.statuses.slow || 0) > 0) accuracy *= 0.7;
+      // 실명된 몬스터: 명중률 -60%
+      if (Number(attacker.statuses.blind || 0) > 0) accuracy *= 0.4;
     } else {
       // 헌터 명중률 = 70 + 감각 * 0.5
       let sense = getBuffedStat(attacker, 'sense');
@@ -4468,6 +4516,8 @@ function getBuffedStat(unit, statKey) {
       if (Number(attacker.statuses.bind || 0) > 0) accuracy *= 0.5;
       // 둔화된 헌터: 명중률 -30%
       if (Number(attacker.statuses.slow || 0) > 0) accuracy *= 0.7;
+      // 실명된 헌터: 명중률 -60%
+      if (Number(attacker.statuses.blind || 0) > 0) accuracy *= 0.4;
     }
     // 대상 회피율 계산 (등급별, 헌터·몬스터 모두 적용)
     let evasion = getBaseEvasion(target);
@@ -4900,6 +4950,31 @@ function getBuffedStat(unit, statKey) {
       if (kind === 'boss') t = Math.min(t, 2);
       else if (kind === 'elite') t = Math.min(t, 3);
       target.statuses.slow = Math.max(Number(target.statuses.slow || 0), t);
+    } else if (type === 'blind') {
+      // 실명: 명중률 대폭 감소
+      let t = turns;
+      const kind = String(target.kind || '').toLowerCase();
+      if (kind === 'boss') t = Math.min(t, 1);
+      else if (kind === 'elite') t = Math.min(t, 2);
+      target.statuses.blind = Math.max(Number(target.statuses.blind || 0), t);
+    } else if (type === 'freeze') {
+      // 빙결: 행동불가, 기절과 동일하게 5턴 면역
+      if (Number(target.statuses.freezeResistTimer || 0) > 0) return false;
+      let t = turns;
+      const kind = String(target.kind || '').toLowerCase();
+      if (kind === 'boss') t = Math.min(t, 1);
+      else if (kind === 'elite') t = Math.min(t, 2);
+      target.statuses.freeze = Math.max(Number(target.statuses.freeze || 0), t);
+      target.statuses.freezeResistTimer = 5;
+    } else if (type === 'paralyze') {
+      // 마비: 행동불가, 기절과 동일하게 5턴 면역
+      if (Number(target.statuses.paralyzeResistTimer || 0) > 0) return false;
+      let t = turns;
+      const kind = String(target.kind || '').toLowerCase();
+      if (kind === 'boss') t = Math.min(t, 1);
+      else if (kind === 'elite') t = Math.min(t, 2);
+      target.statuses.paralyze = Math.max(Number(target.statuses.paralyze || 0), t);
+      target.statuses.paralyzeResistTimer = 5;
     }
     addRoundHighlight(summary, `${sourceName}의 ${skill?.name || '공격'} → ${target.name} ${type}`);
     pushBattleLog(runtime, `${sourceName} 사용: ${skill?.name || '공격'} → ${target.name} ${type}`);
@@ -5326,7 +5401,7 @@ function getBuffedStat(unit, statKey) {
       }
 
       // 상태이상 턴 감소
-      ['stun','bind','sleep','poison','bleed','burn','curse','silence','slow'].forEach(key => {
+      ['stun','bind','sleep','poison','bleed','burn','curse','silence','slow','blind','freeze','paralyze'].forEach(key => {
         unit.statuses[key] = Math.max(0, Number(unit.statuses[key] || 0) - 1);
       });
       // 독/화상: 턴이 0이 되면 스택 초기화
@@ -5336,12 +5411,18 @@ function getBuffedStat(unit, statKey) {
       if (Number(unit.statuses.bleedHealReduction || 0) > 0) {
         unit.statuses.bleedHealReduction = Math.max(0, unit.statuses.bleedHealReduction - 1);
       }
-      // 기절/수면/도발 저항 타이머 감소
+      // 기절/수면/빙결/마비/도발 저항 타이머 감소
       if (Number(unit.statuses.stunResistTimer || 0) > 0) {
         unit.statuses.stunResistTimer = Math.max(0, unit.statuses.stunResistTimer - 1);
       }
       if (Number(unit.statuses.sleepResistTimer || 0) > 0) {
         unit.statuses.sleepResistTimer = Math.max(0, unit.statuses.sleepResistTimer - 1);
+      }
+      if (Number(unit.statuses.freezeResistTimer || 0) > 0) {
+        unit.statuses.freezeResistTimer = Math.max(0, unit.statuses.freezeResistTimer - 1);
+      }
+      if (Number(unit.statuses.paralyzeResistTimer || 0) > 0) {
+        unit.statuses.paralyzeResistTimer = Math.max(0, unit.statuses.paralyzeResistTimer - 1);
       }
       if (Number(unit.statuses.tauntResistTimer || 0) > 0) {
         unit.statuses.tauntResistTimer = Math.max(0, unit.statuses.tauntResistTimer - 1);
@@ -5448,6 +5529,14 @@ function getBuffedStat(unit, statKey) {
       }
       if (Number(actor.statuses.sleep || 0) > 0) {
         addRoundHighlight(summary, `${actor.name} 수면으로 행동 불가`);
+        continue;
+      }
+      if (Number(actor.statuses.freeze || 0) > 0) {
+        addRoundHighlight(summary, `${actor.name} 빙결로 행동 불가`);
+        continue;
+      }
+      if (Number(actor.statuses.paralyze || 0) > 0) {
+        addRoundHighlight(summary, `${actor.name} 마비로 행동 불가`);
         continue;
       }
       const action = actor.side === 'party' ? resolvePartyAction(runtime, actor, allies, foes) : chooseEnemyAction(actor, allies, foes, false);
@@ -8370,14 +8459,14 @@ function renderCommandPanel(runtime) {
     const potions = inv.items.filter(it => it.category === 'potion');
     if (!potions.length) return '<div class="gb-panel"><div class="gb-sub">소지 중인 물약이 없다.</div><div class="gb-btn-row"><button class="gb-btn" id="gb-battle-potion-close">닫기</button></div></div>';
     const daily = getPotionUsesToday();
-    const remaining = Math.max(0, POTION_DAILY_MAX - daily.count);
+    const remaining = Math.max(0, POTION_DAILY_MAX_RECOVERY - daily.recovery);
     const partyAlive = getAlive(runtime.party);
     const potionOpts = potions.map(p => `<option value="${escapeHtml(p.stackKey)}">${escapeHtml(p.name)} x${p.count} — ${escapeHtml(p.note||'')}</option>`).join('');
     const targetOpts = partyAlive.map(u => `<option value="${escapeHtml(u.uid)}">${escapeHtml(u.name)} (HP ${Math.floor(u.hp)}/${Math.floor(u.maxHp)})</option>`).join('');
     return `
       <div class="gb-panel">
         <div class="gb-section-title">🧪 물약 사용 (전투 중)</div>
-        <div class="gb-sub">남은 일일 사용 횟수: ${remaining}/${POTION_DAILY_MAX}${daily.count >= POTION_DAILY_MAX ? ' ⚠️ 한도 도달 — 다음 사용 시 효율 20%' : ''}</div>
+        <div class="gb-sub">회복포션: ${remaining}/${POTION_DAILY_MAX_RECOVERY + 1}회 남음${daily.recovery >= POTION_DAILY_MAX_RECOVERY ? ' ⚠️ 다음 사용 시 효율 20%' : ''}${daily.recovery > POTION_DAILY_MAX_RECOVERY ? ' (한도초과)' : ''} | 버프포션: ${Math.max(0, POTION_DAILY_MAX_BUFF - daily.buff)}/${POTION_DAILY_MAX_BUFF}회 | 해제포션: 무제한</div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;">
           <select class="gb-input" id="gb-battle-potion-select">${potionOpts}</select>
           <span style="color:#94a3b8;">→</span>
