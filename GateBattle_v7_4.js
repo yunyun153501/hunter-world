@@ -6682,6 +6682,9 @@ function getBuffedStat(unit, statKey) {
     if (!model.state.gate || typeof model.state.gate !== 'object') model.state.gate = buildDefaultGateState();
     if (!Array.isArray(model.state.gate.generated) || !model.state.gate.generated.length) generateGateOptions(model.state.gate.size || 'small', model.state.gate.rank || 'E');
     seedDefaultInventoryMigration();
+    // 저장된 캐릭터/페르소나의 파생 스탯(HP/MP/SP/ATK/PDEF/MDEF)을 현재 공식으로 재계산
+    (model.db.characters || []).forEach(c => { if (c.stats) recalcCharDerivedStats(c); });
+    (model.db.personas || []).forEach(p => { if (p.stats) recalcCharDerivedStats(p); });
     ensureSelections();
   }
 
@@ -11458,6 +11461,9 @@ async function saveMaterialTraitFromForm() {
         getInventory();
         if (!Array.isArray(model.db.auctionListings)) model.db.auctionListings = [];
         if (!Array.isArray(model.db.hmUsedListings)) model.db.hmUsedListings = [];
+        // 불러온 캐릭터/페르소나의 파생 스탯을 현재 공식으로 재계산
+        (model.db.characters || []).forEach(c => { if (c.stats) recalcCharDerivedStats(c); });
+        (model.db.personas || []).forEach(p => { if (p.stats) recalcCharDerivedStats(p); });
         ensureSelections();
         await saveDb();
         await saveState();
