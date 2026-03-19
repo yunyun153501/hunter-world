@@ -20,9 +20,10 @@ try {
   // 등급별 주스탯 상한선
   const STAT_CAP_BY_RANK = { E:25, D:40, C:60, B:80, A:100, S:150 };
   const DAMAGE_ELEMENTS = ['none', 'water', 'fire', 'ice', 'earth', 'wind', 'electric', 'dark', 'light'];
-  const STATUS_KEYS = ['stun', 'bind', 'sleep', 'poison', 'bleed', 'burn', 'curse', 'silence', 'slow'];
+  const STATUS_KEYS = ['stun', 'bind', 'sleep', 'poison', 'bleed', 'burn', 'curse', 'silence', 'slow', 'blind', 'freeze', 'paralyze'];
   const STATUS_DOT_KEYS = ['poison', 'burn'];
   const ELEMENT_CHAIN = ['dark', 'light', 'ice', 'fire', 'water', 'earth', 'wind', 'electric'];
+  const ELEMENT_STATUS_MAP = { light:'blind', dark:'curse', fire:'burn', water:'slow', earth:'stun', wind:'bleed', ice:'freeze', electric:'paralyze' };
 
   // ── 희귀도 (Rarity) ──
   const RARITY_LIST = ['Normal','Rare','Unique','Legendary'];
@@ -33,15 +34,26 @@ try {
   // 특성 → 가격 티어 매핑 (rare_material_catalog 기준)
   const TRAIT_TIER_MAP = {
     crit_chance:1, crit_damage:1, physical_damage:1, magic_damage:1,
+    stun_apply:1, freeze_apply:1, paralyze_apply:1, sleep_apply:1,
     bleed_apply:2, burn_apply:2, curse_apply:2, poison_apply:2,
+    bind_apply:2, silence_apply:2, blind_apply:2,
     fire_damage:2, water_damage:2, ice_damage:2, earth_damage:2,
     wind_damage:2, lightning_damage:2, light_damage:2, dark_damage:2,
+    stat_str_up:2, stat_con_up:2, stat_int_up:2, stat_agi_up:2, stat_sense_up:2,
     healing_done:3, magic_defense:3, physical_defense:3, shield_effect:3,
-    pdef_flat:3, mdef_flat:3,
+    pdef_flat:3, mdef_flat:3, slow_apply:3,
+    stun_resist:3, freeze_resist:3, paralyze_resist:3, sleep_resist:3,
     healing_received:4, bleed_resist:4, burn_resist:4, curse_resist:4,
+    bind_resist:4, silence_resist:4, blind_resist:4, slow_resist:4,
     fire_resist:4, water_resist:4, ice_resist:4, earth_resist:4,
     wind_resist:4, lightning_resist:4, light_resist:4, dark_resist:4,
     poison_resist:4, threat_up:4, threat_down:4,
+  };
+  // 디버프 가능 특성 매핑 (10종 — 피해 증가 계열만 디버프로 전환 가능)
+  const TRAIT_CAN_DEBUFF = {
+    physical_damage:true, magic_damage:true,
+    fire_damage:true, water_damage:true, ice_damage:true, earth_damage:true,
+    wind_damage:true, lightning_damage:true, light_damage:true, dark_damage:true,
   };
   // 장비 희귀도 자동 판정: weapon/armor → 특성 유무, subweapon/accessory → 실제 특성 티어
   function assignEquipRarity(part, traitId) {
@@ -52,38 +64,96 @@ try {
     return { rarity: traitId ? 'Rare' : 'Normal', traitTier: 0 };
   }
 
-  // ── 특수효과 (Special Effects) ──
-  const SPECIAL_MATERIAL_EFFECTS = [
-    { id:'physical_damage_up',  label:'물리 피해 증가', buffDesc:'+N% 물리 피해', debuffDesc:'+N% 받는 물리 피해 증가', category:'offense', canDebuff:true },
-    { id:'magic_damage_up',     label:'마법 피해 증가', buffDesc:'+N% 마법 피해', debuffDesc:'+N% 받는 마법 피해 증가', category:'offense', canDebuff:true },
-    { id:'fire_damage_up',      label:'화염 피해 증가', buffDesc:'+N% 화염 피해', debuffDesc:'+N% 받는 화염 피해 증가', category:'offense', canDebuff:true },
-    { id:'ice_damage_up',       label:'빙결 피해 증가', buffDesc:'+N% 빙결 피해', debuffDesc:'+N% 받는 빙결 피해 증가', category:'offense', canDebuff:true },
-    { id:'lightning_damage_up', label:'번개 피해 증가', buffDesc:'+N% 번개 피해', debuffDesc:'+N% 받는 번개 피해 증가', category:'offense', canDebuff:true },
-    { id:'dark_damage_up',      label:'암흑 피해 증가', buffDesc:'+N% 암흑 피해', debuffDesc:'+N% 받는 암흑 피해 증가', category:'offense', canDebuff:true },
-    { id:'water_damage_up',     label:'물 피해 증가',   buffDesc:'+N% 물 피해',   debuffDesc:'+N% 받는 물 피해 증가',   category:'offense', canDebuff:true },
-    { id:'earth_damage_up',     label:'대지 피해 증가', buffDesc:'+N% 대지 피해', debuffDesc:'+N% 받는 대지 피해 증가', category:'offense', canDebuff:true },
-    { id:'wind_damage_up',      label:'바람 피해 증가', buffDesc:'+N% 바람 피해', debuffDesc:'+N% 받는 바람 피해 증가', category:'offense', canDebuff:true },
-    { id:'light_damage_up',     label:'빛 피해 증가',   buffDesc:'+N% 빛 피해',   debuffDesc:'+N% 받는 빛 피해 증가',   category:'offense', canDebuff:true },
-    { id:'crit_chance_up',      label:'치명타 확률 증가', buffDesc:'+N% 치확',    category:'offense' },
-    { id:'crit_damage_up',      label:'치명타 피해 증가', buffDesc:'+N% 치피',    category:'offense' },
-    { id:'physical_defense_up', label:'물리 방어 증가', buffDesc:'+N% 물리 방어',  category:'defense' },
-    { id:'magic_defense_up',    label:'마법 방어 증가', buffDesc:'+N% 마법 방어',  category:'defense' },
-    { id:'healing_up',          label:'회복량 증가',    buffDesc:'+N% 회복량',     category:'support' },
-    { id:'shield_up',           label:'보호막 효과 증가', buffDesc:'+N% 보호막 효과', category:'support' },
-    { id:'stat_str_up',         label:'STR 증가',       buffDesc:'STR +N',         category:'stat' },
-    { id:'stat_con_up',         label:'CON 증가',       buffDesc:'CON +N',         category:'stat' },
-    { id:'stat_int_up',         label:'INT 증가',       buffDesc:'INT +N',         category:'stat' },
-    { id:'stat_agi_up',         label:'AGI 증가',       buffDesc:'AGI +N',         category:'stat' },
-    { id:'stat_sense_up',       label:'SENSE 증가',     buffDesc:'SENSE +N',       category:'stat' },
-    { id:'bleed_apply',         label:'출혈 부여',      buffDesc:'출혈 부여 +N%',  category:'status' },
-    { id:'burn_apply',          label:'화상 부여',      buffDesc:'화상 부여 +N%',  category:'status' },
-    { id:'curse_apply',         label:'저주 부여',      buffDesc:'저주 부여 +N%',  category:'status' },
-  ];
-  function getSpecialMaterialEffectById(id) { return SPECIAL_MATERIAL_EFFECTS.find(e => e.id === id); }
+  // ── 통합 특성 시스템 (Unified Trait System) ──
+  // SPECIAL_MATERIAL_EFFECTS는 EQUIP_TRAIT_LABELS + TRAIT_CAN_DEBUFF 기반으로 자동 생성
+  // 스킬 특수효과 / 장비 주입 / 장비 특성이 모두 동일한 특성 ID 사용
+  const TRAIT_DEBUFF_DESC = {
+    physical_damage:'+N% 받는 물리 피해 증가', magic_damage:'+N% 받는 마법 피해 증가',
+    fire_damage:'+N% 받는 화염 피해 증가', water_damage:'+N% 받는 물 피해 증가',
+    ice_damage:'+N% 받는 빙결 피해 증가', earth_damage:'+N% 받는 대지 피해 증가',
+    wind_damage:'+N% 받는 바람 피해 증가', lightning_damage:'+N% 받는 번개 피해 증가',
+    light_damage:'+N% 받는 빛 피해 증가', dark_damage:'+N% 받는 암흑 피해 증가',
+  };
+  const TRAIT_BUFF_DESC = {
+    physical_damage:'+N% 물리 피해', magic_damage:'+N% 마법 피해',
+    fire_damage:'+N% 화염 피해', water_damage:'+N% 물 피해',
+    ice_damage:'+N% 빙결 피해', earth_damage:'+N% 대지 피해',
+    wind_damage:'+N% 바람 피해', lightning_damage:'+N% 번개 피해',
+    light_damage:'+N% 빛 피해', dark_damage:'+N% 암흑 피해',
+    crit_chance:'+N% 치확', crit_damage:'+N% 치피',
+    physical_defense:'+N% 물리 방어', magic_defense:'+N% 마법 방어',
+    pdef_flat:'물리방어력 +N', mdef_flat:'마법방어력 +N',
+    fire_resist:'+N% 불 저항', water_resist:'+N% 물 저항',
+    ice_resist:'+N% 얼음 저항', earth_resist:'+N% 대지 저항',
+    wind_resist:'+N% 바람 저항', lightning_resist:'+N% 전기 저항',
+    light_resist:'+N% 빛 저항', dark_resist:'+N% 암흑 저항',
+    poison_apply:'독 부여 +N%', bleed_apply:'출혈 부여 +N%',
+    burn_apply:'화상 부여 +N%', curse_apply:'저주 부여 +N%',
+    stun_apply:'기절 부여 +N%', bind_apply:'속박 부여 +N%',
+    sleep_apply:'수면 부여 +N%', silence_apply:'침묵 부여 +N%',
+    slow_apply:'둔화 부여 +N%', blind_apply:'실명 부여 +N%',
+    freeze_apply:'빙결 부여 +N%', paralyze_apply:'마비 부여 +N%',
+    poison_resist:'독 저항 +N%', bleed_resist:'출혈 저항 +N%',
+    burn_resist:'화상 저항 +N%', curse_resist:'저주 저항 +N%',
+    stun_resist:'기절 저항 +N%', bind_resist:'속박 저항 +N%',
+    sleep_resist:'수면 저항 +N%', silence_resist:'침묵 저항 +N%',
+    slow_resist:'둔화 저항 +N%', blind_resist:'실명 저항 +N%',
+    freeze_resist:'빙결 저항 +N%', paralyze_resist:'마비 저항 +N%',
+    healing_done:'+N% 치유량', healing_received:'+N% 받는 치유량',
+    shield_effect:'+N% 보호막 효과',
+    threat_up:'+N% 위협 증가', threat_down:'+N% 위협 감소',
+    stat_str_up:'STR +N', stat_con_up:'CON +N', stat_int_up:'INT +N',
+    stat_agi_up:'AGI +N', stat_sense_up:'SENSE +N',
+  };
+  // 하위호환: SPECIAL_MATERIAL_EFFECTS 구조 유지 (스킬/장비 에디터 UI 등에서 사용)
+  const SPECIAL_MATERIAL_EFFECTS = (function() {
+    // 이전 _up 접미사 ID → 통합 trait ID 매핑
+    const legacyMap = {
+      physical_damage_up:'physical_damage', magic_damage_up:'magic_damage',
+      fire_damage_up:'fire_damage', ice_damage_up:'ice_damage',
+      lightning_damage_up:'lightning_damage', dark_damage_up:'dark_damage',
+      water_damage_up:'water_damage', earth_damage_up:'earth_damage',
+      wind_damage_up:'wind_damage', light_damage_up:'light_damage',
+      crit_chance_up:'crit_chance', crit_damage_up:'crit_damage',
+      physical_defense_up:'physical_defense', magic_defense_up:'magic_defense',
+      healing_up:'healing_done', shield_up:'shield_effect',
+    };
+    // 통합 특성 목록에서 자동 생성 (장비특성 58종 전체를 특수효과로 사용 가능)
+    const result = [];
+    // 기존 EQUIP_TRAIT_TYPES에서 참조할 수 있도록 lazy init (EQUIP_TRAIT_TYPES는 아래에 정의됨)
+    // → 58종 전부를 특수효과 선택지로 제공
+    return { _legacyMap: legacyMap, _result: result, _init: false };
+  })();
+  // lazy init: EQUIP_TRAIT_TYPES 정의 후 호출
+  function initSpecialMaterialEffects() {
+    if (SPECIAL_MATERIAL_EFFECTS._init) return;
+    SPECIAL_MATERIAL_EFFECTS._init = true;
+    const arr = SPECIAL_MATERIAL_EFFECTS._result;
+    arr.length = 0;
+    (typeof EQUIP_TRAIT_TYPES !== 'undefined' ? EQUIP_TRAIT_TYPES : []).forEach(tid => {
+      const label = (typeof EQUIP_TRAIT_LABELS !== 'undefined' ? EQUIP_TRAIT_LABELS[tid] : tid) || tid;
+      const entry = { id:tid, label:label, buffDesc: TRAIT_BUFF_DESC[tid] || ('+N% ' + label), category:'offense' };
+      if (TRAIT_CAN_DEBUFF[tid]) { entry.canDebuff = true; entry.debuffDesc = TRAIT_DEBUFF_DESC[tid] || ('+N% 받는 ' + label); }
+      arr.push(entry);
+    });
+  }
+  // ID 변환: 레거시 _up ID → 통합 trait ID
+  function normalizeTraitId(id) {
+    if (!id) return id;
+    const m = SPECIAL_MATERIAL_EFFECTS._legacyMap;
+    return m[id] || id;
+  }
+  function getSpecialMaterialEffectById(id) {
+    initSpecialMaterialEffects();
+    const nid = normalizeTraitId(id);
+    return SPECIAL_MATERIAL_EFFECTS._result.find(e => e.id === nid) || SPECIAL_MATERIAL_EFFECTS._result.find(e => e.id === id);
+  }
   function smeOptionsHtml(selectedId, type) {
-    const list = type === 'debuff' ? SPECIAL_MATERIAL_EFFECTS.filter(e => e.canDebuff) : SPECIAL_MATERIAL_EFFECTS;
-    return '<option value="" ' + (!selectedId ? 'selected' : '') + '>(선택)</option>' +
-      list.map(e => '<option value="' + e.id + '"' + (selectedId === e.id ? ' selected' : '') + '>' + escapeHtml(e.label + (type === 'debuff' && e.canDebuff ? ' → 받는 ' + e.label : '')) + '</option>').join('');
+    initSpecialMaterialEffects();
+    const list = type === 'debuff' ? SPECIAL_MATERIAL_EFFECTS._result.filter(e => e.canDebuff) : SPECIAL_MATERIAL_EFFECTS._result;
+    const nid = normalizeTraitId(selectedId);
+    return '<option value="" ' + (!nid ? 'selected' : '') + '>(선택)</option>' +
+      list.map(e => '<option value="' + e.id + '"' + (nid === e.id ? ' selected' : '') + '>' + escapeHtml(e.label + (type === 'debuff' && e.canDebuff ? ' → 받는 ' + e.label : '')) + '</option>').join('');
   }
 
 const ELEMENTS = DAMAGE_ELEMENTS;
@@ -348,6 +418,24 @@ const EQUIP_PRICE_RANGE = {
 const EQUIP_PART_PRICE_MUL = { weapon:[0.8,1.0], armor:[0.6,0.75], subweapon:[0.4,0.55], accessory:[0.25,0.40] };
 // Skill book: ×5 equipment price
 const SKILL_BOOK_PRICE_MUL = 5;
+// Skill book tier assignment by category (T1=best performance, T4=utility)
+// T1: aoeAttack, aoeCC — game-changing AoE skills
+// T2: singleAttack, singleCC — strong single-target combat
+// T3: aoeHeal, buff — team support skills
+// T4: singleHeal, passive, utility — utility/passive skills
+const SKILL_BOOK_TIERS = {
+  aoeAttack: 1, aoeCC: 1,
+  singleAttack: 2, singleCC: 2,
+  aoeHeal: 3, buff: 3,
+  singleHeal: 4, passive: 4, utility: 4
+};
+// Skillbook price = reference equipment price × SKILL_BOOK_PRICE_MUL
+// Tier determines which part's price to use: T1=weapon, T2=armor, T3=subweapon, T4=accessory
+const SKILL_BOOK_TIER_PART = { 1:'weapon', 2:'armor', 3:'subweapon', 4:'accessory' };
+function calcSkillBookPrice(rank, tier) {
+  const part = SKILL_BOOK_TIER_PART[tier] || 'accessory';
+  return Math.round(calcEquipBasePrice(rank, part) * SKILL_BOOK_PRICE_MUL);
+}
 
 // Max enhancement by part
 const EQUIP_MAX_ENHANCE = { weapon:5, subweapon:0, armor:5, accessory:5 };
@@ -364,6 +452,53 @@ const ARMOR_STAT_BY_RANK = {
   A: { totalStatSum:11, defRange:[0,100], resistance:7, enhanceStat:5 },
   S: { totalStatSum:16, defRange:[0,200], resistance:10,enhanceStat:6 },
 };
+// Armor subtypes: different defense multipliers, stat pools, and stat bonus modifiers
+const ARMOR_SUBTYPES = {
+  heavy:   { label:'중갑',   defMul:[0.90,1.00], statPool:['con','str'], atkMul:-0.10, statBonusMul:0 },
+  light:   { label:'경갑',   defMul:[0.70,0.80], statPool:['con','str','agi'], atkMul:0, statBonusMul:0 },
+  leather: { label:'가죽갑', defMul:[0.50,0.60], statPool:['str','agi','int','sense'], atkMul:0, statBonusMul:0.10 },
+  robe:    { label:'로브',   defMul:[0.40,0.50], statPool:['agi','int','sense'], atkMul:0, statBonusMul:0.20 }
+};
+const ARMOR_SUBTYPE_KEYS = ['heavy','light','leather','robe'];
+
+// ── 장비 이름 생성 테이블 ──────────────────────────────────────────────────────
+const EQUIP_RANK_PREFIX = {
+  E: ['낡은','조악한','투박한','해진','흠집난','허름한'],
+  D: ['평범한','실용적인','손질된','무난한','균형잡힌'],
+  C: ['정교한','견고한','세련된','숙련된','우수한'],
+  B: ['희귀한','탁월한','고급','뛰어난','정예의'],
+  A: ['영웅의','고결한','위엄의','찬란한','축복받은'],
+  S: ['전설의','신화의','초월한','불멸의','천상의']
+};
+const EQUIP_NAME_SUFFIXES = {
+  weapon: ['검','대검','창','활','대궁','석궁','완드','지팡이','로드','도끼','쌍검','단검','레이피어','총','저격총','권갑','스파이크','투창','투척단검'],
+  subweapon: ['방패','화살','수정구','예비단검','신발','장갑','보호대'],
+  accessory: ['귀걸이','반지','목걸이','벨트','표식'],
+  armor_heavy: ['강철갑옷','판금갑옷','백은중갑','중갑'],
+  armor_light: ['사슬갑옷','전술경갑','백은경갑','경갑'],
+  armor_leather: ['기동조끼','가죽외피','사냥꾼조끼','가죽갑옷'],
+  armor_robe: ['로브','예복','법의','마도복']
+};
+function generateEquipName(rank, part, armorSubtypeKey, traitLabel, forcedSuffix) {
+  const prefixes = EQUIP_RANK_PREFIX[rank] || EQUIP_RANK_PREFIX.E;
+  let prefix;
+  if (part === 'weapon' && rank === 'E') {
+    prefix = '협회지급';
+  } else {
+    prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+  }
+  let suff;
+  if (forcedSuffix) {
+    suff = forcedSuffix;
+  } else {
+    let suffKey = part;
+    if (part === 'armor' && armorSubtypeKey) suffKey = 'armor_' + armorSubtypeKey;
+    const suffArr = EQUIP_NAME_SUFFIXES[suffKey] || EQUIP_NAME_SUFFIXES[part] || [part];
+    suff = suffArr[Math.floor(Math.random() * suffArr.length)];
+  }
+  return `${prefix} ${suff}${traitLabel ? ` [${traitLabel}]` : ''}`;
+}
+
 // Accessory base stats by rank
 const ACCESSORY_STAT_BY_RANK = {
   E: { totalStatSum:0,   traits:1, enhanceStat:1 },
@@ -380,6 +515,17 @@ const EQUIP_MAX_INFUSE = { weapon:2, subweapon:2, armor:2, accessory:1 };
 
 // Repair fee base price per 1% durability lost (₩) — Weapon is ×2
 const REPAIR_FEE_BASE = { E:0, D:10000, C:100000, B:1000000, A:20000000, S:750000000 };
+
+// ── 전투 내구도 소모량 ──────────────────────────────────────────────────────────
+const DURABILITY_COST = {
+  weaponBasicAttack: 0.3,
+  weaponSkillAttack: 0.6,
+  armorHit: 0.4,
+  shieldHit: 0.5,
+  subweaponAttack: 0.3,
+  subweaponSkill: 0.6,
+  accessoryAction: 0.3
+};
 
 // ── 대장간 강화 시스템 ──────────────────────────────────────────────────────────
 // 강화 재료: 같은 등급 마정석 순도 80~100%
@@ -404,7 +550,7 @@ function calcForgeEnhancedUsedPrice(basePrice, enhance, part, rank) {
   return Math.round(enhanced * calcUsedEquipConditionMul(99, 99));
 }
 
-// Trait types for equipment (all 37 rare material trait IDs, snake_case)
+// 통합 특성 목록 (58종 = 기존 37종 + 스탯 5종 + 상태이상 부여/저항 16종)
 const EQUIP_TRAIT_TYPES = [
   // 공격
   'physical_damage','magic_damage',
@@ -416,18 +562,24 @@ const EQUIP_TRAIT_TYPES = [
   'pdef_flat','mdef_flat',
   'fire_resist','water_resist','ice_resist','earth_resist',
   'wind_resist','lightning_resist','light_resist','dark_resist',
-  // 상태이상 부여
+  // 상태이상 부여 (12종)
   'poison_apply','bleed_apply','burn_apply','curse_apply',
-  // 상태이상 저항
+  'stun_apply','bind_apply','sleep_apply','silence_apply',
+  'slow_apply','blind_apply','freeze_apply','paralyze_apply',
+  // 상태이상 저항 (12종)
   'poison_resist','bleed_resist','burn_resist','curse_resist',
+  'stun_resist','bind_resist','sleep_resist','silence_resist',
+  'slow_resist','blind_resist','freeze_resist','paralyze_resist',
   // 지원
   'healing_done','healing_received','shield_effect','threat_up','threat_down',
+  // 스탯
+  'stat_str_up','stat_con_up','stat_int_up','stat_agi_up','stat_sense_up',
 ];
 // 희귀(tier1-2) / 일반(tier3-4) 특성 풀 — 경매장 80/20 비율 제어용
 const RARE_TRAIT_POOL = EQUIP_TRAIT_TYPES.filter(t => (TRAIT_TIER_MAP[t] || 3) <= 2);
 const NORMAL_TRAIT_POOL = EQUIP_TRAIT_TYPES.filter(t => (TRAIT_TIER_MAP[t] || 3) > 2);
 const EQUIP_TRAIT_LABELS = {
-  // snake_case (37개 전체)
+  // snake_case (58종 전체)
   physical_damage:'물리 피해 증가', magic_damage:'마법 피해 증가',
   fire_damage:'불 속성 피해 증가', water_damage:'물 속성 피해 증가',
   ice_damage:'얼음 속성 피해 증가', earth_damage:'대지 속성 피해 증가',
@@ -442,16 +594,28 @@ const EQUIP_TRAIT_LABELS = {
   light_resist:'빛 속성 저항', dark_resist:'어둠 속성 저항',
   poison_apply:'독 부여 확률 증가', bleed_apply:'출혈 부여 확률 증가',
   burn_apply:'화상 부여 확률 증가', curse_apply:'저주 부여 확률 증가',
+  stun_apply:'기절 부여 확률 증가', bind_apply:'속박 부여 확률 증가',
+  sleep_apply:'수면 부여 확률 증가', silence_apply:'침묵 부여 확률 증가',
+  slow_apply:'둔화 부여 확률 증가', blind_apply:'실명 부여 확률 증가',
+  freeze_apply:'빙결 부여 확률 증가', paralyze_apply:'마비 부여 확률 증가',
   poison_resist:'독 저항', bleed_resist:'출혈 저항',
   burn_resist:'화상 저항', curse_resist:'저주 저항',
+  stun_resist:'기절 저항', bind_resist:'속박 저항',
+  sleep_resist:'수면 저항', silence_resist:'침묵 저항',
+  slow_resist:'둔화 저항', blind_resist:'실명 저항',
+  freeze_resist:'빙결 저항', paralyze_resist:'마비 저항',
   healing_done:'치유량 증가', healing_received:'받는 치유량 증가',
   shield_effect:'보호막 효과 증가',
   threat_up:'위협 수치 증가', threat_down:'위협 수치 감소',
+  stat_str_up:'STR 증가', stat_con_up:'CON 증가', stat_int_up:'INT 증가',
+  stat_agi_up:'AGI 증가', stat_sense_up:'SENSE 증가',
   // 구버전 camelCase (하위 호환)
   physicalDamage:'물리 피해', magicDamage:'마법 피해', elementalDamage:'속성 피해',
   physicalDefense:'물리피해감소', magicDefense:'마법피해감소', elementalDefense:'속성 저항',
   increasedHealing:'치유 증가'
 };
+// SPECIAL_MATERIAL_EFFECTS lazy init 트리거
+initSpecialMaterialEffects();
 // Trait effect % by rank — fallback for legacy camelCase traits not in the pack
 const EQUIP_TRAIT_EFFECT_PCT = {
   E: 3, D: 5, C: 8, B: 12, A: 18, S: 25
@@ -572,8 +736,8 @@ const PARTY_BAGS = {
   bag_A: { id:'bag_A', name:'A급 게이트백팩',     rank:'A', slotBonus:24, weightMul:0.80, maxWeightBonusG:25000 },
   bag_S: { id:'bag_S', name:'S급 마정공간백팩',   rank:'S', slotBonus:28, weightMul:0.70, maxWeightBonusG:30000 },
 };
-const INVENTORY_BASE_SLOTS = 8;
-const INVENTORY_BASE_MAX_WEIGHT_G = 6000;
+const INVENTORY_BASE_SLOTS = 4;
+const INVENTORY_BASE_MAX_WEIGHT_G = 3000;
 const PERSONAL_INV_BASE_SLOTS = 8;
 const PERSONAL_INV_BASE_MAX_WEIGHT_G = 6000;
 const SHARED_INV_BAG_RATIO = 0.20; // 가방 보너스의 20%만 공용인벤에 적용
@@ -639,26 +803,39 @@ function buildPotionItem(potionDef, count=1) {
   return { id: potionDef.id, name: potionDef.name, category:'potion', type: potionDef.type, grade: potionDef.grade, rank: potionDef.targetRank || '', count:Math.max(1,Number(count||1)), unitWeightG:potionDef.weight||200, stackable:true, stackKey:`potion:${potionDef.id}`, note: potionDef.note||'', effectValue: potionDef.effectValue||0, effectDuration: potionDef.effectDuration||0, targetRank: potionDef.targetRank||'', price: potionDef.price||0 };
 }
 
-const POTION_DAILY_MAX = 5;
+const POTION_DAILY_MAX_RECOVERY = 5;  // 일반 회복포션 (HP/MP/SP) 일일 제한
+const POTION_DAILY_MAX_BUFF = 3;      // 버프포션 일일 제한
+// 해제포션 (antidote, cc_cure, curse_cure)은 사용 제한 없음
 
 function getPotionUsesToday() {
   const gd = model.db.gameDate || { year:2026, month:1, day:1 };
   const key = `${gd.year}-${gd.month}-${gd.day}`;
   if (!model.db.potionDailyUse || model.db.potionDailyUse.dateKey !== key) {
-    model.db.potionDailyUse = { dateKey: key, count: 0 };
+    model.db.potionDailyUse = { dateKey: key, count: 0, recovery: 0, buff: 0 };
   }
+  // 이전 데이터 호환: recovery/buff 필드가 없으면 추가
+  if (model.db.potionDailyUse.recovery == null) model.db.potionDailyUse.recovery = model.db.potionDailyUse.count || 0;
+  if (model.db.potionDailyUse.buff == null) model.db.potionDailyUse.buff = 0;
   return model.db.potionDailyUse;
 }
 
 function usePotionOnUnit(potionItem, targetUnit) {
   const daily = getPotionUsesToday();
-  if (daily.count > POTION_DAILY_MAX) throw new Error('오늘은 더 이상 물약을 사용할 수 없다. (일일 한도 초과)');
+  const type = potionItem.type;
+  const isRecovery = ['hp', 'mp', 'sp'].includes(type);
+  const isBuff = type === 'buff';
+  const isCure = ['antidote', 'cc_cure', 'curse_cure'].includes(type);
+
+  // 일일 제한 확인
+  if (isRecovery && daily.recovery > POTION_DAILY_MAX_RECOVERY) throw new Error('오늘은 더 이상 회복 물약을 사용할 수 없다. (일일 한도 초과)');
+  if (isBuff && daily.buff >= POTION_DAILY_MAX_BUFF) throw new Error('오늘은 더 이상 버프 물약을 사용할 수 없다. (일일 한도 초과)');
+  // 해제포션은 제한 없음
 
   let efficiency = 1.0;
-  if (daily.count === POTION_DAILY_MAX) efficiency = 0.2;
+  // 일반 회복포션: 6회째 사용 시 20% 효율
+  if (isRecovery && daily.recovery === POTION_DAILY_MAX_RECOVERY) efficiency = 0.2;
 
   const isPartyState = targetUnit.currentHp !== undefined;
-  const type = potionItem.type;
   let resultMsg = '';
 
   if (type === 'hp') {
@@ -694,27 +871,37 @@ function usePotionOnUnit(potionItem, targetUnit) {
   } else if (type === 'antidote') {
     if (targetUnit.debuffs) targetUnit.debuffs = targetUnit.debuffs.filter(d => d.type !== 'poison');
     if (targetUnit.statusEffects) targetUnit.statusEffects = targetUnit.statusEffects.filter(s => s.type !== 'poison');
-    resultMsg = `${targetUnit.name}: 독 해제` + (efficiency < 1 ? ' (부작용: 효율 20%)' : '');
+    resultMsg = `${targetUnit.name}: 독 해제`;
   } else if (type === 'cc_cure') {
-    if (targetUnit.debuffs) targetUnit.debuffs = targetUnit.debuffs.filter(d => !['stun','sleep','bind'].includes(d.type));
-    if (targetUnit.statusEffects) targetUnit.statusEffects = targetUnit.statusEffects.filter(s => !['stun','sleep','bind'].includes(s.type));
+    if (targetUnit.debuffs) targetUnit.debuffs = targetUnit.debuffs.filter(d => !['stun','sleep','bind','freeze','paralyze'].includes(d.type));
+    if (targetUnit.statusEffects) targetUnit.statusEffects = targetUnit.statusEffects.filter(s => !['stun','sleep','bind','freeze','paralyze'].includes(s.type));
     if (targetUnit.cc) targetUnit.cc = null;
-    resultMsg = `${targetUnit.name}: CC 해제` + (efficiency < 1 ? ' (부작용: 효율 20%)' : '');
+    resultMsg = `${targetUnit.name}: CC 해제`;
   } else if (type === 'curse_cure') {
     if (targetUnit.debuffs) targetUnit.debuffs = targetUnit.debuffs.filter(d => d.type !== 'curse');
     if (targetUnit.statusEffects) targetUnit.statusEffects = targetUnit.statusEffects.filter(s => s.type !== 'curse');
-    resultMsg = `${targetUnit.name}: 저주 해제` + (efficiency < 1 ? ' (부작용: 효율 20%)' : '');
+    resultMsg = `${targetUnit.name}: 저주 해제`;
   } else if (type === 'buff') {
     const statBoost = Math.floor((potionItem.effectValue || 0) * efficiency);
     const duration = potionItem.effectDuration || 3;
     if (!targetUnit.buffs) targetUnit.buffs = {};
     targetUnit.buffs.potionBuff = { statBoost, turnsLeft: duration, from: potionItem.name };
-    resultMsg = `${targetUnit.name}: 주스탯 +${statBoost} (${duration}턴)` + (efficiency < 1 ? ' (부작용: 효율 20%)' : '');
+    resultMsg = `${targetUnit.name}: 주스탯 +${statBoost} (${duration}턴)`;
   }
 
+  // 사용 횟수 증가
   daily.count++;
-  if (daily.count > POTION_DAILY_MAX) {
-    resultMsg += ' ⚠️ 오늘은 더 이상 물약을 사용할 수 없다!';
+  if (isRecovery) {
+    daily.recovery++;
+    if (daily.recovery > POTION_DAILY_MAX_RECOVERY) {
+      resultMsg += ' ⚠️ 오늘은 더 이상 회복 물약을 사용할 수 없다!';
+    }
+  }
+  if (isBuff) {
+    daily.buff++;
+    if (daily.buff >= POTION_DAILY_MAX_BUFF) {
+      resultMsg += ' ⚠️ 오늘의 버프 물약 사용 한도에 도달했다!';
+    }
   }
   return resultMsg;
 }
@@ -751,8 +938,8 @@ function buildConvFoodItem(foodDef, count=1) {
 }
 
 const DEFAULT_RARE_MATERIAL_PACK = {
-  "version": 2,
-  "note": "GateBattle v7.7 — defenseFlat scale added, elemental damage/resist moved to statusPercent, shield_effect moved to statusPercent, trait combat integration.",
+  "version": 3,
+  "note": "GateBattle v7.8 — unified trait system (58 traits), statFlat scale added for 5 stat traits, SPECIAL_MATERIAL_EFFECTS auto-derived from EQUIP_TRAIT_TYPES.",
   "valueScales": {
     "percentSmall": {
       "E": 1,
@@ -801,6 +988,14 @@ const DEFAULT_RARE_MATERIAL_PACK = {
       "B": 35,
       "A": 50,
       "S": 70
+    },
+    "statFlat": {
+      "E": 2,
+      "D": 4,
+      "C": 6,
+      "B": 8,
+      "A": 11,
+      "S": 14
     }
   },
   "traits": [
@@ -1021,6 +1216,118 @@ const DEFAULT_RARE_MATERIAL_PACK = {
       "status": "curse"
     },
     {
+      "id": "stun_apply",
+      "name": "기절 부여 확률 증가",
+      "category": "status_apply",
+      "scale": "statusPercent",
+      "status": "stun"
+    },
+    {
+      "id": "bind_apply",
+      "name": "속박 부여 확률 증가",
+      "category": "status_apply",
+      "scale": "statusPercent",
+      "status": "bind"
+    },
+    {
+      "id": "sleep_apply",
+      "name": "수면 부여 확률 증가",
+      "category": "status_apply",
+      "scale": "statusPercent",
+      "status": "sleep"
+    },
+    {
+      "id": "silence_apply",
+      "name": "침묵 부여 확률 증가",
+      "category": "status_apply",
+      "scale": "statusPercent",
+      "status": "silence"
+    },
+    {
+      "id": "slow_apply",
+      "name": "둔화 부여 확률 증가",
+      "category": "status_apply",
+      "scale": "statusPercent",
+      "status": "slow"
+    },
+    {
+      "id": "blind_apply",
+      "name": "실명 부여 확률 증가",
+      "category": "status_apply",
+      "scale": "statusPercent",
+      "status": "blind"
+    },
+    {
+      "id": "freeze_apply",
+      "name": "빙결 부여 확률 증가",
+      "category": "status_apply",
+      "scale": "statusPercent",
+      "status": "freeze"
+    },
+    {
+      "id": "paralyze_apply",
+      "name": "마비 부여 확률 증가",
+      "category": "status_apply",
+      "scale": "statusPercent",
+      "status": "paralyze"
+    },
+    {
+      "id": "stun_resist",
+      "name": "기절 저항",
+      "category": "status_resist",
+      "scale": "statusPercent",
+      "status": "stun"
+    },
+    {
+      "id": "bind_resist",
+      "name": "속박 저항",
+      "category": "status_resist",
+      "scale": "statusPercent",
+      "status": "bind"
+    },
+    {
+      "id": "sleep_resist",
+      "name": "수면 저항",
+      "category": "status_resist",
+      "scale": "statusPercent",
+      "status": "sleep"
+    },
+    {
+      "id": "silence_resist",
+      "name": "침묵 저항",
+      "category": "status_resist",
+      "scale": "statusPercent",
+      "status": "silence"
+    },
+    {
+      "id": "slow_resist",
+      "name": "둔화 저항",
+      "category": "status_resist",
+      "scale": "statusPercent",
+      "status": "slow"
+    },
+    {
+      "id": "blind_resist",
+      "name": "실명 저항",
+      "category": "status_resist",
+      "scale": "statusPercent",
+      "status": "blind"
+    },
+    {
+      "id": "freeze_resist",
+      "name": "빙결 저항",
+      "category": "status_resist",
+      "scale": "statusPercent",
+      "status": "freeze"
+    },
+    {
+      "id": "paralyze_resist",
+      "name": "마비 저항",
+      "category": "status_resist",
+      "scale": "statusPercent",
+      "status": "paralyze"
+    },
+    {
       "id": "healing_done",
       "name": "치유량 증가",
       "category": "support",
@@ -1049,6 +1356,36 @@ const DEFAULT_RARE_MATERIAL_PACK = {
       "name": "위협 수치 감소",
       "category": "support",
       "scale": "threatPercent"
+    },
+    {
+      "id": "stat_str_up",
+      "name": "STR 증가",
+      "category": "stat",
+      "scale": "statFlat"
+    },
+    {
+      "id": "stat_con_up",
+      "name": "CON 증가",
+      "category": "stat",
+      "scale": "statFlat"
+    },
+    {
+      "id": "stat_int_up",
+      "name": "INT 증가",
+      "category": "stat",
+      "scale": "statFlat"
+    },
+    {
+      "id": "stat_agi_up",
+      "name": "AGI 증가",
+      "category": "stat",
+      "scale": "statFlat"
+    },
+    {
+      "id": "stat_sense_up",
+      "name": "SENSE 증가",
+      "category": "stat",
+      "scale": "statFlat"
     }
   ]
 };
@@ -1063,10 +1400,10 @@ const RARE_TRAIT_LEGACY_ALIASES = {
 };
 const RARE_FAMILY_PRESETS = {
   increasedHealing:['healing_done','healing_received','shield_effect'],
-  elementalDefense:['fire_resist','water_resist','ice_resist','earth_resist','wind_resist','lightning_resist','light_resist','dark_resist','poison_resist','bleed_resist','burn_resist','curse_resist'],
+  elementalDefense:['fire_resist','water_resist','ice_resist','earth_resist','wind_resist','lightning_resist','light_resist','dark_resist','poison_resist','bleed_resist','burn_resist','curse_resist','stun_resist','bind_resist','sleep_resist','silence_resist','slow_resist','blind_resist','freeze_resist','paralyze_resist'],
   physicalDefense:['physical_defense','threat_up'],
   magicDefense:['magic_defense','threat_down'],
-  elementalDamage:['fire_damage','water_damage','ice_damage','earth_damage','wind_damage','lightning_damage','light_damage','dark_damage','poison_apply','bleed_apply','burn_apply','curse_apply'],
+  elementalDamage:['fire_damage','water_damage','ice_damage','earth_damage','wind_damage','lightning_damage','light_damage','dark_damage','poison_apply','bleed_apply','burn_apply','curse_apply','stun_apply','bind_apply','sleep_apply','silence_apply','slow_apply','blind_apply','freeze_apply','paralyze_apply'],
   physicalDamage:['physical_damage','crit_chance','crit_damage'],
   magicDamage:['magic_damage','healing_done']
 };
@@ -1184,18 +1521,13 @@ const RARE_FAMILY_PRESETS = {
     if (position.includes('근거리')) { dmgT += 0.04; }
     const hp = Math.round(rangeValue(table.hp[0], table.hp[1], hpT));
     const dmg = Math.round(rangeValue(table.dmg[0], table.dmg[1], dmgT));
-    const damageType = (entry && entry.damageType === 'magic') ? 'magic' : 'physical';
-    const rankIdx = gradeIndex(rank);
-    const resPack = MONSTER_RESOURCE_TABLE[damageType];
-    const mp = resPack ? resPack.mp[rankIdx] : 0;
-    const sp = resPack ? resPack.sp[rankIdx] : 0;
     return {
       kind,
       hp,
       damage:dmg,
       skillMul:Number(table.skill || 1),
-      mp,
-      sp,
+      mp:0,
+      sp:0,
       tableHp:table.hp.slice(),
       tableDmg:table.dmg.slice()
     };
@@ -1229,7 +1561,10 @@ const RARE_FAMILY_PRESETS = {
       '화상':'burn', 'burn':'burn',
       '저주':'curse', 'curse':'curse',
       '침묵':'silence', 'silence':'silence',
-      '둔화':'slow', 'slow':'slow'
+      '둔화':'slow', 'slow':'slow',
+      '실명':'blind', 'blind':'blind',
+      '빙결':'freeze', 'freeze':'freeze',
+      '마비':'paralyze', 'paralyze':'paralyze'
     };
     return map[s] || '';
   }
@@ -1306,9 +1641,9 @@ const RARE_FAMILY_PRESETS = {
   const SPECIES_DEFAULTS = {
     undead: { speciesLabel:'언데드', defaultElement:'dark', immunities:['poison','bleed','curse'], damageTakenMods:{ physical:1.10 } },
     ghost: { speciesLabel:'고스트', defaultElement:'dark', immunities:['poison','bleed','curse'], damageTakenMods:{ physical:0.50, magic:1.25 } },
-    beast: { speciesLabel:'야수', defaultElement:'wind', bonusVsBleeding:1.20, aloneDamageTaken:1.10 },
+    beast: { speciesLabel:'야수', defaultElement:'wind', immunities:['slow'], bonusVsBleeding:1.20, aloneDamageTaken:1.10 },
     plant: { speciesLabel:'식물', defaultElement:'earth', immunities:['bleed'], regenPct:0.03, regenBlockedBy:['burn'] },
-    slime: { speciesLabel:'슬라임', defaultElement:'water', immunities:['bleed'], damageTakenMods:{ physical:0.70, magic:1.10 } },
+    slime: { speciesLabel:'슬라임', defaultElement:'water', immunities:['slow'], damageTakenMods:{ physical:0.70, magic:1.10 } },
     construct: { speciesLabel:'구조체', defaultElement:'electric', immunities:['poison','bleed','sleep'], damageTakenMods:{ magic:0.80, physical:1.15 } },
     elemental: { speciesLabel:'정령', defaultElement:'none' },
     demon: { speciesLabel:'악마', defaultElement:'fire', immunities:['burn'], damageTakenMods:{ dark:0.70 } },
@@ -1370,9 +1705,44 @@ const RARE_FAMILY_PRESETS = {
     if (prefixMatch) {
       const st = normStatus(prefixMatch[1]);
       if (st) {
-        const defaultChance = ['stun','bind','sleep'].includes(st) ? 0.18 : 0.28;
-        const defaultTurns = ['stun','bind','sleep'].includes(st) ? 1 : 2;
-        meta.onHitStatus = st; meta.onHitChance = defaultChance; meta.onHitTurns = defaultTurns;
+        const hardCcTypes = ['stun','bind','sleep','freeze','paralyze','curse'];
+        const dotTypes = ['poison','bleed','burn'];
+        const defaultChance = hardCcTypes.includes(st) ? 0.18 : dotTypes.includes(st) ? 0.23 : 0.28;
+        const turnsByStatus = { stun:2, bind:2, sleep:3, freeze:2, paralyze:2, curse:3, poison:3, bleed:3, burn:5, silence:2, slow:3, blind:3 };
+        const defaultTurns = turnsByStatus[st] || 2;
+        // 정령은 30% 확률로만 상태이상 부여 능력 보유
+        const isElemental = meta.species === 'elemental';
+        if (!isElemental || Math.random() < 0.3) {
+          meta.onHitStatus = st; meta.onHitChance = defaultChance; meta.onHitTurns = defaultTurns;
+        }
+      }
+    }
+    // 보스/엘리트: 접두효과 없어도 기본속성 기반 상태이상 부여 (ELEMENT_STATUS_MAP)
+    const kind = String(item.kind || '').toLowerCase();
+    if (!meta.onHitStatus && (kind === 'boss' || kind === 'elite') && meta.baseElement && meta.baseElement !== 'none') {
+      const elSt = ELEMENT_STATUS_MAP[meta.baseElement];
+      if (elSt && normStatus(elSt)) {
+        const hardCcTypes = ['stun','bind','sleep','freeze','paralyze','curse'];
+        const dotTypes = ['poison','bleed','burn'];
+        const turnsByStatus = { stun:2, bind:2, sleep:3, freeze:2, paralyze:2, curse:3, poison:3, bleed:3, burn:5, silence:2, slow:3, blind:3 };
+        meta.onHitStatus = elSt;
+        meta.onHitChance = hardCcTypes.includes(elSt) ? 0.18 : dotTypes.includes(elSt) ? 0.23 : 0.28;
+        meta.onHitTurns = turnsByStatus[elSt] || 2;
+      }
+    }
+    // 정령 보스/엘리트: baseElement가 없으면(variable) 랜덤 속성 배정 후 상태이상 부여
+    if (!meta.onHitStatus && (kind === 'boss' || kind === 'elite') && meta.species === 'elemental') {
+      const elKeys = Object.keys(ELEMENT_STATUS_MAP);
+      const randEl = elKeys[Math.floor(Math.random() * elKeys.length)];
+      const elSt = ELEMENT_STATUS_MAP[randEl];
+      if (elSt && normStatus(elSt)) {
+        meta.baseElement = randEl;
+        const hardCcTypes = ['stun','bind','sleep','freeze','paralyze','curse'];
+        const dotTypes = ['poison','bleed','burn'];
+        const turnsByStatus = { stun:2, bind:2, sleep:3, freeze:2, paralyze:2, curse:3, poison:3, bleed:3, burn:5, silence:2, slow:3, blind:3 };
+        meta.onHitStatus = elSt;
+        meta.onHitChance = hardCcTypes.includes(elSt) ? 0.18 : dotTypes.includes(elSt) ? 0.23 : 0.28;
+        meta.onHitTurns = turnsByStatus[elSt] || 2;
       }
     }
     if (Array.isArray(item.immunities)) meta = mergeMeta(meta, { immunities:item.immunities });
@@ -1383,7 +1753,7 @@ const RARE_FAMILY_PRESETS = {
     if (item.regenBlockedBy) meta = mergeMeta(meta, { regenBlockedBy:item.regenBlockedBy });
     if (item.onHitStatus) meta = mergeMeta(meta, { onHitStatus:item.onHitStatus, onHitChance:item.onHitChance, onHitTurns:item.onHitTurns });
 
-    const immRe = /(독|출혈|기절|속박|수면|화상|저주)\s*면역/g;
+    const immRe = /(독|출혈|기절|속박|수면|화상|저주|실명|빙결|마비)\s*면역/g;
     let m;
     while ((m = immRe.exec(note))) {
       const st = normStatus(m[1]);
@@ -1421,15 +1791,18 @@ const RARE_FAMILY_PRESETS = {
   function getStatusDefaultProfile(type) {
     const st = normStatus(type);
     const map = {
-      poison:{ turns:3, chance:0.28, power:0 },
-      bleed:{ turns:3, chance:0.28, power:0 },
-      burn:{ turns:5, chance:0.28, power:0 },
-      curse:{ turns:3, chance:0.24, power:0 },
+      poison:{ turns:3, chance:0.23, power:0 },
+      bleed:{ turns:3, chance:0.23, power:0 },
+      burn:{ turns:5, chance:0.23, power:0 },
+      curse:{ turns:3, chance:0.18, power:0 },
       bind:{ turns:2, chance:0.18, power:0 },
-      sleep:{ turns:2, chance:0.16, power:0 },
-      stun:{ turns:1, chance:0.16, power:0 },
-      silence:{ turns:3, chance:0.20, power:0 },
-      slow:{ turns:3, chance:0.25, power:0 }
+      sleep:{ turns:3, chance:0.16, power:0 },
+      stun:{ turns:2, chance:0.16, power:0 },
+      silence:{ turns:2, chance:0.20, power:0 },
+      slow:{ turns:3, chance:0.25, power:0 },
+      blind:{ turns:3, chance:0.20, power:0 },
+      freeze:{ turns:2, chance:0.16, power:0 },
+      paralyze:{ turns:2, chance:0.16, power:0 }
     };
     return Object.assign({ turns:2, chance:0.2, power:0 }, map[st] || {});
   }
@@ -1446,7 +1819,278 @@ const RARE_FAMILY_PRESETS = {
     return 1;
   }
 
-  const BUILTIN_SKILLS = {};
+  const BUILTIN_SKILLS = {
+    "singleAttackPhysE":{"id":"singleAttackPhysE","name":"타격","grade":"E","category":"singleAttack","target":"singleEnemy","costs":{"mp":0,"sp":20},"coef":1.2,"statTypes":["str"],"damageType":"physical","element":"none","desc":"무속성 물리 단일 공격 (E랭크)","cooldown":0},
+    "singleAttackMagE":{"id":"singleAttackMagE","name":"마탄","grade":"E","category":"singleAttack","target":"singleEnemy","costs":{"mp":20,"sp":0},"coef":1.2,"statTypes":["int"],"damageType":"magic","element":"none","desc":"무속성 마법 단일 공격 (E랭크)","cooldown":0},
+    "aoeAttackPhysE":{"id":"aoeAttackPhysE","name":"연타","grade":"E","category":"aoeAttack","target":"allEnemies","costs":{"mp":0,"sp":40},"coef":0.7,"statTypes":["str"],"damageType":"physical","element":"none","desc":"무속성 물리 광역 공격 (E랭크)","cooldown":0},
+    "aoeAttackMagE":{"id":"aoeAttackMagE","name":"마력파","grade":"E","category":"aoeAttack","target":"allEnemies","costs":{"mp":40,"sp":0},"coef":0.7,"statTypes":["int"],"damageType":"magic","element":"none","desc":"무속성 마법 광역 공격 (E랭크)","cooldown":0},
+    "elemAttackFireE":{"id":"elemAttackFireE","name":"화염탄","grade":"E","category":"singleAttack","target":"singleEnemy","costs":{"mp":20,"sp":0},"coef":1.2,"statTypes":["int"],"damageType":"magic","element":"fire","desc":"화염 속성 마법 단일 공격 (E랭크)","cooldown":0},
+    "elemAttackIceE":{"id":"elemAttackIceE","name":"빙침","grade":"E","category":"singleAttack","target":"singleEnemy","costs":{"mp":20,"sp":0},"coef":1.2,"statTypes":["int"],"damageType":"magic","element":"ice","desc":"빙결 속성 마법 단일 공격 (E랭크)","cooldown":0},
+    "elemAttackWaterE":{"id":"elemAttackWaterE","name":"수류탄","grade":"E","category":"singleAttack","target":"singleEnemy","costs":{"mp":20,"sp":0},"coef":1.2,"statTypes":["int"],"damageType":"magic","element":"water","desc":"수류 속성 마법 단일 공격 (E랭크)","cooldown":0},
+    "elemAttackWindE":{"id":"elemAttackWindE","name":"풍인","grade":"E","category":"singleAttack","target":"singleEnemy","costs":{"mp":20,"sp":0},"coef":1.2,"statTypes":["int"],"damageType":"magic","element":"wind","desc":"질풍 속성 마법 단일 공격 (E랭크)","cooldown":0},
+    "elemAttackEarthE":{"id":"elemAttackEarthE","name":"암석탄","grade":"E","category":"singleAttack","target":"singleEnemy","costs":{"mp":20,"sp":0},"coef":1.2,"statTypes":["int"],"damageType":"magic","element":"earth","desc":"대지 속성 마법 단일 공격 (E랭크)","cooldown":0},
+    "elemAttackElectricE":{"id":"elemAttackElectricE","name":"전격","grade":"E","category":"singleAttack","target":"singleEnemy","costs":{"mp":20,"sp":0},"coef":1.2,"statTypes":["int"],"damageType":"magic","element":"electric","desc":"전격 속성 마법 단일 공격 (E랭크)","cooldown":0},
+    "elemAttackLightE":{"id":"elemAttackLightE","name":"섬광탄","grade":"E","category":"singleAttack","target":"singleEnemy","costs":{"mp":20,"sp":0},"coef":1.2,"statTypes":["int"],"damageType":"magic","element":"light","desc":"성광 속성 마법 단일 공격 (E랭크)","cooldown":0},
+    "elemAttackDarkE":{"id":"elemAttackDarkE","name":"암영탄","grade":"E","category":"singleAttack","target":"singleEnemy","costs":{"mp":20,"sp":0},"coef":1.2,"statTypes":["int"],"damageType":"magic","element":"dark","desc":"암흑 속성 마법 단일 공격 (E랭크)","cooldown":0},
+    "singleCcStunE":{"id":"singleCcStunE","name":"타격파","grade":"E","category":"singleCC","target":"singleEnemy","costs":{"mp":0,"sp":20},"coef":0.96,"statTypes":["con"],"damageType":"physical","element":"none","cc":{"type":"stun","turns":2,"chance":0.16},"desc":"단일 대상 기절 타격 (E랭크)","cooldown":0},
+    "singleCcFreezeE":{"id":"singleCcFreezeE","name":"냉기술","grade":"E","category":"singleCC","target":"singleEnemy","costs":{"mp":20,"sp":0},"coef":0.96,"statTypes":["int"],"damageType":"magic","element":"ice","cc":{"type":"freeze","turns":2,"chance":0.16},"desc":"단일 대상 빙결 마법 (E랭크)","cooldown":0},
+    "singleCcParalyzeE":{"id":"singleCcParalyzeE","name":"감전","grade":"E","category":"singleCC","target":"singleEnemy","costs":{"mp":20,"sp":0},"coef":0.96,"statTypes":["int"],"damageType":"magic","element":"electric","cc":{"type":"paralyze","turns":2,"chance":0.16},"desc":"단일 대상 마비 전격 (E랭크)","cooldown":0},
+    "singleCcSleepE":{"id":"singleCcSleepE","name":"졸음","grade":"E","category":"singleCC","target":"singleEnemy","costs":{"mp":20,"sp":0},"coef":0.96,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"sleep","turns":3,"chance":0.16},"desc":"단일 대상 수면 마법 (E랭크)","cooldown":0},
+    "singleCcBindE":{"id":"singleCcBindE","name":"올가미","grade":"E","category":"singleCC","target":"singleEnemy","costs":{"mp":0,"sp":20},"coef":0.96,"statTypes":["str"],"damageType":"physical","element":"none","cc":{"type":"bind","turns":2,"chance":0.18},"desc":"단일 대상 속박 타격 (E랭크)","cooldown":0},
+    "singleCcCurseE":{"id":"singleCcCurseE","name":"주술","grade":"E","category":"singleCC","target":"singleEnemy","costs":{"mp":20,"sp":0},"coef":0.96,"statTypes":["int"],"damageType":"magic","element":"dark","cc":{"type":"curse","turns":3,"chance":0.18},"desc":"단일 대상 저주 마법 (E랭크)","cooldown":0},
+    "singleCcSilenceE":{"id":"singleCcSilenceE","name":"침묵","grade":"E","category":"singleCC","target":"singleEnemy","costs":{"mp":20,"sp":0},"coef":0.96,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"silence","turns":2,"chance":0.2},"desc":"단일 대상 침묵 마법 (E랭크)","cooldown":0},
+    "singleCcSlowE":{"id":"singleCcSlowE","name":"감속","grade":"E","category":"singleCC","target":"singleEnemy","costs":{"mp":0,"sp":20},"coef":0.96,"statTypes":["agi"],"damageType":"physical","element":"none","cc":{"type":"slow","turns":3,"chance":0.25},"desc":"단일 대상 둔화 타격 (E랭크)","cooldown":0},
+    "singleCcBlindE":{"id":"singleCcBlindE","name":"눈부심","grade":"E","category":"singleCC","target":"singleEnemy","costs":{"mp":20,"sp":0},"coef":0.96,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"blind","turns":3,"chance":0.2},"desc":"단일 대상 실명 마법 (E랭크)","cooldown":0},
+    "singleCcPoisonE":{"id":"singleCcPoisonE","name":"독침","grade":"E","category":"singleCC","target":"singleEnemy","costs":{"mp":20,"sp":0},"coef":0.96,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"poison","turns":3,"chance":0.23},"desc":"단일 대상 독 마법 (E랭크)","cooldown":0},
+    "singleCcBleedE":{"id":"singleCcBleedE","name":"할퀴기","grade":"E","category":"singleCC","target":"singleEnemy","costs":{"mp":0,"sp":20},"coef":0.96,"statTypes":["str"],"damageType":"physical","element":"none","cc":{"type":"bleed","turns":3,"chance":0.23},"desc":"단일 대상 출혈 타격 (E랭크)","cooldown":0},
+    "singleCcBurnE":{"id":"singleCcBurnE","name":"불씨","grade":"E","category":"singleCC","target":"singleEnemy","costs":{"mp":20,"sp":0},"coef":0.96,"statTypes":["int"],"damageType":"magic","element":"fire","cc":{"type":"burn","turns":5,"chance":0.23},"desc":"단일 대상 화상 마법 (E랭크)","cooldown":0},
+    "aoeCcStunE":{"id":"aoeCcStunE","name":"대지진동","grade":"E","category":"aoeCC","target":"allEnemies","costs":{"mp":0,"sp":40},"coef":0.56,"statTypes":["con"],"damageType":"physical","element":"none","cc":{"type":"stun","turns":2,"chance":0.16},"desc":"광역 대상 광역 기절 (E랭크)","cooldown":0},
+    "aoeCcFreezeE":{"id":"aoeCcFreezeE","name":"냉기방출","grade":"E","category":"aoeCC","target":"allEnemies","costs":{"mp":40,"sp":0},"coef":0.56,"statTypes":["int"],"damageType":"magic","element":"ice","cc":{"type":"freeze","turns":2,"chance":0.16},"desc":"광역 대상 광역 빙결 (E랭크)","cooldown":0},
+    "aoeCcPoisonE":{"id":"aoeCcPoisonE","name":"독연기","grade":"E","category":"aoeCC","target":"allEnemies","costs":{"mp":40,"sp":0},"coef":0.56,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"poison","turns":3,"chance":0.23},"desc":"광역 대상 광역 독 (E랭크)","cooldown":0},
+    "aoeCcBurnE":{"id":"aoeCcBurnE","name":"불꽃비","grade":"E","category":"aoeCC","target":"allEnemies","costs":{"mp":40,"sp":0},"coef":0.56,"statTypes":["int"],"damageType":"magic","element":"fire","cc":{"type":"burn","turns":5,"chance":0.23},"desc":"광역 대상 광역 화상 (E랭크)","cooldown":0},
+    "singleHealE":{"id":"singleHealE","name":"응급치료","grade":"E","category":"singleHeal","target":"singleAlly","costs":{"mp":20,"sp":0},"coef":1.2,"statTypes":["int"],"damageType":"magic","element":"none","desc":"단일 대상 회복 (E랭크)","cooldown":0},
+    "aoeHealE":{"id":"aoeHealE","name":"치유의 바람","grade":"E","category":"aoeHeal","target":"allAllies","costs":{"mp":40,"sp":0},"coef":0.7,"statTypes":["int"],"damageType":"magic","element":"none","desc":"광역 회복 (E랭크)","cooldown":0},
+    "buffStrE":{"id":"buffStrE","name":"힘 강화","grade":"E","category":"buff","target":"self","costs":{"mp":20,"sp":0},"coef":0,"statTypes":["str"],"damageType":"magic","element":"none","buff":{"stats":{"str":2}},"duration":3,"desc":"STR 강화 버프 3턴 (E랭크)","cooldown":0},
+    "buffConE":{"id":"buffConE","name":"체력 강화","grade":"E","category":"buff","target":"self","costs":{"mp":20,"sp":0},"coef":0,"statTypes":["con"],"damageType":"magic","element":"none","buff":{"stats":{"con":2}},"duration":3,"desc":"CON 강화 버프 3턴 (E랭크)","cooldown":0},
+    "buffIntE":{"id":"buffIntE","name":"지력 강화","grade":"E","category":"buff","target":"self","costs":{"mp":20,"sp":0},"coef":0,"statTypes":["int"],"damageType":"magic","element":"none","buff":{"stats":{"int":2}},"duration":3,"desc":"INT 강화 버프 3턴 (E랭크)","cooldown":0},
+    "buffAgiE":{"id":"buffAgiE","name":"민첩 강화","grade":"E","category":"buff","target":"self","costs":{"mp":20,"sp":0},"coef":0,"statTypes":["agi"],"damageType":"magic","element":"none","buff":{"stats":{"agi":2}},"duration":3,"desc":"AGI 강화 버프 3턴 (E랭크)","cooldown":0},
+    "buffSenseE":{"id":"buffSenseE","name":"감각 강화","grade":"E","category":"buff","target":"self","costs":{"mp":20,"sp":0},"coef":0,"statTypes":["sense"],"damageType":"magic","element":"none","buff":{"stats":{"sense":2}},"duration":3,"desc":"SENSE 강화 버프 3턴 (E랭크)","cooldown":0},
+    "buffPdefE":{"id":"buffPdefE","name":"방어 강화","grade":"E","category":"buff","target":"self","costs":{"mp":20,"sp":0},"coef":0,"statTypes":["pDef"],"damageType":"magic","element":"none","buff":{"stats":{"pdef":2}},"duration":3,"desc":"PDEF 강화 버프 3턴 (E랭크)","cooldown":0},
+    "buffMdefE":{"id":"buffMdefE","name":"마방 강화","grade":"E","category":"buff","target":"self","costs":{"mp":20,"sp":0},"coef":0,"statTypes":["mDef"],"damageType":"magic","element":"none","buff":{"stats":{"mdef":2}},"duration":3,"desc":"MDEF 강화 버프 3턴 (E랭크)","cooldown":0},
+    "buffTauntE":{"id":"buffTauntE","name":"위협","grade":"E","category":"buff","target":"self","costs":{"mp":0,"sp":20},"coef":0,"statTypes":["con"],"damageType":"physical","element":"none","buff":{"stats":{},"threatBonus":3},"duration":3,"desc":"도발 버프 3턴, 위협 +3 (E랭크)","cooldown":0},
+    "passiveStrE":{"id":"passiveStrE","name":"기초 근력","grade":"E","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["str"],"damageType":"magic","element":"none","duration":0,"desc":"STR 패시브 영구 보너스 (E랭크)","cooldown":0,"passiveBonuses":{"str":2}},
+    "passiveConE":{"id":"passiveConE","name":"기초 체력","grade":"E","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["con"],"damageType":"magic","element":"none","duration":0,"desc":"CON 패시브 영구 보너스 (E랭크)","cooldown":0,"passiveBonuses":{"con":2}},
+    "passiveIntE":{"id":"passiveIntE","name":"기초 지력","grade":"E","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["int"],"damageType":"magic","element":"none","duration":0,"desc":"INT 패시브 영구 보너스 (E랭크)","cooldown":0,"passiveBonuses":{"int":2}},
+    "passiveAgiE":{"id":"passiveAgiE","name":"기초 민첩","grade":"E","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["agi"],"damageType":"magic","element":"none","duration":0,"desc":"AGI 패시브 영구 보너스 (E랭크)","cooldown":0,"passiveBonuses":{"agi":2}},
+    "passiveSenseE":{"id":"passiveSenseE","name":"기초 감각","grade":"E","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["sense"],"damageType":"magic","element":"none","duration":0,"desc":"SENSE 패시브 영구 보너스 (E랭크)","cooldown":0,"passiveBonuses":{"sense":2}},
+    "passivePdefE":{"id":"passivePdefE","name":"기초 방어","grade":"E","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["pDef"],"damageType":"magic","element":"none","duration":0,"desc":"PDEF 패시브 영구 보너스 (E랭크)","cooldown":0,"passiveBonuses":{"pdef":2}},
+    "passiveMdefE":{"id":"passiveMdefE","name":"기초 마방","grade":"E","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["mDef"],"damageType":"magic","element":"none","duration":0,"desc":"MDEF 패시브 영구 보너스 (E랭크)","cooldown":0,"passiveBonuses":{"mdef":2}},
+    "singleAttackPhysD":{"id":"singleAttackPhysD","name":"강타","grade":"D","category":"singleAttack","target":"singleEnemy","costs":{"mp":0,"sp":25},"coef":1.92,"statTypes":["str"],"damageType":"physical","element":"none","desc":"무속성 물리 단일 공격 (D랭크)","cooldown":0},
+    "singleAttackMagD":{"id":"singleAttackMagD","name":"마력탄","grade":"D","category":"singleAttack","target":"singleEnemy","costs":{"mp":25,"sp":0},"coef":1.92,"statTypes":["int"],"damageType":"magic","element":"none","desc":"무속성 마법 단일 공격 (D랭크)","cooldown":0},
+    "aoeAttackPhysD":{"id":"aoeAttackPhysD","name":"난무","grade":"D","category":"aoeAttack","target":"allEnemies","costs":{"mp":0,"sp":50},"coef":1.11,"statTypes":["str"],"damageType":"physical","element":"none","desc":"무속성 물리 광역 공격 (D랭크)","cooldown":0},
+    "aoeAttackMagD":{"id":"aoeAttackMagD","name":"마력진","grade":"D","category":"aoeAttack","target":"allEnemies","costs":{"mp":50,"sp":0},"coef":1.11,"statTypes":["int"],"damageType":"magic","element":"none","desc":"무속성 마법 광역 공격 (D랭크)","cooldown":0},
+    "elemAttackFireD":{"id":"elemAttackFireD","name":"화염구","grade":"D","category":"singleAttack","target":"singleEnemy","costs":{"mp":25,"sp":0},"coef":1.92,"statTypes":["int"],"damageType":"magic","element":"fire","desc":"화염 속성 마법 단일 공격 (D랭크)","cooldown":0},
+    "elemAttackIceD":{"id":"elemAttackIceD","name":"빙결탄","grade":"D","category":"singleAttack","target":"singleEnemy","costs":{"mp":25,"sp":0},"coef":1.92,"statTypes":["int"],"damageType":"magic","element":"ice","desc":"빙결 속성 마법 단일 공격 (D랭크)","cooldown":0},
+    "elemAttackWaterD":{"id":"elemAttackWaterD","name":"수압포","grade":"D","category":"singleAttack","target":"singleEnemy","costs":{"mp":25,"sp":0},"coef":1.92,"statTypes":["int"],"damageType":"magic","element":"water","desc":"수류 속성 마법 단일 공격 (D랭크)","cooldown":0},
+    "elemAttackWindD":{"id":"elemAttackWindD","name":"질풍타","grade":"D","category":"singleAttack","target":"singleEnemy","costs":{"mp":25,"sp":0},"coef":1.92,"statTypes":["int"],"damageType":"magic","element":"wind","desc":"질풍 속성 마법 단일 공격 (D랭크)","cooldown":0},
+    "elemAttackEarthD":{"id":"elemAttackEarthD","name":"지진격","grade":"D","category":"singleAttack","target":"singleEnemy","costs":{"mp":25,"sp":0},"coef":1.92,"statTypes":["int"],"damageType":"magic","element":"earth","desc":"대지 속성 마법 단일 공격 (D랭크)","cooldown":0},
+    "elemAttackElectricD":{"id":"elemAttackElectricD","name":"방전","grade":"D","category":"singleAttack","target":"singleEnemy","costs":{"mp":25,"sp":0},"coef":1.92,"statTypes":["int"],"damageType":"magic","element":"electric","desc":"전격 속성 마법 단일 공격 (D랭크)","cooldown":0},
+    "elemAttackLightD":{"id":"elemAttackLightD","name":"성광격","grade":"D","category":"singleAttack","target":"singleEnemy","costs":{"mp":25,"sp":0},"coef":1.92,"statTypes":["int"],"damageType":"magic","element":"light","desc":"성광 속성 마법 단일 공격 (D랭크)","cooldown":0},
+    "elemAttackDarkD":{"id":"elemAttackDarkD","name":"명침","grade":"D","category":"singleAttack","target":"singleEnemy","costs":{"mp":25,"sp":0},"coef":1.92,"statTypes":["int"],"damageType":"magic","element":"dark","desc":"암흑 속성 마법 단일 공격 (D랭크)","cooldown":0},
+    "singleCcStunD":{"id":"singleCcStunD","name":"충격파","grade":"D","category":"singleCC","target":"singleEnemy","costs":{"mp":0,"sp":25},"coef":1.54,"statTypes":["con"],"damageType":"physical","element":"none","cc":{"type":"stun","turns":2,"chance":0.16},"desc":"단일 대상 기절 타격 (D랭크)","cooldown":0},
+    "singleCcFreezeD":{"id":"singleCcFreezeD","name":"동결술","grade":"D","category":"singleCC","target":"singleEnemy","costs":{"mp":25,"sp":0},"coef":1.54,"statTypes":["int"],"damageType":"magic","element":"ice","cc":{"type":"freeze","turns":2,"chance":0.16},"desc":"단일 대상 빙결 마법 (D랭크)","cooldown":0},
+    "singleCcParalyzeD":{"id":"singleCcParalyzeD","name":"전류속박","grade":"D","category":"singleCC","target":"singleEnemy","costs":{"mp":25,"sp":0},"coef":1.54,"statTypes":["int"],"damageType":"magic","element":"electric","cc":{"type":"paralyze","turns":2,"chance":0.16},"desc":"단일 대상 마비 전격 (D랭크)","cooldown":0},
+    "singleCcSleepD":{"id":"singleCcSleepD","name":"수면술","grade":"D","category":"singleCC","target":"singleEnemy","costs":{"mp":25,"sp":0},"coef":1.54,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"sleep","turns":3,"chance":0.16},"desc":"단일 대상 수면 마법 (D랭크)","cooldown":0},
+    "singleCcBindD":{"id":"singleCcBindD","name":"사슬결박","grade":"D","category":"singleCC","target":"singleEnemy","costs":{"mp":0,"sp":25},"coef":1.54,"statTypes":["str"],"damageType":"physical","element":"none","cc":{"type":"bind","turns":2,"chance":0.18},"desc":"단일 대상 속박 타격 (D랭크)","cooldown":0},
+    "singleCcCurseD":{"id":"singleCcCurseD","name":"저주술","grade":"D","category":"singleCC","target":"singleEnemy","costs":{"mp":25,"sp":0},"coef":1.54,"statTypes":["int"],"damageType":"magic","element":"dark","cc":{"type":"curse","turns":3,"chance":0.18},"desc":"단일 대상 저주 마법 (D랭크)","cooldown":0},
+    "singleCcSilenceD":{"id":"singleCcSilenceD","name":"봉인술","grade":"D","category":"singleCC","target":"singleEnemy","costs":{"mp":25,"sp":0},"coef":1.54,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"silence","turns":2,"chance":0.2},"desc":"단일 대상 침묵 마법 (D랭크)","cooldown":0},
+    "singleCcSlowD":{"id":"singleCcSlowD","name":"둔중술","grade":"D","category":"singleCC","target":"singleEnemy","costs":{"mp":0,"sp":25},"coef":1.54,"statTypes":["agi"],"damageType":"physical","element":"none","cc":{"type":"slow","turns":3,"chance":0.25},"desc":"단일 대상 둔화 타격 (D랭크)","cooldown":0},
+    "singleCcBlindD":{"id":"singleCcBlindD","name":"암막술","grade":"D","category":"singleCC","target":"singleEnemy","costs":{"mp":25,"sp":0},"coef":1.54,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"blind","turns":3,"chance":0.2},"desc":"단일 대상 실명 마법 (D랭크)","cooldown":0},
+    "singleCcPoisonD":{"id":"singleCcPoisonD","name":"독안개","grade":"D","category":"singleCC","target":"singleEnemy","costs":{"mp":25,"sp":0},"coef":1.54,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"poison","turns":3,"chance":0.23},"desc":"단일 대상 독 마법 (D랭크)","cooldown":0},
+    "singleCcBleedD":{"id":"singleCcBleedD","name":"열상격","grade":"D","category":"singleCC","target":"singleEnemy","costs":{"mp":0,"sp":25},"coef":1.54,"statTypes":["str"],"damageType":"physical","element":"none","cc":{"type":"bleed","turns":3,"chance":0.23},"desc":"단일 대상 출혈 타격 (D랭크)","cooldown":0},
+    "singleCcBurnD":{"id":"singleCcBurnD","name":"점화술","grade":"D","category":"singleCC","target":"singleEnemy","costs":{"mp":25,"sp":0},"coef":1.54,"statTypes":["int"],"damageType":"magic","element":"fire","cc":{"type":"burn","turns":5,"chance":0.23},"desc":"단일 대상 화상 마법 (D랭크)","cooldown":0},
+    "aoeCcStunD":{"id":"aoeCcStunD","name":"지진파","grade":"D","category":"aoeCC","target":"allEnemies","costs":{"mp":0,"sp":50},"coef":0.89,"statTypes":["con"],"damageType":"physical","element":"none","cc":{"type":"stun","turns":2,"chance":0.16},"desc":"광역 대상 광역 기절 (D랭크)","cooldown":0},
+    "aoeCcFreezeD":{"id":"aoeCcFreezeD","name":"동결진","grade":"D","category":"aoeCC","target":"allEnemies","costs":{"mp":50,"sp":0},"coef":0.89,"statTypes":["int"],"damageType":"magic","element":"ice","cc":{"type":"freeze","turns":2,"chance":0.16},"desc":"광역 대상 광역 빙결 (D랭크)","cooldown":0},
+    "aoeCcPoisonD":{"id":"aoeCcPoisonD","name":"독무","grade":"D","category":"aoeCC","target":"allEnemies","costs":{"mp":50,"sp":0},"coef":0.89,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"poison","turns":3,"chance":0.23},"desc":"광역 대상 광역 독 (D랭크)","cooldown":0},
+    "aoeCcBurnD":{"id":"aoeCcBurnD","name":"화염비","grade":"D","category":"aoeCC","target":"allEnemies","costs":{"mp":50,"sp":0},"coef":0.89,"statTypes":["int"],"damageType":"magic","element":"fire","cc":{"type":"burn","turns":5,"chance":0.23},"desc":"광역 대상 광역 화상 (D랭크)","cooldown":0},
+    "singleHealD":{"id":"singleHealD","name":"치유의 빛","grade":"D","category":"singleHeal","target":"singleAlly","costs":{"mp":25,"sp":0},"coef":1.4,"statTypes":["int"],"damageType":"magic","element":"none","desc":"단일 대상 회복 (D랭크)","cooldown":0},
+    "aoeHealD":{"id":"aoeHealD","name":"생명의 노래","grade":"D","category":"aoeHeal","target":"allAllies","costs":{"mp":50,"sp":0},"coef":0.81,"statTypes":["int"],"damageType":"magic","element":"none","desc":"광역 회복 (D랭크)","cooldown":0},
+    "buffStrD":{"id":"buffStrD","name":"투사의 함성","grade":"D","category":"buff","target":"self","costs":{"mp":25,"sp":0},"coef":0,"statTypes":["str"],"damageType":"magic","element":"none","buff":{"stats":{"str":4}},"duration":3,"desc":"STR 강화 버프 3턴 (D랭크)","cooldown":0},
+    "buffConD":{"id":"buffConD","name":"강철 의지","grade":"D","category":"buff","target":"self","costs":{"mp":25,"sp":0},"coef":0,"statTypes":["con"],"damageType":"magic","element":"none","buff":{"stats":{"con":4}},"duration":3,"desc":"CON 강화 버프 3턴 (D랭크)","cooldown":0},
+    "buffIntD":{"id":"buffIntD","name":"명석의 비전","grade":"D","category":"buff","target":"self","costs":{"mp":25,"sp":0},"coef":0,"statTypes":["int"],"damageType":"magic","element":"none","buff":{"stats":{"int":4}},"duration":3,"desc":"INT 강화 버프 3턴 (D랭크)","cooldown":0},
+    "buffAgiD":{"id":"buffAgiD","name":"질풍 보법","grade":"D","category":"buff","target":"self","costs":{"mp":25,"sp":0},"coef":0,"statTypes":["agi"],"damageType":"magic","element":"none","buff":{"stats":{"agi":4}},"duration":3,"desc":"AGI 강화 버프 3턴 (D랭크)","cooldown":0},
+    "buffSenseD":{"id":"buffSenseD","name":"매의 눈","grade":"D","category":"buff","target":"self","costs":{"mp":25,"sp":0},"coef":0,"statTypes":["sense"],"damageType":"magic","element":"none","buff":{"stats":{"sense":4}},"duration":3,"desc":"SENSE 강화 버프 3턴 (D랭크)","cooldown":0},
+    "buffPdefD":{"id":"buffPdefD","name":"석갑 부여","grade":"D","category":"buff","target":"self","costs":{"mp":25,"sp":0},"coef":0,"statTypes":["pDef"],"damageType":"magic","element":"none","buff":{"stats":{"pdef":4}},"duration":3,"desc":"PDEF 강화 버프 3턴 (D랭크)","cooldown":0},
+    "buffMdefD":{"id":"buffMdefD","name":"마력 방벽","grade":"D","category":"buff","target":"self","costs":{"mp":25,"sp":0},"coef":0,"statTypes":["mDef"],"damageType":"magic","element":"none","buff":{"stats":{"mdef":4}},"duration":3,"desc":"MDEF 강화 버프 3턴 (D랭크)","cooldown":0},
+    "buffTauntD":{"id":"buffTauntD","name":"도발","grade":"D","category":"buff","target":"self","costs":{"mp":0,"sp":25},"coef":0,"statTypes":["con"],"damageType":"physical","element":"none","buff":{"stats":{},"threatBonus":5},"duration":3,"desc":"도발 버프 3턴, 위협 +5 (D랭크)","cooldown":0},
+    "passiveStrD":{"id":"passiveStrD","name":"근력 단련","grade":"D","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["str"],"damageType":"magic","element":"none","duration":0,"desc":"STR 패시브 영구 보너스 (D랭크)","cooldown":0,"passiveBonuses":{"str":4}},
+    "passiveConD":{"id":"passiveConD","name":"체력 단련","grade":"D","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["con"],"damageType":"magic","element":"none","duration":0,"desc":"CON 패시브 영구 보너스 (D랭크)","cooldown":0,"passiveBonuses":{"con":4}},
+    "passiveIntD":{"id":"passiveIntD","name":"지력 수련","grade":"D","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["int"],"damageType":"magic","element":"none","duration":0,"desc":"INT 패시브 영구 보너스 (D랭크)","cooldown":0,"passiveBonuses":{"int":4}},
+    "passiveAgiD":{"id":"passiveAgiD","name":"신속 수련","grade":"D","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["agi"],"damageType":"magic","element":"none","duration":0,"desc":"AGI 패시브 영구 보너스 (D랭크)","cooldown":0,"passiveBonuses":{"agi":4}},
+    "passiveSenseD":{"id":"passiveSenseD","name":"감각 연마","grade":"D","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["sense"],"damageType":"magic","element":"none","duration":0,"desc":"SENSE 패시브 영구 보너스 (D랭크)","cooldown":0,"passiveBonuses":{"sense":4}},
+    "passivePdefD":{"id":"passivePdefD","name":"방어 숙련","grade":"D","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["pDef"],"damageType":"magic","element":"none","duration":0,"desc":"PDEF 패시브 영구 보너스 (D랭크)","cooldown":0,"passiveBonuses":{"pdef":4}},
+    "passiveMdefD":{"id":"passiveMdefD","name":"마법 내성","grade":"D","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["mDef"],"damageType":"magic","element":"none","duration":0,"desc":"MDEF 패시브 영구 보너스 (D랭크)","cooldown":0,"passiveBonuses":{"mdef":4}},
+    "singleAttackPhysC":{"id":"singleAttackPhysC","name":"분쇄격","grade":"C","category":"singleAttack","target":"singleEnemy","costs":{"mp":0,"sp":30},"coef":2.88,"statTypes":["str"],"damageType":"physical","element":"none","desc":"무속성 물리 단일 공격 (C랭크)","cooldown":0},
+    "singleAttackMagC":{"id":"singleAttackMagC","name":"마력포","grade":"C","category":"singleAttack","target":"singleEnemy","costs":{"mp":30,"sp":0},"coef":2.88,"statTypes":["int"],"damageType":"magic","element":"none","desc":"무속성 마법 단일 공격 (C랭크)","cooldown":0},
+    "aoeAttackPhysC":{"id":"aoeAttackPhysC","name":"질풍연타","grade":"C","category":"aoeAttack","target":"allEnemies","costs":{"mp":0,"sp":60},"coef":1.67,"statTypes":["str"],"damageType":"physical","element":"none","desc":"무속성 물리 광역 공격 (C랭크)","cooldown":0},
+    "aoeAttackMagC":{"id":"aoeAttackMagC","name":"마력폭발","grade":"C","category":"aoeAttack","target":"allEnemies","costs":{"mp":60,"sp":0},"coef":1.67,"statTypes":["int"],"damageType":"magic","element":"none","desc":"무속성 마법 광역 공격 (C랭크)","cooldown":0},
+    "elemAttackFireC":{"id":"elemAttackFireC","name":"폭염","grade":"C","category":"singleAttack","target":"singleEnemy","costs":{"mp":30,"sp":0},"coef":2.88,"statTypes":["int"],"damageType":"magic","element":"fire","desc":"화염 속성 마법 단일 공격 (C랭크)","cooldown":0},
+    "elemAttackIceC":{"id":"elemAttackIceC","name":"동결파","grade":"C","category":"singleAttack","target":"singleEnemy","costs":{"mp":30,"sp":0},"coef":2.88,"statTypes":["int"],"damageType":"magic","element":"ice","desc":"빙결 속성 마법 단일 공격 (C랭크)","cooldown":0},
+    "elemAttackWaterC":{"id":"elemAttackWaterC","name":"해류격","grade":"C","category":"singleAttack","target":"singleEnemy","costs":{"mp":30,"sp":0},"coef":2.88,"statTypes":["int"],"damageType":"magic","element":"water","desc":"수류 속성 마법 단일 공격 (C랭크)","cooldown":0},
+    "elemAttackWindC":{"id":"elemAttackWindC","name":"열풍격","grade":"C","category":"singleAttack","target":"singleEnemy","costs":{"mp":30,"sp":0},"coef":2.88,"statTypes":["int"],"damageType":"magic","element":"wind","desc":"질풍 속성 마법 단일 공격 (C랭크)","cooldown":0},
+    "elemAttackEarthC":{"id":"elemAttackEarthC","name":"암쇄","grade":"C","category":"singleAttack","target":"singleEnemy","costs":{"mp":30,"sp":0},"coef":2.88,"statTypes":["int"],"damageType":"magic","element":"earth","desc":"대지 속성 마법 단일 공격 (C랭크)","cooldown":0},
+    "elemAttackElectricC":{"id":"elemAttackElectricC","name":"낙뢰","grade":"C","category":"singleAttack","target":"singleEnemy","costs":{"mp":30,"sp":0},"coef":2.88,"statTypes":["int"],"damageType":"magic","element":"electric","desc":"전격 속성 마법 단일 공격 (C랭크)","cooldown":0},
+    "elemAttackLightC":{"id":"elemAttackLightC","name":"광명격","grade":"C","category":"singleAttack","target":"singleEnemy","costs":{"mp":30,"sp":0},"coef":2.88,"statTypes":["int"],"damageType":"magic","element":"light","desc":"성광 속성 마법 단일 공격 (C랭크)","cooldown":0},
+    "elemAttackDarkC":{"id":"elemAttackDarkC","name":"암흑파","grade":"C","category":"singleAttack","target":"singleEnemy","costs":{"mp":30,"sp":0},"coef":2.88,"statTypes":["int"],"damageType":"magic","element":"dark","desc":"암흑 속성 마법 단일 공격 (C랭크)","cooldown":0},
+    "singleCcStunC":{"id":"singleCcStunC","name":"지축격","grade":"C","category":"singleCC","target":"singleEnemy","costs":{"mp":0,"sp":30},"coef":2.3,"statTypes":["con"],"damageType":"physical","element":"none","cc":{"type":"stun","turns":2,"chance":0.16},"desc":"단일 대상 기절 타격 (C랭크)","cooldown":0},
+    "singleCcFreezeC":{"id":"singleCcFreezeC","name":"빙쇄파","grade":"C","category":"singleCC","target":"singleEnemy","costs":{"mp":30,"sp":0},"coef":2.3,"statTypes":["int"],"damageType":"magic","element":"ice","cc":{"type":"freeze","turns":2,"chance":0.16},"desc":"단일 대상 빙결 마법 (C랭크)","cooldown":0},
+    "singleCcParalyzeC":{"id":"singleCcParalyzeC","name":"마비전류","grade":"C","category":"singleCC","target":"singleEnemy","costs":{"mp":30,"sp":0},"coef":2.3,"statTypes":["int"],"damageType":"magic","element":"electric","cc":{"type":"paralyze","turns":2,"chance":0.16},"desc":"단일 대상 마비 전격 (C랭크)","cooldown":0},
+    "singleCcSleepC":{"id":"singleCcSleepC","name":"자장가","grade":"C","category":"singleCC","target":"singleEnemy","costs":{"mp":30,"sp":0},"coef":2.3,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"sleep","turns":3,"chance":0.16},"desc":"단일 대상 수면 마법 (C랭크)","cooldown":0},
+    "singleCcBindC":{"id":"singleCcBindC","name":"속박진","grade":"C","category":"singleCC","target":"singleEnemy","costs":{"mp":0,"sp":30},"coef":2.3,"statTypes":["str"],"damageType":"physical","element":"none","cc":{"type":"bind","turns":2,"chance":0.18},"desc":"단일 대상 속박 타격 (C랭크)","cooldown":0},
+    "singleCcCurseC":{"id":"singleCcCurseC","name":"원혼의 저주","grade":"C","category":"singleCC","target":"singleEnemy","costs":{"mp":30,"sp":0},"coef":2.3,"statTypes":["int"],"damageType":"magic","element":"dark","cc":{"type":"curse","turns":3,"chance":0.18},"desc":"단일 대상 저주 마법 (C랭크)","cooldown":0},
+    "singleCcSilenceC":{"id":"singleCcSilenceC","name":"마력봉인","grade":"C","category":"singleCC","target":"singleEnemy","costs":{"mp":30,"sp":0},"coef":2.3,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"silence","turns":2,"chance":0.2},"desc":"단일 대상 침묵 마법 (C랭크)","cooldown":0},
+    "singleCcSlowC":{"id":"singleCcSlowC","name":"시간지연","grade":"C","category":"singleCC","target":"singleEnemy","costs":{"mp":0,"sp":30},"coef":2.3,"statTypes":["agi"],"damageType":"physical","element":"none","cc":{"type":"slow","turns":3,"chance":0.25},"desc":"단일 대상 둔화 타격 (C랭크)","cooldown":0},
+    "singleCcBlindC":{"id":"singleCcBlindC","name":"시야차단","grade":"C","category":"singleCC","target":"singleEnemy","costs":{"mp":30,"sp":0},"coef":2.3,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"blind","turns":3,"chance":0.2},"desc":"단일 대상 실명 마법 (C랭크)","cooldown":0},
+    "singleCcPoisonC":{"id":"singleCcPoisonC","name":"맹독술","grade":"C","category":"singleCC","target":"singleEnemy","costs":{"mp":30,"sp":0},"coef":2.3,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"poison","turns":3,"chance":0.23},"desc":"단일 대상 독 마법 (C랭크)","cooldown":0},
+    "singleCcBleedC":{"id":"singleCcBleedC","name":"출혈참","grade":"C","category":"singleCC","target":"singleEnemy","costs":{"mp":0,"sp":30},"coef":2.3,"statTypes":["str"],"damageType":"physical","element":"none","cc":{"type":"bleed","turns":3,"chance":0.23},"desc":"단일 대상 출혈 타격 (C랭크)","cooldown":0},
+    "singleCcBurnC":{"id":"singleCcBurnC","name":"발화","grade":"C","category":"singleCC","target":"singleEnemy","costs":{"mp":30,"sp":0},"coef":2.3,"statTypes":["int"],"damageType":"magic","element":"fire","cc":{"type":"burn","turns":5,"chance":0.23},"desc":"단일 대상 화상 마법 (C랭크)","cooldown":0},
+    "aoeCcStunC":{"id":"aoeCcStunC","name":"파쇄충격","grade":"C","category":"aoeCC","target":"allEnemies","costs":{"mp":0,"sp":60},"coef":1.33,"statTypes":["con"],"damageType":"physical","element":"none","cc":{"type":"stun","turns":2,"chance":0.16},"desc":"광역 대상 광역 기절 (C랭크)","cooldown":0},
+    "aoeCcFreezeC":{"id":"aoeCcFreezeC","name":"빙결의 파동","grade":"C","category":"aoeCC","target":"allEnemies","costs":{"mp":60,"sp":0},"coef":1.33,"statTypes":["int"],"damageType":"magic","element":"ice","cc":{"type":"freeze","turns":2,"chance":0.16},"desc":"광역 대상 광역 빙결 (C랭크)","cooldown":0},
+    "aoeCcPoisonC":{"id":"aoeCcPoisonC","name":"독안개진","grade":"C","category":"aoeCC","target":"allEnemies","costs":{"mp":60,"sp":0},"coef":1.33,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"poison","turns":3,"chance":0.23},"desc":"광역 대상 광역 독 (C랭크)","cooldown":0},
+    "aoeCcBurnC":{"id":"aoeCcBurnC","name":"업화","grade":"C","category":"aoeCC","target":"allEnemies","costs":{"mp":60,"sp":0},"coef":1.33,"statTypes":["int"],"damageType":"magic","element":"fire","cc":{"type":"burn","turns":5,"chance":0.23},"desc":"광역 대상 광역 화상 (C랭크)","cooldown":0},
+    "singleHealC":{"id":"singleHealC","name":"생명의 손길","grade":"C","category":"singleHeal","target":"singleAlly","costs":{"mp":30,"sp":0},"coef":1.6,"statTypes":["int"],"damageType":"magic","element":"none","desc":"단일 대상 회복 (C랭크)","cooldown":0},
+    "aoeHealC":{"id":"aoeHealC","name":"대지의 은혜","grade":"C","category":"aoeHeal","target":"allAllies","costs":{"mp":60,"sp":0},"coef":0.93,"statTypes":["int"],"damageType":"magic","element":"none","desc":"광역 회복 (C랭크)","cooldown":0},
+    "buffStrC":{"id":"buffStrC","name":"전투격려","grade":"C","category":"buff","target":"self","costs":{"mp":30,"sp":0},"coef":0,"statTypes":["str"],"damageType":"magic","element":"none","buff":{"stats":{"str":6}},"duration":3,"desc":"STR 강화 버프 3턴 (C랭크)","cooldown":0},
+    "buffConC":{"id":"buffConC","name":"견고한 방벽","grade":"C","category":"buff","target":"self","costs":{"mp":30,"sp":0},"coef":0,"statTypes":["con"],"damageType":"magic","element":"none","buff":{"stats":{"con":6}},"duration":3,"desc":"CON 강화 버프 3턴 (C랭크)","cooldown":0},
+    "buffIntC":{"id":"buffIntC","name":"지혜의 각성","grade":"C","category":"buff","target":"self","costs":{"mp":30,"sp":0},"coef":0,"statTypes":["int"],"damageType":"magic","element":"none","buff":{"stats":{"int":6}},"duration":3,"desc":"INT 강화 버프 3턴 (C랭크)","cooldown":0},
+    "buffAgiC":{"id":"buffAgiC","name":"그림자 걸음","grade":"C","category":"buff","target":"self","costs":{"mp":30,"sp":0},"coef":0,"statTypes":["agi"],"damageType":"magic","element":"none","buff":{"stats":{"agi":6}},"duration":3,"desc":"AGI 강화 버프 3턴 (C랭크)","cooldown":0},
+    "buffSenseC":{"id":"buffSenseC","name":"천리안","grade":"C","category":"buff","target":"self","costs":{"mp":30,"sp":0},"coef":0,"statTypes":["sense"],"damageType":"magic","element":"none","buff":{"stats":{"sense":6}},"duration":3,"desc":"SENSE 강화 버프 3턴 (C랭크)","cooldown":0},
+    "buffPdefC":{"id":"buffPdefC","name":"철벽방어","grade":"C","category":"buff","target":"self","costs":{"mp":30,"sp":0},"coef":0,"statTypes":["pDef"],"damageType":"magic","element":"none","buff":{"stats":{"pdef":6}},"duration":3,"desc":"PDEF 강화 버프 3턴 (C랭크)","cooldown":0},
+    "buffMdefC":{"id":"buffMdefC","name":"마법저항","grade":"C","category":"buff","target":"self","costs":{"mp":30,"sp":0},"coef":0,"statTypes":["mDef"],"damageType":"magic","element":"none","buff":{"stats":{"mdef":6}},"duration":3,"desc":"MDEF 강화 버프 3턴 (C랭크)","cooldown":0},
+    "buffTauntC":{"id":"buffTauntC","name":"전장의 포효","grade":"C","category":"buff","target":"self","costs":{"mp":0,"sp":30},"coef":0,"statTypes":["con"],"damageType":"physical","element":"none","buff":{"stats":{},"threatBonus":7},"duration":3,"desc":"도발 버프 3턴, 위협 +7 (C랭크)","cooldown":0},
+    "passiveStrC":{"id":"passiveStrC","name":"전사의 힘","grade":"C","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["str"],"damageType":"magic","element":"none","duration":0,"desc":"STR 패시브 영구 보너스 (C랭크)","cooldown":0,"passiveBonuses":{"str":6}},
+    "passiveConC":{"id":"passiveConC","name":"전사의 체력","grade":"C","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["con"],"damageType":"magic","element":"none","duration":0,"desc":"CON 패시브 영구 보너스 (C랭크)","cooldown":0,"passiveBonuses":{"con":6}},
+    "passiveIntC":{"id":"passiveIntC","name":"학자의 지식","grade":"C","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["int"],"damageType":"magic","element":"none","duration":0,"desc":"INT 패시브 영구 보너스 (C랭크)","cooldown":0,"passiveBonuses":{"int":6}},
+    "passiveAgiC":{"id":"passiveAgiC","name":"암살자의 발걸음","grade":"C","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["agi"],"damageType":"magic","element":"none","duration":0,"desc":"AGI 패시브 영구 보너스 (C랭크)","cooldown":0,"passiveBonuses":{"agi":6}},
+    "passiveSenseC":{"id":"passiveSenseC","name":"사냥꾼의 감각","grade":"C","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["sense"],"damageType":"magic","element":"none","duration":0,"desc":"SENSE 패시브 영구 보너스 (C랭크)","cooldown":0,"passiveBonuses":{"sense":6}},
+    "passivePdefC":{"id":"passivePdefC","name":"철벽 수호","grade":"C","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["pDef"],"damageType":"magic","element":"none","duration":0,"desc":"PDEF 패시브 영구 보너스 (C랭크)","cooldown":0,"passiveBonuses":{"pdef":6}},
+    "passiveMdefC":{"id":"passiveMdefC","name":"마력 차단","grade":"C","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["mDef"],"damageType":"magic","element":"none","duration":0,"desc":"MDEF 패시브 영구 보너스 (C랭크)","cooldown":0,"passiveBonuses":{"mdef":6}},
+    "singleAttackPhysB":{"id":"singleAttackPhysB","name":"파쇄일섬","grade":"B","category":"singleAttack","target":"singleEnemy","costs":{"mp":0,"sp":40},"coef":4.8,"statTypes":["str"],"damageType":"physical","element":"none","desc":"무속성 물리 단일 공격 (B랭크)","cooldown":0},
+    "singleAttackMagB":{"id":"singleAttackMagB","name":"섬멸의 탄환","grade":"B","category":"singleAttack","target":"singleEnemy","costs":{"mp":40,"sp":0},"coef":4.8,"statTypes":["int"],"damageType":"magic","element":"none","desc":"무속성 마법 단일 공격 (B랭크)","cooldown":0},
+    "aoeAttackPhysB":{"id":"aoeAttackPhysB","name":"광풍난무","grade":"B","category":"aoeAttack","target":"allEnemies","costs":{"mp":0,"sp":80},"coef":2.78,"statTypes":["str"],"damageType":"physical","element":"none","desc":"무속성 물리 광역 공격 (B랭크)","cooldown":0},
+    "aoeAttackMagB":{"id":"aoeAttackMagB","name":"마기의 폭류","grade":"B","category":"aoeAttack","target":"allEnemies","costs":{"mp":80,"sp":0},"coef":2.78,"statTypes":["int"],"damageType":"magic","element":"none","desc":"무속성 마법 광역 공격 (B랭크)","cooldown":0},
+    "elemAttackFireB":{"id":"elemAttackFireB","name":"업화격","grade":"B","category":"singleAttack","target":"singleEnemy","costs":{"mp":40,"sp":0},"coef":4.8,"statTypes":["int"],"damageType":"magic","element":"fire","desc":"화염 속성 마법 단일 공격 (B랭크)","cooldown":0},
+    "elemAttackIceB":{"id":"elemAttackIceB","name":"빙폭","grade":"B","category":"singleAttack","target":"singleEnemy","costs":{"mp":40,"sp":0},"coef":4.8,"statTypes":["int"],"damageType":"magic","element":"ice","desc":"빙결 속성 마법 단일 공격 (B랭크)","cooldown":0},
+    "elemAttackWaterB":{"id":"elemAttackWaterB","name":"격류","grade":"B","category":"singleAttack","target":"singleEnemy","costs":{"mp":40,"sp":0},"coef":4.8,"statTypes":["int"],"damageType":"magic","element":"water","desc":"수류 속성 마법 단일 공격 (B랭크)","cooldown":0},
+    "elemAttackWindB":{"id":"elemAttackWindB","name":"폭풍참","grade":"B","category":"singleAttack","target":"singleEnemy","costs":{"mp":40,"sp":0},"coef":4.8,"statTypes":["int"],"damageType":"magic","element":"wind","desc":"질풍 속성 마법 단일 공격 (B랭크)","cooldown":0},
+    "elemAttackEarthB":{"id":"elemAttackEarthB","name":"지각붕괴","grade":"B","category":"singleAttack","target":"singleEnemy","costs":{"mp":40,"sp":0},"coef":4.8,"statTypes":["int"],"damageType":"magic","element":"earth","desc":"대지 속성 마법 단일 공격 (B랭크)","cooldown":0},
+    "elemAttackElectricB":{"id":"elemAttackElectricB","name":"뇌전","grade":"B","category":"singleAttack","target":"singleEnemy","costs":{"mp":40,"sp":0},"coef":4.8,"statTypes":["int"],"damageType":"magic","element":"electric","desc":"전격 속성 마법 단일 공격 (B랭크)","cooldown":0},
+    "elemAttackLightB":{"id":"elemAttackLightB","name":"성스러운 빛","grade":"B","category":"singleAttack","target":"singleEnemy","costs":{"mp":40,"sp":0},"coef":4.8,"statTypes":["int"],"damageType":"magic","element":"light","desc":"성광 속성 마법 단일 공격 (B랭크)","cooldown":0},
+    "elemAttackDarkB":{"id":"elemAttackDarkB","name":"심연의 손길","grade":"B","category":"singleAttack","target":"singleEnemy","costs":{"mp":40,"sp":0},"coef":4.8,"statTypes":["int"],"damageType":"magic","element":"dark","desc":"암흑 속성 마법 단일 공격 (B랭크)","cooldown":0},
+    "singleCcStunB":{"id":"singleCcStunB","name":"뇌진격","grade":"B","category":"singleCC","target":"singleEnemy","costs":{"mp":0,"sp":40},"coef":3.84,"statTypes":["con"],"damageType":"physical","element":"none","cc":{"type":"stun","turns":2,"chance":0.16},"desc":"단일 대상 기절 타격 (B랭크)","cooldown":0},
+    "singleCcFreezeB":{"id":"singleCcFreezeB","name":"극한동파","grade":"B","category":"singleCC","target":"singleEnemy","costs":{"mp":40,"sp":0},"coef":3.84,"statTypes":["int"],"damageType":"magic","element":"ice","cc":{"type":"freeze","turns":2,"chance":0.16},"desc":"단일 대상 빙결 마법 (B랭크)","cooldown":0},
+    "singleCcParalyzeB":{"id":"singleCcParalyzeB","name":"신경차단","grade":"B","category":"singleCC","target":"singleEnemy","costs":{"mp":40,"sp":0},"coef":3.84,"statTypes":["int"],"damageType":"magic","element":"electric","cc":{"type":"paralyze","turns":2,"chance":0.16},"desc":"단일 대상 마비 전격 (B랭크)","cooldown":0},
+    "singleCcSleepB":{"id":"singleCcSleepB","name":"깊은 잠","grade":"B","category":"singleCC","target":"singleEnemy","costs":{"mp":40,"sp":0},"coef":3.84,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"sleep","turns":3,"chance":0.16},"desc":"단일 대상 수면 마법 (B랭크)","cooldown":0},
+    "singleCcBindB":{"id":"singleCcBindB","name":"구속쇄","grade":"B","category":"singleCC","target":"singleEnemy","costs":{"mp":0,"sp":40},"coef":3.84,"statTypes":["str"],"damageType":"physical","element":"none","cc":{"type":"bind","turns":2,"chance":0.18},"desc":"단일 대상 속박 타격 (B랭크)","cooldown":0},
+    "singleCcCurseB":{"id":"singleCcCurseB","name":"파멸의 저주","grade":"B","category":"singleCC","target":"singleEnemy","costs":{"mp":40,"sp":0},"coef":3.84,"statTypes":["int"],"damageType":"magic","element":"dark","cc":{"type":"curse","turns":3,"chance":0.18},"desc":"단일 대상 저주 마법 (B랭크)","cooldown":0},
+    "singleCcSilenceB":{"id":"singleCcSilenceB","name":"정신쇄","grade":"B","category":"singleCC","target":"singleEnemy","costs":{"mp":40,"sp":0},"coef":3.84,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"silence","turns":2,"chance":0.2},"desc":"단일 대상 침묵 마법 (B랭크)","cooldown":0},
+    "singleCcSlowB":{"id":"singleCcSlowB","name":"중력구속","grade":"B","category":"singleCC","target":"singleEnemy","costs":{"mp":0,"sp":40},"coef":3.84,"statTypes":["agi"],"damageType":"physical","element":"none","cc":{"type":"slow","turns":3,"chance":0.25},"desc":"단일 대상 둔화 타격 (B랭크)","cooldown":0},
+    "singleCcBlindB":{"id":"singleCcBlindB","name":"암흑안개","grade":"B","category":"singleCC","target":"singleEnemy","costs":{"mp":40,"sp":0},"coef":3.84,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"blind","turns":3,"chance":0.2},"desc":"단일 대상 실명 마법 (B랭크)","cooldown":0},
+    "singleCcPoisonB":{"id":"singleCcPoisonB","name":"독사의 이빨","grade":"B","category":"singleCC","target":"singleEnemy","costs":{"mp":40,"sp":0},"coef":3.84,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"poison","turns":3,"chance":0.23},"desc":"단일 대상 독 마법 (B랭크)","cooldown":0},
+    "singleCcBleedB":{"id":"singleCcBleedB","name":"혈풍참","grade":"B","category":"singleCC","target":"singleEnemy","costs":{"mp":0,"sp":40},"coef":3.84,"statTypes":["str"],"damageType":"physical","element":"none","cc":{"type":"bleed","turns":3,"chance":0.23},"desc":"단일 대상 출혈 타격 (B랭크)","cooldown":0},
+    "singleCcBurnB":{"id":"singleCcBurnB","name":"화염방사","grade":"B","category":"singleCC","target":"singleEnemy","costs":{"mp":40,"sp":0},"coef":3.84,"statTypes":["int"],"damageType":"magic","element":"fire","cc":{"type":"burn","turns":5,"chance":0.23},"desc":"단일 대상 화상 마법 (B랭크)","cooldown":0},
+    "aoeCcStunB":{"id":"aoeCcStunB","name":"충격파동","grade":"B","category":"aoeCC","target":"allEnemies","costs":{"mp":0,"sp":80},"coef":2.23,"statTypes":["con"],"damageType":"physical","element":"none","cc":{"type":"stun","turns":2,"chance":0.16},"desc":"광역 대상 광역 기절 (B랭크)","cooldown":0},
+    "aoeCcFreezeB":{"id":"aoeCcFreezeB","name":"빙하의 포효","grade":"B","category":"aoeCC","target":"allEnemies","costs":{"mp":80,"sp":0},"coef":2.23,"statTypes":["int"],"damageType":"magic","element":"ice","cc":{"type":"freeze","turns":2,"chance":0.16},"desc":"광역 대상 광역 빙결 (B랭크)","cooldown":0},
+    "aoeCcPoisonB":{"id":"aoeCcPoisonB","name":"역병의 숨결","grade":"B","category":"aoeCC","target":"allEnemies","costs":{"mp":80,"sp":0},"coef":2.23,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"poison","turns":3,"chance":0.23},"desc":"광역 대상 광역 독 (B랭크)","cooldown":0},
+    "aoeCcBurnB":{"id":"aoeCcBurnB","name":"화염폭풍","grade":"B","category":"aoeCC","target":"allEnemies","costs":{"mp":80,"sp":0},"coef":2.23,"statTypes":["int"],"damageType":"magic","element":"fire","cc":{"type":"burn","turns":5,"chance":0.23},"desc":"광역 대상 광역 화상 (B랭크)","cooldown":0},
+    "singleHealB":{"id":"singleHealB","name":"신성한 치유","grade":"B","category":"singleHeal","target":"singleAlly","costs":{"mp":40,"sp":0},"coef":1.8,"statTypes":["int"],"damageType":"magic","element":"none","desc":"단일 대상 회복 (B랭크)","cooldown":0},
+    "aoeHealB":{"id":"aoeHealB","name":"성스러운 비","grade":"B","category":"aoeHeal","target":"allAllies","costs":{"mp":80,"sp":0},"coef":1.04,"statTypes":["int"],"damageType":"magic","element":"none","desc":"광역 회복 (B랭크)","cooldown":0},
+    "buffStrB":{"id":"buffStrB","name":"광전사의 분노","grade":"B","category":"buff","target":"self","costs":{"mp":40,"sp":0},"coef":0,"statTypes":["str"],"damageType":"magic","element":"none","buff":{"stats":{"str":8}},"duration":3,"desc":"STR 강화 버프 3턴 (B랭크)","cooldown":0},
+    "buffConB":{"id":"buffConB","name":"불굴의 의지","grade":"B","category":"buff","target":"self","costs":{"mp":40,"sp":0},"coef":0,"statTypes":["con"],"damageType":"magic","element":"none","buff":{"stats":{"con":8}},"duration":3,"desc":"CON 강화 버프 3턴 (B랭크)","cooldown":0},
+    "buffIntB":{"id":"buffIntB","name":"마력 해방","grade":"B","category":"buff","target":"self","costs":{"mp":40,"sp":0},"coef":0,"statTypes":["int"],"damageType":"magic","element":"none","buff":{"stats":{"int":8}},"duration":3,"desc":"INT 강화 버프 3턴 (B랭크)","cooldown":0},
+    "buffAgiB":{"id":"buffAgiB","name":"번개 발걸음","grade":"B","category":"buff","target":"self","costs":{"mp":40,"sp":0},"coef":0,"statTypes":["agi"],"damageType":"magic","element":"none","buff":{"stats":{"agi":8}},"duration":3,"desc":"AGI 강화 버프 3턴 (B랭크)","cooldown":0},
+    "buffSenseB":{"id":"buffSenseB","name":"예지의 눈","grade":"B","category":"buff","target":"self","costs":{"mp":40,"sp":0},"coef":0,"statTypes":["sense"],"damageType":"magic","element":"none","buff":{"stats":{"sense":8}},"duration":3,"desc":"SENSE 강화 버프 3턴 (B랭크)","cooldown":0},
+    "buffPdefB":{"id":"buffPdefB","name":"난공불락","grade":"B","category":"buff","target":"self","costs":{"mp":40,"sp":0},"coef":0,"statTypes":["pDef"],"damageType":"magic","element":"none","buff":{"stats":{"pdef":8}},"duration":3,"desc":"PDEF 강화 버프 3턴 (B랭크)","cooldown":0},
+    "buffMdefB":{"id":"buffMdefB","name":"마법반사","grade":"B","category":"buff","target":"self","costs":{"mp":40,"sp":0},"coef":0,"statTypes":["mDef"],"damageType":"magic","element":"none","buff":{"stats":{"mdef":8}},"duration":3,"desc":"MDEF 강화 버프 3턴 (B랭크)","cooldown":0},
+    "buffTauntB":{"id":"buffTauntB","name":"왕의 위엄","grade":"B","category":"buff","target":"self","costs":{"mp":0,"sp":40},"coef":0,"statTypes":["con"],"damageType":"physical","element":"none","buff":{"stats":{},"threatBonus":10},"duration":3,"desc":"도발 버프 3턴, 위협 +10 (B랭크)","cooldown":0},
+    "passiveStrB":{"id":"passiveStrB","name":"강인한 근력","grade":"B","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["str"],"damageType":"magic","element":"none","duration":0,"desc":"STR 패시브 영구 보너스 (B랭크)","cooldown":0,"passiveBonuses":{"str":8}},
+    "passiveConB":{"id":"passiveConB","name":"강인한 체력","grade":"B","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["con"],"damageType":"magic","element":"none","duration":0,"desc":"CON 패시브 영구 보너스 (B랭크)","cooldown":0,"passiveBonuses":{"con":8}},
+    "passiveIntB":{"id":"passiveIntB","name":"현자의 지혜","grade":"B","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["int"],"damageType":"magic","element":"none","duration":0,"desc":"INT 패시브 영구 보너스 (B랭크)","cooldown":0,"passiveBonuses":{"int":8}},
+    "passiveAgiB":{"id":"passiveAgiB","name":"바람의 민첩","grade":"B","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["agi"],"damageType":"magic","element":"none","duration":0,"desc":"AGI 패시브 영구 보너스 (B랭크)","cooldown":0,"passiveBonuses":{"agi":8}},
+    "passiveSenseB":{"id":"passiveSenseB","name":"예리한 감각","grade":"B","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["sense"],"damageType":"magic","element":"none","duration":0,"desc":"SENSE 패시브 영구 보너스 (B랭크)","cooldown":0,"passiveBonuses":{"sense":8}},
+    "passivePdefB":{"id":"passivePdefB","name":"요새의 몸","grade":"B","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["pDef"],"damageType":"magic","element":"none","duration":0,"desc":"PDEF 패시브 영구 보너스 (B랭크)","cooldown":0,"passiveBonuses":{"pdef":8}},
+    "passiveMdefB":{"id":"passiveMdefB","name":"마법저항 체질","grade":"B","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["mDef"],"damageType":"magic","element":"none","duration":0,"desc":"MDEF 패시브 영구 보너스 (B랭크)","cooldown":0,"passiveBonuses":{"mdef":8}},
+    "singleAttackPhysA":{"id":"singleAttackPhysA","name":"멸살참","grade":"A","category":"singleAttack","target":"singleEnemy","costs":{"mp":0,"sp":55},"coef":7.68,"statTypes":["str"],"damageType":"physical","element":"none","desc":"무속성 물리 단일 공격 (A랭크)","cooldown":0},
+    "singleAttackMagA":{"id":"singleAttackMagA","name":"마멸포","grade":"A","category":"singleAttack","target":"singleEnemy","costs":{"mp":55,"sp":0},"coef":7.68,"statTypes":["int"],"damageType":"magic","element":"none","desc":"무속성 마법 단일 공격 (A랭크)","cooldown":0},
+    "aoeAttackPhysA":{"id":"aoeAttackPhysA","name":"천격연무","grade":"A","category":"aoeAttack","target":"allEnemies","costs":{"mp":0,"sp":110},"coef":4.45,"statTypes":["str"],"damageType":"physical","element":"none","desc":"무속성 물리 광역 공격 (A랭크)","cooldown":0},
+    "aoeAttackMagA":{"id":"aoeAttackMagA","name":"성마의 진","grade":"A","category":"aoeAttack","target":"allEnemies","costs":{"mp":110,"sp":0},"coef":4.45,"statTypes":["int"],"damageType":"magic","element":"none","desc":"무속성 마법 광역 공격 (A랭크)","cooldown":0},
+    "elemAttackFireA":{"id":"elemAttackFireA","name":"홍련의 불꽃","grade":"A","category":"singleAttack","target":"singleEnemy","costs":{"mp":55,"sp":0},"coef":7.68,"statTypes":["int"],"damageType":"magic","element":"fire","desc":"화염 속성 마법 단일 공격 (A랭크)","cooldown":0},
+    "elemAttackIceA":{"id":"elemAttackIceA","name":"영겁의 서리","grade":"A","category":"singleAttack","target":"singleEnemy","costs":{"mp":55,"sp":0},"coef":7.68,"statTypes":["int"],"damageType":"magic","element":"ice","desc":"빙결 속성 마법 단일 공격 (A랭크)","cooldown":0},
+    "elemAttackWaterA":{"id":"elemAttackWaterA","name":"폭류의 파도","grade":"A","category":"singleAttack","target":"singleEnemy","costs":{"mp":55,"sp":0},"coef":7.68,"statTypes":["int"],"damageType":"magic","element":"water","desc":"수류 속성 마법 단일 공격 (A랭크)","cooldown":0},
+    "elemAttackWindA":{"id":"elemAttackWindA","name":"진공의 칼날","grade":"A","category":"singleAttack","target":"singleEnemy","costs":{"mp":55,"sp":0},"coef":7.68,"statTypes":["int"],"damageType":"magic","element":"wind","desc":"질풍 속성 마법 단일 공격 (A랭크)","cooldown":0},
+    "elemAttackEarthA":{"id":"elemAttackEarthA","name":"산악의 진노","grade":"A","category":"singleAttack","target":"singleEnemy","costs":{"mp":55,"sp":0},"coef":7.68,"statTypes":["int"],"damageType":"magic","element":"earth","desc":"대지 속성 마법 단일 공격 (A랭크)","cooldown":0},
+    "elemAttackElectricA":{"id":"elemAttackElectricA","name":"뇌신의 번개","grade":"A","category":"singleAttack","target":"singleEnemy","costs":{"mp":55,"sp":0},"coef":7.68,"statTypes":["int"],"damageType":"magic","element":"electric","desc":"전격 속성 마법 단일 공격 (A랭크)","cooldown":0},
+    "elemAttackLightA":{"id":"elemAttackLightA","name":"천광의 창","grade":"A","category":"singleAttack","target":"singleEnemy","costs":{"mp":55,"sp":0},"coef":7.68,"statTypes":["int"],"damageType":"magic","element":"light","desc":"성광 속성 마법 단일 공격 (A랭크)","cooldown":0},
+    "elemAttackDarkA":{"id":"elemAttackDarkA","name":"황혼의 칼날","grade":"A","category":"singleAttack","target":"singleEnemy","costs":{"mp":55,"sp":0},"coef":7.68,"statTypes":["int"],"damageType":"magic","element":"dark","desc":"암흑 속성 마법 단일 공격 (A랭크)","cooldown":0},
+    "singleCcStunA":{"id":"singleCcStunA","name":"공명파괴","grade":"A","category":"singleCC","target":"singleEnemy","costs":{"mp":0,"sp":55},"coef":6.14,"statTypes":["con"],"damageType":"physical","element":"none","cc":{"type":"stun","turns":2,"chance":0.16},"desc":"단일 대상 기절 타격 (A랭크)","cooldown":0},
+    "singleCcFreezeA":{"id":"singleCcFreezeA","name":"빙하의 감옥","grade":"A","category":"singleCC","target":"singleEnemy","costs":{"mp":55,"sp":0},"coef":6.14,"statTypes":["int"],"damageType":"magic","element":"ice","cc":{"type":"freeze","turns":2,"chance":0.16},"desc":"단일 대상 빙결 마법 (A랭크)","cooldown":0},
+    "singleCcParalyzeA":{"id":"singleCcParalyzeA","name":"전신마비","grade":"A","category":"singleCC","target":"singleEnemy","costs":{"mp":55,"sp":0},"coef":6.14,"statTypes":["int"],"damageType":"magic","element":"electric","cc":{"type":"paralyze","turns":2,"chance":0.16},"desc":"단일 대상 마비 전격 (A랭크)","cooldown":0},
+    "singleCcSleepA":{"id":"singleCcSleepA","name":"천년의 안식","grade":"A","category":"singleCC","target":"singleEnemy","costs":{"mp":55,"sp":0},"coef":6.14,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"sleep","turns":3,"chance":0.16},"desc":"단일 대상 수면 마법 (A랭크)","cooldown":0},
+    "singleCcBindA":{"id":"singleCcBindA","name":"천쇄의 감옥","grade":"A","category":"singleCC","target":"singleEnemy","costs":{"mp":0,"sp":55},"coef":6.14,"statTypes":["str"],"damageType":"physical","element":"none","cc":{"type":"bind","turns":2,"chance":0.18},"desc":"단일 대상 속박 타격 (A랭크)","cooldown":0},
+    "singleCcCurseA":{"id":"singleCcCurseA","name":"사신의 낙인","grade":"A","category":"singleCC","target":"singleEnemy","costs":{"mp":55,"sp":0},"coef":6.14,"statTypes":["int"],"damageType":"magic","element":"dark","cc":{"type":"curse","turns":3,"chance":0.18},"desc":"단일 대상 저주 마법 (A랭크)","cooldown":0},
+    "singleCcSilenceA":{"id":"singleCcSilenceA","name":"영혼봉인","grade":"A","category":"singleCC","target":"singleEnemy","costs":{"mp":55,"sp":0},"coef":6.14,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"silence","turns":2,"chance":0.2},"desc":"단일 대상 침묵 마법 (A랭크)","cooldown":0},
+    "singleCcSlowA":{"id":"singleCcSlowA","name":"시간왜곡","grade":"A","category":"singleCC","target":"singleEnemy","costs":{"mp":0,"sp":55},"coef":6.14,"statTypes":["agi"],"damageType":"physical","element":"none","cc":{"type":"slow","turns":3,"chance":0.25},"desc":"단일 대상 둔화 타격 (A랭크)","cooldown":0},
+    "singleCcBlindA":{"id":"singleCcBlindA","name":"무한어둠","grade":"A","category":"singleCC","target":"singleEnemy","costs":{"mp":55,"sp":0},"coef":6.14,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"blind","turns":3,"chance":0.2},"desc":"단일 대상 실명 마법 (A랭크)","cooldown":0},
+    "singleCcPoisonA":{"id":"singleCcPoisonA","name":"치명독","grade":"A","category":"singleCC","target":"singleEnemy","costs":{"mp":55,"sp":0},"coef":6.14,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"poison","turns":3,"chance":0.23},"desc":"단일 대상 독 마법 (A랭크)","cooldown":0},
+    "singleCcBleedA":{"id":"singleCcBleedA","name":"피의 광풍","grade":"A","category":"singleCC","target":"singleEnemy","costs":{"mp":0,"sp":55},"coef":6.14,"statTypes":["str"],"damageType":"physical","element":"none","cc":{"type":"bleed","turns":3,"chance":0.23},"desc":"단일 대상 출혈 타격 (A랭크)","cooldown":0},
+    "singleCcBurnA":{"id":"singleCcBurnA","name":"홍련격","grade":"A","category":"singleCC","target":"singleEnemy","costs":{"mp":55,"sp":0},"coef":6.14,"statTypes":["int"],"damageType":"magic","element":"fire","cc":{"type":"burn","turns":5,"chance":0.23},"desc":"단일 대상 화상 마법 (A랭크)","cooldown":0},
+    "aoeCcStunA":{"id":"aoeCcStunA","name":"천둥의 진","grade":"A","category":"aoeCC","target":"allEnemies","costs":{"mp":0,"sp":110},"coef":3.56,"statTypes":["con"],"damageType":"physical","element":"none","cc":{"type":"stun","turns":2,"chance":0.16},"desc":"광역 대상 광역 기절 (A랭크)","cooldown":0},
+    "aoeCcFreezeA":{"id":"aoeCcFreezeA","name":"동토의 결계","grade":"A","category":"aoeCC","target":"allEnemies","costs":{"mp":110,"sp":0},"coef":3.56,"statTypes":["int"],"damageType":"magic","element":"ice","cc":{"type":"freeze","turns":2,"chance":0.16},"desc":"광역 대상 광역 빙결 (A랭크)","cooldown":0},
+    "aoeCcPoisonA":{"id":"aoeCcPoisonA","name":"만독의 진","grade":"A","category":"aoeCC","target":"allEnemies","costs":{"mp":110,"sp":0},"coef":3.56,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"poison","turns":3,"chance":0.23},"desc":"광역 대상 광역 독 (A랭크)","cooldown":0},
+    "aoeCcBurnA":{"id":"aoeCcBurnA","name":"불꽃지옥","grade":"A","category":"aoeCC","target":"allEnemies","costs":{"mp":110,"sp":0},"coef":3.56,"statTypes":["int"],"damageType":"magic","element":"fire","cc":{"type":"burn","turns":5,"chance":0.23},"desc":"광역 대상 광역 화상 (A랭크)","cooldown":0},
+    "singleHealA":{"id":"singleHealA","name":"천사의 가호","grade":"A","category":"singleHeal","target":"singleAlly","costs":{"mp":55,"sp":0},"coef":2.1,"statTypes":["int"],"damageType":"magic","element":"none","desc":"단일 대상 회복 (A랭크)","cooldown":0},
+    "aoeHealA":{"id":"aoeHealA","name":"천사의 찬가","grade":"A","category":"aoeHeal","target":"allAllies","costs":{"mp":110,"sp":0},"coef":1.22,"statTypes":["int"],"damageType":"magic","element":"none","desc":"광역 회복 (A랭크)","cooldown":0},
+    "buffStrA":{"id":"buffStrA","name":"영웅의 함성","grade":"A","category":"buff","target":"self","costs":{"mp":55,"sp":0},"coef":0,"statTypes":["str"],"damageType":"magic","element":"none","buff":{"stats":{"str":11}},"duration":3,"desc":"STR 강화 버프 3턴 (A랭크)","cooldown":0},
+    "buffConA":{"id":"buffConA","name":"불사의 육체","grade":"A","category":"buff","target":"self","costs":{"mp":55,"sp":0},"coef":0,"statTypes":["con"],"damageType":"magic","element":"none","buff":{"stats":{"con":11}},"duration":3,"desc":"CON 강화 버프 3턴 (A랭크)","cooldown":0},
+    "buffIntA":{"id":"buffIntA","name":"대현자의 지혜","grade":"A","category":"buff","target":"self","costs":{"mp":55,"sp":0},"coef":0,"statTypes":["int"],"damageType":"magic","element":"none","buff":{"stats":{"int":11}},"duration":3,"desc":"INT 강화 버프 3턴 (A랭크)","cooldown":0},
+    "buffAgiA":{"id":"buffAgiA","name":"잔상보법","grade":"A","category":"buff","target":"self","costs":{"mp":55,"sp":0},"coef":0,"statTypes":["agi"],"damageType":"magic","element":"none","buff":{"stats":{"agi":11}},"duration":3,"desc":"AGI 강화 버프 3턴 (A랭크)","cooldown":0},
+    "buffSenseA":{"id":"buffSenseA","name":"만물감지","grade":"A","category":"buff","target":"self","costs":{"mp":55,"sp":0},"coef":0,"statTypes":["sense"],"damageType":"magic","element":"none","buff":{"stats":{"sense":11}},"duration":3,"desc":"SENSE 강화 버프 3턴 (A랭크)","cooldown":0},
+    "buffPdefA":{"id":"buffPdefA","name":"무적의 방패","grade":"A","category":"buff","target":"self","costs":{"mp":55,"sp":0},"coef":0,"statTypes":["pDef"],"damageType":"magic","element":"none","buff":{"stats":{"pdef":11}},"duration":3,"desc":"PDEF 강화 버프 3턴 (A랭크)","cooldown":0},
+    "buffMdefA":{"id":"buffMdefA","name":"마력무효화","grade":"A","category":"buff","target":"self","costs":{"mp":55,"sp":0},"coef":0,"statTypes":["mDef"],"damageType":"magic","element":"none","buff":{"stats":{"mdef":11}},"duration":3,"desc":"MDEF 강화 버프 3턴 (A랭크)","cooldown":0},
+    "buffTauntA":{"id":"buffTauntA","name":"공포의 기운","grade":"A","category":"buff","target":"self","costs":{"mp":0,"sp":55},"coef":0,"statTypes":["con"],"damageType":"physical","element":"none","buff":{"stats":{},"threatBonus":13},"duration":3,"desc":"도발 버프 3턴, 위협 +13 (A랭크)","cooldown":0},
+    "passiveStrA":{"id":"passiveStrA","name":"초인의 힘","grade":"A","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["str"],"damageType":"magic","element":"none","duration":0,"desc":"STR 패시브 영구 보너스 (A랭크)","cooldown":0,"passiveBonuses":{"str":11}},
+    "passiveConA":{"id":"passiveConA","name":"초인의 체력","grade":"A","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["con"],"damageType":"magic","element":"none","duration":0,"desc":"CON 패시브 영구 보너스 (A랭크)","cooldown":0,"passiveBonuses":{"con":11}},
+    "passiveIntA":{"id":"passiveIntA","name":"대마도사의 지력","grade":"A","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["int"],"damageType":"magic","element":"none","duration":0,"desc":"INT 패시브 영구 보너스 (A랭크)","cooldown":0,"passiveBonuses":{"int":11}},
+    "passiveAgiA":{"id":"passiveAgiA","name":"번개의 몸놀림","grade":"A","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["agi"],"damageType":"magic","element":"none","duration":0,"desc":"AGI 패시브 영구 보너스 (A랭크)","cooldown":0,"passiveBonuses":{"agi":11}},
+    "passiveSenseA":{"id":"passiveSenseA","name":"초감각","grade":"A","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["sense"],"damageType":"magic","element":"none","duration":0,"desc":"SENSE 패시브 영구 보너스 (A랭크)","cooldown":0,"passiveBonuses":{"sense":11}},
+    "passivePdefA":{"id":"passivePdefA","name":"강철 피부","grade":"A","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["pDef"],"damageType":"magic","element":"none","duration":0,"desc":"PDEF 패시브 영구 보너스 (A랭크)","cooldown":0,"passiveBonuses":{"pdef":11}},
+    "passiveMdefA":{"id":"passiveMdefA","name":"마력 면역","grade":"A","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["mDef"],"damageType":"magic","element":"none","duration":0,"desc":"MDEF 패시브 영구 보너스 (A랭크)","cooldown":0,"passiveBonuses":{"mdef":11}},
+    "singleAttackPhysS":{"id":"singleAttackPhysS","name":"천벌의 일격","grade":"S","category":"singleAttack","target":"singleEnemy","costs":{"mp":0,"sp":70},"coef":11.52,"statTypes":["str"],"damageType":"physical","element":"none","desc":"무속성 물리 단일 공격 (S랭크)","cooldown":0},
+    "singleAttackMagS":{"id":"singleAttackMagS","name":"성천의 마탄","grade":"S","category":"singleAttack","target":"singleEnemy","costs":{"mp":70,"sp":0},"coef":11.52,"statTypes":["int"],"damageType":"magic","element":"none","desc":"무속성 마법 단일 공격 (S랭크)","cooldown":0},
+    "aoeAttackPhysS":{"id":"aoeAttackPhysS","name":"멸살의 광풍","grade":"S","category":"aoeAttack","target":"allEnemies","costs":{"mp":0,"sp":140},"coef":6.68,"statTypes":["str"],"damageType":"physical","element":"none","desc":"무속성 물리 광역 공격 (S랭크)","cooldown":0},
+    "aoeAttackMagS":{"id":"aoeAttackMagS","name":"궁극의 마력진","grade":"S","category":"aoeAttack","target":"allEnemies","costs":{"mp":140,"sp":0},"coef":6.68,"statTypes":["int"],"damageType":"magic","element":"none","desc":"무속성 마법 광역 공격 (S랭크)","cooldown":0},
+    "elemAttackFireS":{"id":"elemAttackFireS","name":"멸화의 극염","grade":"S","category":"singleAttack","target":"singleEnemy","costs":{"mp":70,"sp":0},"coef":11.52,"statTypes":["int"],"damageType":"magic","element":"fire","desc":"화염 속성 마법 단일 공격 (S랭크)","cooldown":0},
+    "elemAttackIceS":{"id":"elemAttackIceS","name":"극한빙결","grade":"S","category":"singleAttack","target":"singleEnemy","costs":{"mp":70,"sp":0},"coef":11.52,"statTypes":["int"],"damageType":"magic","element":"ice","desc":"빙결 속성 마법 단일 공격 (S랭크)","cooldown":0},
+    "elemAttackWaterS":{"id":"elemAttackWaterS","name":"심해의 포효","grade":"S","category":"singleAttack","target":"singleEnemy","costs":{"mp":70,"sp":0},"coef":11.52,"statTypes":["int"],"damageType":"magic","element":"water","desc":"수류 속성 마법 단일 공격 (S랭크)","cooldown":0},
+    "elemAttackWindS":{"id":"elemAttackWindS","name":"천공의 폭풍","grade":"S","category":"singleAttack","target":"singleEnemy","costs":{"mp":70,"sp":0},"coef":11.52,"statTypes":["int"],"damageType":"magic","element":"wind","desc":"질풍 속성 마법 단일 공격 (S랭크)","cooldown":0},
+    "elemAttackEarthS":{"id":"elemAttackEarthS","name":"대지의 심판","grade":"S","category":"singleAttack","target":"singleEnemy","costs":{"mp":70,"sp":0},"coef":11.52,"statTypes":["int"],"damageType":"magic","element":"earth","desc":"대지 속성 마법 단일 공격 (S랭크)","cooldown":0},
+    "elemAttackElectricS":{"id":"elemAttackElectricS","name":"만뢰의 심판","grade":"S","category":"singleAttack","target":"singleEnemy","costs":{"mp":70,"sp":0},"coef":11.52,"statTypes":["int"],"damageType":"magic","element":"electric","desc":"전격 속성 마법 단일 공격 (S랭크)","cooldown":0},
+    "elemAttackLightS":{"id":"elemAttackLightS","name":"성천의 심판","grade":"S","category":"singleAttack","target":"singleEnemy","costs":{"mp":70,"sp":0},"coef":11.52,"statTypes":["int"],"damageType":"magic","element":"light","desc":"성광 속성 마법 단일 공격 (S랭크)","cooldown":0},
+    "elemAttackDarkS":{"id":"elemAttackDarkS","name":"나락의 심판","grade":"S","category":"singleAttack","target":"singleEnemy","costs":{"mp":70,"sp":0},"coef":11.52,"statTypes":["int"],"damageType":"magic","element":"dark","desc":"암흑 속성 마법 단일 공격 (S랭크)","cooldown":0},
+    "singleCcStunS":{"id":"singleCcStunS","name":"천둥의 일격","grade":"S","category":"singleCC","target":"singleEnemy","costs":{"mp":0,"sp":70},"coef":9.22,"statTypes":["con"],"damageType":"physical","element":"none","cc":{"type":"stun","turns":2,"chance":0.16},"desc":"단일 대상 기절 타격 (S랭크)","cooldown":0},
+    "singleCcFreezeS":{"id":"singleCcFreezeS","name":"시간동결","grade":"S","category":"singleCC","target":"singleEnemy","costs":{"mp":70,"sp":0},"coef":9.22,"statTypes":["int"],"damageType":"magic","element":"ice","cc":{"type":"freeze","turns":2,"chance":0.16},"desc":"단일 대상 빙결 마법 (S랭크)","cooldown":0},
+    "singleCcParalyzeS":{"id":"singleCcParalyzeS","name":"절대속박","grade":"S","category":"singleCC","target":"singleEnemy","costs":{"mp":70,"sp":0},"coef":9.22,"statTypes":["int"],"damageType":"magic","element":"electric","cc":{"type":"paralyze","turns":2,"chance":0.16},"desc":"단일 대상 마비 전격 (S랭크)","cooldown":0},
+    "singleCcSleepS":{"id":"singleCcSleepS","name":"영겁의 잠","grade":"S","category":"singleCC","target":"singleEnemy","costs":{"mp":70,"sp":0},"coef":9.22,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"sleep","turns":3,"chance":0.16},"desc":"단일 대상 수면 마법 (S랭크)","cooldown":0},
+    "singleCcBindS":{"id":"singleCcBindS","name":"차원봉인","grade":"S","category":"singleCC","target":"singleEnemy","costs":{"mp":0,"sp":70},"coef":9.22,"statTypes":["str"],"damageType":"physical","element":"none","cc":{"type":"bind","turns":2,"chance":0.18},"desc":"단일 대상 속박 타격 (S랭크)","cooldown":0},
+    "singleCcCurseS":{"id":"singleCcCurseS","name":"천벌의 저주","grade":"S","category":"singleCC","target":"singleEnemy","costs":{"mp":70,"sp":0},"coef":9.22,"statTypes":["int"],"damageType":"magic","element":"dark","cc":{"type":"curse","turns":3,"chance":0.18},"desc":"단일 대상 저주 마법 (S랭크)","cooldown":0},
+    "singleCcSilenceS":{"id":"singleCcSilenceS","name":"절대침묵","grade":"S","category":"singleCC","target":"singleEnemy","costs":{"mp":70,"sp":0},"coef":9.22,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"silence","turns":2,"chance":0.2},"desc":"단일 대상 침묵 마법 (S랭크)","cooldown":0},
+    "singleCcSlowS":{"id":"singleCcSlowS","name":"시공정지","grade":"S","category":"singleCC","target":"singleEnemy","costs":{"mp":0,"sp":70},"coef":9.22,"statTypes":["agi"],"damageType":"physical","element":"none","cc":{"type":"slow","turns":3,"chance":0.25},"desc":"단일 대상 둔화 타격 (S랭크)","cooldown":0},
+    "singleCcBlindS":{"id":"singleCcBlindS","name":"심연의 눈","grade":"S","category":"singleCC","target":"singleEnemy","costs":{"mp":70,"sp":0},"coef":9.22,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"blind","turns":3,"chance":0.2},"desc":"단일 대상 실명 마법 (S랭크)","cooldown":0},
+    "singleCcPoisonS":{"id":"singleCcPoisonS","name":"멸독의 비수","grade":"S","category":"singleCC","target":"singleEnemy","costs":{"mp":70,"sp":0},"coef":9.22,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"poison","turns":3,"chance":0.23},"desc":"단일 대상 독 마법 (S랭크)","cooldown":0},
+    "singleCcBleedS":{"id":"singleCcBleedS","name":"혈계의 참격","grade":"S","category":"singleCC","target":"singleEnemy","costs":{"mp":0,"sp":70},"coef":9.22,"statTypes":["str"],"damageType":"physical","element":"none","cc":{"type":"bleed","turns":3,"chance":0.23},"desc":"단일 대상 출혈 타격 (S랭크)","cooldown":0},
+    "singleCcBurnS":{"id":"singleCcBurnS","name":"지옥의 업화","grade":"S","category":"singleCC","target":"singleEnemy","costs":{"mp":70,"sp":0},"coef":9.22,"statTypes":["int"],"damageType":"magic","element":"fire","cc":{"type":"burn","turns":5,"chance":0.23},"desc":"단일 대상 화상 마법 (S랭크)","cooldown":0},
+    "aoeCcStunS":{"id":"aoeCcStunS","name":"신벌의 지진","grade":"S","category":"aoeCC","target":"allEnemies","costs":{"mp":0,"sp":140},"coef":5.35,"statTypes":["con"],"damageType":"physical","element":"none","cc":{"type":"stun","turns":2,"chance":0.16},"desc":"광역 대상 광역 기절 (S랭크)","cooldown":0},
+    "aoeCcFreezeS":{"id":"aoeCcFreezeS","name":"빙결의 종말","grade":"S","category":"aoeCC","target":"allEnemies","costs":{"mp":140,"sp":0},"coef":5.35,"statTypes":["int"],"damageType":"magic","element":"ice","cc":{"type":"freeze","turns":2,"chance":0.16},"desc":"광역 대상 광역 빙결 (S랭크)","cooldown":0},
+    "aoeCcPoisonS":{"id":"aoeCcPoisonS","name":"멸독의 안개","grade":"S","category":"aoeCC","target":"allEnemies","costs":{"mp":140,"sp":0},"coef":5.35,"statTypes":["int"],"damageType":"magic","element":"none","cc":{"type":"poison","turns":3,"chance":0.23},"desc":"광역 대상 광역 독 (S랭크)","cooldown":0},
+    "aoeCcBurnS":{"id":"aoeCcBurnS","name":"종말의 화염","grade":"S","category":"aoeCC","target":"allEnemies","costs":{"mp":140,"sp":0},"coef":5.35,"statTypes":["int"],"damageType":"magic","element":"fire","cc":{"type":"burn","turns":5,"chance":0.23},"desc":"광역 대상 광역 화상 (S랭크)","cooldown":0},
+    "singleHealS":{"id":"singleHealS","name":"기적의 치유","grade":"S","category":"singleHeal","target":"singleAlly","costs":{"mp":70,"sp":0},"coef":2.4,"statTypes":["int"],"damageType":"magic","element":"none","desc":"단일 대상 회복 (S랭크)","cooldown":0},
+    "aoeHealS":{"id":"aoeHealS","name":"기적의 성가","grade":"S","category":"aoeHeal","target":"allAllies","costs":{"mp":140,"sp":0},"coef":1.39,"statTypes":["int"],"damageType":"magic","element":"none","desc":"광역 회복 (S랭크)","cooldown":0},
+    "buffStrS":{"id":"buffStrS","name":"전쟁신의 축복","grade":"S","category":"buff","target":"self","costs":{"mp":70,"sp":0},"coef":0,"statTypes":["str"],"damageType":"magic","element":"none","buff":{"stats":{"str":14}},"duration":3,"desc":"STR 강화 버프 3턴 (S랭크)","cooldown":0},
+    "buffConS":{"id":"buffConS","name":"신체의 축복","grade":"S","category":"buff","target":"self","costs":{"mp":70,"sp":0},"coef":0,"statTypes":["con"],"damageType":"magic","element":"none","buff":{"stats":{"con":14}},"duration":3,"desc":"CON 강화 버프 3턴 (S랭크)","cooldown":0},
+    "buffIntS":{"id":"buffIntS","name":"전지의 축복","grade":"S","category":"buff","target":"self","costs":{"mp":70,"sp":0},"coef":0,"statTypes":["int"],"damageType":"magic","element":"none","buff":{"stats":{"int":14}},"duration":3,"desc":"INT 강화 버프 3턴 (S랭크)","cooldown":0},
+    "buffAgiS":{"id":"buffAgiS","name":"시공의 축복","grade":"S","category":"buff","target":"self","costs":{"mp":70,"sp":0},"coef":0,"statTypes":["agi"],"damageType":"magic","element":"none","buff":{"stats":{"agi":14}},"duration":3,"desc":"AGI 강화 버프 3턴 (S랭크)","cooldown":0},
+    "buffSenseS":{"id":"buffSenseS","name":"전지전능의 눈","grade":"S","category":"buff","target":"self","costs":{"mp":70,"sp":0},"coef":0,"statTypes":["sense"],"damageType":"magic","element":"none","buff":{"stats":{"sense":14}},"duration":3,"desc":"SENSE 강화 버프 3턴 (S랭크)","cooldown":0},
+    "buffPdefS":{"id":"buffPdefS","name":"절대방어","grade":"S","category":"buff","target":"self","costs":{"mp":70,"sp":0},"coef":0,"statTypes":["pDef"],"damageType":"magic","element":"none","buff":{"stats":{"pdef":14}},"duration":3,"desc":"PDEF 강화 버프 3턴 (S랭크)","cooldown":0},
+    "buffMdefS":{"id":"buffMdefS","name":"절대마방","grade":"S","category":"buff","target":"self","costs":{"mp":70,"sp":0},"coef":0,"statTypes":["mDef"],"damageType":"magic","element":"none","buff":{"stats":{"mdef":14}},"duration":3,"desc":"MDEF 강화 버프 3턴 (S랭크)","cooldown":0},
+    "buffTauntS":{"id":"buffTauntS","name":"절대지배","grade":"S","category":"buff","target":"self","costs":{"mp":0,"sp":70},"coef":0,"statTypes":["con"],"damageType":"physical","element":"none","buff":{"stats":{},"threatBonus":16},"duration":3,"desc":"도발 버프 3턴, 위협 +16 (S랭크)","cooldown":0},
+    "passiveStrS":{"id":"passiveStrS","name":"신의 근력","grade":"S","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["str"],"damageType":"magic","element":"none","duration":0,"desc":"STR 패시브 영구 보너스 (S랭크)","cooldown":0,"passiveBonuses":{"str":14}},
+    "passiveConS":{"id":"passiveConS","name":"신의 체력","grade":"S","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["con"],"damageType":"magic","element":"none","duration":0,"desc":"CON 패시브 영구 보너스 (S랭크)","cooldown":0,"passiveBonuses":{"con":14}},
+    "passiveIntS":{"id":"passiveIntS","name":"신의 지력","grade":"S","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["int"],"damageType":"magic","element":"none","duration":0,"desc":"INT 패시브 영구 보너스 (S랭크)","cooldown":0,"passiveBonuses":{"int":14}},
+    "passiveAgiS":{"id":"passiveAgiS","name":"신의 민첩","grade":"S","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["agi"],"damageType":"magic","element":"none","duration":0,"desc":"AGI 패시브 영구 보너스 (S랭크)","cooldown":0,"passiveBonuses":{"agi":14}},
+    "passiveSenseS":{"id":"passiveSenseS","name":"신의 감각","grade":"S","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["sense"],"damageType":"magic","element":"none","duration":0,"desc":"SENSE 패시브 영구 보너스 (S랭크)","cooldown":0,"passiveBonuses":{"sense":14}},
+    "passivePdefS":{"id":"passivePdefS","name":"신의 갑옷","grade":"S","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["pDef"],"damageType":"magic","element":"none","duration":0,"desc":"PDEF 패시브 영구 보너스 (S랭크)","cooldown":0,"passiveBonuses":{"pdef":14}},
+    "passiveMdefS":{"id":"passiveMdefS","name":"신의 마력","grade":"S","category":"passive","target":"self","costs":{"mp":0,"sp":0},"coef":0,"statTypes":["mDef"],"damageType":"magic","element":"none","duration":0,"desc":"MDEF 패시브 영구 보너스 (S랭크)","cooldown":0,"passiveBonuses":{"mdef":14}}
+  };
 
   function buildSampleCharacters() {
     return [
@@ -1466,76 +2110,104 @@ const RARE_FAMILY_PRESETS = {
   }
 
   function buildSampleEquipments() {
-    // Sample equipment catalog: E/D/C rank, all 4 parts
-    return [
-      // ── E등급 무기 ──────────────────────────────────────────────
-      { id:'eq_e_weapon_01', name:'협회 지급 대검', part:'weapon', rank:'E',
-        enhance:0, infuse:0, maxInfuse:2, traits:[], durability:100, maxDurability:100,
-        atk:5, pdef:0, mdef:0, mainStat:'str', resistType:'', resistPct:0,
-        price:500000, note:'협회에서 신규 헌터에게 대량 보급하는 표준 규격 대검.' },
-      { id:'eq_e_weapon_02', name:'E급 단검', part:'weapon', rank:'E',
-        enhance:0, infuse:0, maxInfuse:2, traits:[], durability:100, maxDurability:100,
-        atk:5, pdef:0, mdef:0, mainStat:'agi', resistType:'', resistPct:0,
-        price:400000, note:'빠른 연속공격에 특화된 경량 단검.' },
-      // ── E등급 보조무기 ──────────────────────────────────────────
-      { id:'eq_e_subweapon_01', name:'낡은 방패', part:'subweapon', rank:'E',
-        enhance:0, infuse:0, maxInfuse:1, traits:[], durability:100, maxDurability:100,
-        atk:-1, pdef:2, mdef:0, mainStat:'con', resistType:'physical', resistPct:1,
-        price:350000, note:'보스 껍데기와 석재를 융합해 조잡하게 만든 방패.' },
-      // ── E등급 방어구 ──────────────────────────────────────────
-      { id:'eq_e_armor_01', name:'가죽 갑옷', part:'armor', rank:'E',
-        enhance:0, infuse:0, maxInfuse:2, traits:[], durability:100, maxDurability:100,
-        atk:0, pdef:3, mdef:2, mainStat:'con', resistType:'physical', resistPct:1,
-        price:450000, note:'기본 헌터 훈련복에 가죽 패딩을 덧댄 갑옷.' },
-      { id:'eq_e_armor_02', name:'강화 면 로브', part:'armor', rank:'E',
-        enhance:0, infuse:0, maxInfuse:2, traits:[], durability:100, maxDurability:100,
-        atk:0, pdef:1, mdef:4, mainStat:'int', resistType:'magic', resistPct:1,
-        price:450000, note:'마력이 주입된 직물로 제작된 마법사형 갑옷.' },
-      // ── E등급 악세서리 ──────────────────────────────────────────
-      { id:'eq_e_acc_01', name:'쇠반지', part:'accessory', rank:'E',
-        enhance:0, infuse:0, maxInfuse:1, traits:[], durability:100, maxDurability:100,
-        atk:0, pdef:0, mdef:0, mainStat:'str', resistType:'', resistPct:0,
-        price:280000, note:'물리 공격력을 소폭 강화하는 단순한 금속 반지.' },
-      // ── D등급 무기 ──────────────────────────────────────────────
-      { id:'eq_d_weapon_01', name:'강철 대검', part:'weapon', rank:'D',
-        enhance:0, infuse:0, maxInfuse:2, traits:[], durability:100, maxDurability:100,
-        atk:15, pdef:0, mdef:0, mainStat:'str', resistType:'', resistPct:0,
-        price:3000000, note:'D등급 던전에서 수거한 철광석으로 단조한 대검.' },
-      { id:'eq_d_weapon_02', name:'마법 지팡이', part:'weapon', rank:'D',
-        enhance:0, infuse:0, maxInfuse:2, traits:[], durability:100, maxDurability:100,
-        atk:15, pdef:0, mdef:0, mainStat:'int', resistType:'', resistPct:0,
-        price:3500000, note:'마력 증폭 크리스탈이 삽입된 D급 지팡이.' },
-      // ── D등급 보조무기 ──────────────────────────────────────────
-      { id:'eq_d_subweapon_01', name:'D급 철 방패', part:'subweapon', rank:'D',
-        enhance:0, infuse:0, maxInfuse:1, traits:[], durability:100, maxDurability:100,
-        atk:-3, pdef:6, mdef:0, mainStat:'con', resistType:'physical', resistPct:2,
-        price:2200000, note:'두꺼운 철판으로 만든 D급 표준 방패.' },
-      // ── D등급 방어구 ──────────────────────────────────────────
-      { id:'eq_d_armor_01', name:'체인 갑옷', part:'armor', rank:'D',
-        enhance:0, infuse:0, maxInfuse:2, traits:[], durability:100, maxDurability:100,
-        atk:0, pdef:10, mdef:5, mainStat:'con', resistType:'physical', resistPct:2,
-        price:2800000, note:'D급 금속 체인을 촘촘히 엮어 만든 갑옷. 총 스탯합 2.' },
-      // ── D등급 악세서리 ──────────────────────────────────────────
-      { id:'eq_d_acc_01', name:'헌터 인식표', part:'accessory', rank:'D',
-        enhance:0, infuse:0, maxInfuse:1, traits:[], durability:100, maxDurability:100,
-        atk:0, pdef:0, mdef:0, mainStat:'str', resistType:'', resistPct:0,
-        price:2000000, note:'D등급 헌터 공식 인식표. 총 스탯합 1.' },
-      // ── C등급 무기 ──────────────────────────────────────────────
-      { id:'eq_c_weapon_01', name:'미스릴 롱소드', part:'weapon', rank:'C',
-        enhance:0, infuse:0, maxInfuse:2, traits:[], durability:100, maxDurability:100,
-        atk:25, pdef:0, mdef:0, mainStat:'str', resistType:'', resistPct:0,
-        price:30000000, note:'C급 던전 보스에게서 얻은 미스릴로 제작.' },
-      // ── C등급 방어구 ──────────────────────────────────────────
-      { id:'eq_c_armor_01', name:'강화 플레이트', part:'armor', rank:'C',
-        enhance:0, infuse:0, maxInfuse:2, traits:[], durability:100, maxDurability:100,
-        atk:0, pdef:30, mdef:15, mainStat:'con', resistType:'physical', resistPct:3,
-        price:28000000, note:'C급 금속 플레이트 풀아머. 총 스탯합 5.' },
-      // ── C등급 악세서리 ──────────────────────────────────────────
-      { id:'eq_c_acc_01', name:'마력 증폭 반지', part:'accessory', rank:'C',
-        enhance:0, infuse:0, maxInfuse:1, traits:[], durability:100, maxDurability:100,
-        atk:0, pdef:0, mdef:0, mainStat:'int', resistType:'', resistPct:0,
-        price:25000000, note:'마법 피해를 증폭시키는 C급 마법 반지. 총 스탯합 3.' },
-    ];
+    const items = [];
+    const SHOP_RANKS = ['E','D','C'];
+    let idx = 0;
+    for (const rank of SHOP_RANKS) {
+      const baseAtk = WEAPON_BASE_ATK[rank] || 5;
+      const armorBase = ARMOR_STAT_BY_RANK[rank] || { defRange:[0,5], resistance:1 };
+      const maxDef = armorBase.defRange[1];
+      // ── 무기 5종 ──
+      const weaponSuffixes = ['검','대검','단검','지팡이','활'];
+      for (let w = 0; w < 5; w++) {
+        const isAssoc = (rank === 'E');
+        const prefix = isAssoc ? '협회지급' : EQUIP_RANK_PREFIX[rank][w % EQUIP_RANK_PREFIX[rank].length];
+        const suff = weaponSuffixes[w];
+        const atk = isAssoc ? baseAtk : Math.max(1, Math.round(baseAtk * (0.85 + Math.random() * 0.10)));
+        const price = isAssoc ? 0 : Math.round(calcEquipBasePrice(rank, 'weapon') * (0.85 + Math.random() * 0.10));
+        const mainStats = ['str','str','agi','int','agi'];
+        items.push({
+          id: `eq_${rank.toLowerCase()}_weapon_${String(++idx).padStart(2,'0')}`,
+          name: `${prefix} ${suff}`,
+          part: 'weapon', rank, rarity: 'Normal',
+          enhance: 0, infuse: 0, maxInfuse: 2, traits: [],
+          durability: 100, maxDurability: 100,
+          atk, pdef: 0, mdef: 0,
+          mainStat: mainStats[w], resistType: '', resistPct: 0,
+          price,
+          note: isAssoc ? '협회에서 신규 헌터에게 지급하는 표준 규격 무기.' : `${rank}급 표준 ${suff}.`
+        });
+      }
+      // ── 보조무기 3종 (기본 특성 1개, 주입 최대 2 — 특수효과는 주입이 아님) ──
+      const subSuffixes = ['방패','장갑','보호대'];
+      for (let s = 0; s < 3; s++) {
+        const prefix = EQUIP_RANK_PREFIX[rank][s % EQUIP_RANK_PREFIX[rank].length];
+        const suff = subSuffixes[s];
+        const isShield = (suff === '방패');
+        const pdef = isShield ? Math.max(1, Math.round(maxDef * 0.25 * (0.85 + Math.random() * 0.10))) : 0;
+        const price = Math.round(calcEquipBasePrice(rank, 'subweapon') * (0.85 + Math.random() * 0.10));
+        const subTrait = NORMAL_TRAIT_POOL[Math.floor(Math.random() * NORMAL_TRAIT_POOL.length)];
+        items.push({
+          id: `eq_${rank.toLowerCase()}_subweapon_${String(++idx).padStart(2,'0')}`,
+          name: `${prefix} ${suff}`,
+          part: 'subweapon', rank, rarity: 'Normal',
+          enhance: 0, infuse: 0, maxInfuse: 2, traits: [subTrait],
+          durability: 100, maxDurability: 100,
+          atk: 0, pdef, mdef: 0,
+          mainStat: isShield ? 'con' : '', resistType: '', resistPct: 0,
+          price,
+          note: `${rank}급 보조무기.`
+        });
+      }
+      // ── 방어구: 종류별 2개씩 ──
+      for (const subKey of ARMOR_SUBTYPE_KEYS) {
+        const sub = ARMOR_SUBTYPES[subKey];
+        for (let a = 0; a < 2; a++) {
+          const prefix = EQUIP_RANK_PREFIX[rank][(a + ARMOR_SUBTYPE_KEYS.indexOf(subKey)) % EQUIP_RANK_PREFIX[rank].length];
+          const suffArr = EQUIP_NAME_SUFFIXES['armor_' + subKey] || [sub.label];
+          const suff = suffArr[a % suffArr.length];
+          const defMul = sub.defMul[0] + Math.random() * (sub.defMul[1] - sub.defMul[0]);
+          const pdef = Math.max(1, Math.round(maxDef * defMul * (0.85 + Math.random() * 0.10)));
+          const mdef = Math.max(1, Math.round(maxDef * defMul * (0.85 + Math.random() * 0.10)));
+          const atkPenalty = sub.atkMul ? Math.round(baseAtk * sub.atkMul) : 0;
+          const mainStat = sub.statPool[a % sub.statPool.length];
+          const price = Math.round(calcEquipBasePrice(rank, 'armor') * (0.85 + Math.random() * 0.10));
+          items.push({
+            id: `eq_${rank.toLowerCase()}_armor_${subKey}_${String(++idx).padStart(2,'0')}`,
+            name: `${prefix} ${suff}`,
+            part: 'armor', rank, rarity: 'Normal',
+            armorSubtype: subKey, armorStatBonusMul: sub.statBonusMul,
+            enhance: 0, infuse: 0, maxInfuse: 2, traits: [],
+            durability: 100, maxDurability: 100,
+            atk: atkPenalty, pdef, mdef,
+            mainStat, resistType: '', resistPct: armorBase.resistance || 0,
+            price,
+            note: `${rank}급 ${sub.label}.`
+          });
+        }
+      }
+      // ── 악세서리 8종 (기본 특성 1개, 주입 최대 1 — 특수효과는 주입이 아님) ──
+      const accSuffixes = ['귀걸이','반지','목걸이','벨트','표식','귀걸이','반지','목걸이'];
+      const accMainStats = ['str','int','agi','con','sense','str','int','agi'];
+      for (let ac = 0; ac < 8; ac++) {
+        const prefix = EQUIP_RANK_PREFIX[rank][ac % EQUIP_RANK_PREFIX[rank].length];
+        const suff = accSuffixes[ac];
+        const price = Math.round(calcEquipBasePrice(rank, 'accessory') * (0.85 + Math.random() * 0.10));
+        const accTrait = NORMAL_TRAIT_POOL[Math.floor(Math.random() * NORMAL_TRAIT_POOL.length)];
+        items.push({
+          id: `eq_${rank.toLowerCase()}_acc_${String(++idx).padStart(2,'0')}`,
+          name: `${prefix} ${suff}`,
+          part: 'accessory', rank, rarity: 'Normal',
+          enhance: 0, infuse: 0, maxInfuse: 1, traits: [accTrait],
+          durability: 100, maxDurability: 100,
+          atk: 0, pdef: 0, mdef: 0,
+          mainStat: accMainStats[ac], resistType: '', resistPct: 0,
+          price,
+          note: `${rank}급 악세서리.`
+        });
+      }
+    }
+    return items;
   }
 
   function buildDefaultDb() {
@@ -1555,7 +2227,7 @@ const RARE_FAMILY_PRESETS = {
       customSkills: [
         { id:'skill_guide', name:'⭐ 스킬가이드', grade:'E', category:'singleAttack', target:'singleEnemy',
           costs:{ mp:0, sp:0 }, coef:1.0, damageType:'physical', element:'none', statTypes:['str'], duration:0,
-          desc:'【스킬 만드는 법】\n1. "새 스킬" 클릭 → ID/이름 입력\n2. 각 항목을 설정 후 저장\n\n【카테고리 설명】\nsingleAttack = 단일 공격 (적 1체)\naoeAttack = 광역 공격 (전체 적)\nsingleCC = 단일 CC (적 1체 + 행동방해)\naoeCC = 광역 CC (전체 적 + 행동방해)\nsingleHeal = 단일 회복 (아군 1체)\naoeHeal = 광역 회복 (전체 아군)\nbuff = 버프 (자신/아군 강화)\nutility = 유틸리티 (자원/상태 관리)\n\n【은신(stealth) 버프 만드는 법】\n은신은 buff 카테고리 스킬로 만듭니다.\n1. 카테고리: buff\n2. 대상: self (자기 자신)\n3. 버프 스탯: 원하는 스탯 (예: agi +5)\n4. 지속 턴: 원하는 턴수 (예: 3)\n5. 은신 체크박스: 체크 ✓\n효과: 은신 중에는 모든 공격 대상에서 제외됩니다.\n  보스를 포함한 모든 적의 공격에서 은신이 적용됩니다.\n  은신 상태에서 공격하면 즉시 은신이 해제됩니다.\n  지속 턴이 끝나도 자동 해제됩니다.\n\n【특수효과 설정법】\n장비와 스킬에 특수효과를 추가할 수 있습니다.\n1. 효과 종류: 버프(자신/아군 강화) 또는 디버프(적에게 받는 피해 증가)\n2. 발동확률: 0~100% (장비는 피격/공격 시, 스킬은 사용 시)\n3. 효과 선택: 버프는 다양한 효과, 디버프는 받는 피해 증가만 선택 가능\n4. 효과 수치: 효과의 크기 (%, 절대값 등)\n버프: 자신이나 아군의 해당 효과 증가\n디버프: 적에게 받는 피해 증가 적용 (물리/마법/속성별 받는 피해 증가)\n\n【대상 설명】\nsingleEnemy = 적 1체\nallEnemies = 전체 적 (광역)\nrowFront = 전열 적만 (전열 광역)\nrowMid = 중열 적만\nrowBack = 후열 적만\nrowFrontMid = 전열+중열 적\nrowMidBack = 중열+후열 적\nsingleAlly = 아군 1체\nallAllies = 전체 아군\nself = 자기 자신\n※ 열 공격: 해당 열이 비면 가장 앞 열의 적을 공격\n\n【CC 종류 설명】\nstun = 기절 (행동불가, 1턴, 이후 5턴 면역)\nbind = 속박 (감각-50%, 명중률-50%)\nsleep = 수면 (행동불가, 피격 시 해제, 이후 5턴 면역)\nsilence = 침묵 (스킬 사용불가)\nslow = 둔화 (명중률-30%, 회피율-50%)\n※ CC 확률: 비우면 100%. 0~1 사이 소수로 입력 (예: 0.3=30%)\n\n【상태이상 설명 및 기본 확률/턴수】\npoison = 독 — 확률28%, 3턴, 최대3중첩\n  효과: 매턴 방어무시 DoT (기본값×계수×0.2×중첩수)\nbleed = 출혈 — 확률28%, 3턴\n  효과: 발동 시 해당 공격 피해의 30% 추가피해(1회)\n  + 3턴간 받는 회복량 50% 감소\nburn = 화상 — 확률28%, 5턴, 최대5중첩\n  효과: 매턴 방어무시 DoT (기본값×계수×0.12×중첩수)\n  + 받는 데미지 +10% (중첩 무관)\ncurse = 저주 — 확률24%, 3턴\n  효과: 등급별 공격력 감소 + 받는 피해 증가 (E:10%~S:30%)\nsilence = 침묵 — 확률20%, 3턴\n  효과: 스킬 사용불가 (기본공격만 가능)\nslow = 둔화 — 확률25%, 3턴\n  효과: 명중률 -30%, 회피율 -50%\nbind = 속박 — 확률18%, 2턴\n  효과: 감각(SENSE) -50%, 명중률 -50% (크리율도 함께 감소)\n  둔화보다 명중 감소폭이 크고, 감각 감소로 크리티컬률도 하락\n\n※ 상태이상 확률: 비우면 위 기본값 자동 적용\n0~1 사이 소수로 입력 (예: 0.5=50%)\n\n【등급별 계수 — 순수 공격 (단일 기준)】\n하한 → 상한\nE: 1.2 → 1.5\nD: 1.92 → 2.4\nC: 2.88 → 3.6\nB: 4.8 → 6.0\nA: 7.68 → 9.6\nS: 11.52 → 14.4\n광역/열공격 = 단일 × 0.58\n\n【CC/상태이상 스킬 추천 계수】\n상태이상이 붙는 스킬은 직접 데미지를 낮추는 대신\n상태이상 효과로 총 가치를 보상하는 구조.\n추천: 순수공격 하한값 × 0.8 (20% 약화)\n\n단일 CC/상태이상 추천계수 (기본확률일 경우):\nE: 0.96 / D: 1.54 / C: 2.30\nB: 3.84 / A: 6.14 / S: 9.22\n\n광역 CC/상태이상 추천계수 (단일×0.58):\nE: 0.56 / D: 0.89 / C: 1.33\nB: 2.23 / A: 3.56 / S: 5.35\n\n※ 밸런스 기준:\n직접피해 + 상태이상 효과(DoT/추가피해/디버프)\n총합이 최소 상한계수급 이상이면 적절.\n독/화상: 총합≈상한의 102%\n출혈: 직접+즉시추가≈상한의 83% + 회복량50%감소 유틸\n상태이상이 강할수록 계수를 더 낮춰도 됨.\n\n【데미지 공식】\n기본값 = (2 × 주스탯) + (3 × ATK)\n최종데미지 = 기본값 × 계수 × 크리배율 × 속성배율\n※ 크리티컬: ×1.5 / 속성유리: ×1.25 / 속성불리: ×0.75\n\n【상태이상 효과 공식】\n독(DoT): 매턴 기본값 × 계수 × 0.2 × 중첩수 (최대3)\n화상(DoT): 매턴 기본값 × 계수 × 0.12 × 중첩수 (최대5)\n  + 받는 데미지 +10% (중첩 무관)\n출혈: 발동 시 해당 공격 피해의 30% 추가피해(1회)\n  + 3턴간 받는 회복량 50% 감소\n저주: 등급별 공격력 감소 + 받는 피해 증가 (E:10%~S:30%)\n\n【E급 예시 (주스탯15, ATK5)】\n기본값 = (2×15)+(3×5) = 45\n상한 직접피해 = 45×1.5 = 67.5\n\n■ 순수 단일공격 (계수1.35): 45×1.35 = 60.75\n■ 순수 광역공격 (계수0.78): 45×0.78 = 35.10\n\n■ 단일CC/상태이상 (추천계수0.96):\n  직접피해: 45×0.96 = 43.20\n  독1중첩 3턴합: 45×0.96×0.2×3 = 25.92\n  → 총합: 43.20+25.92 = 69.12 (상한의 102%) ✓\n  화상1중첩 5턴합: 45×0.96×0.12×5 = 25.92\n  → 총합: 43.20+25.92 = 69.12 + 피격+10% ✓\n  출혈 즉시추가: 43.20×0.3 = 12.96\n  → 총합: 43.20+12.96 = 56.16 (상한83%) + 회복량50%감소 ✓\n\n■ 광역CC/상태이상 (추천계수0.56):\n  직접피해: 45×0.56 = 25.20 (각 적)\n  독1중첩 3턴합: 45×0.56×0.2×3 = 15.12\n  → 총합: 25.20+15.12 = 40.32/적\n  출혈 즉시추가: 25.20×0.3 = 7.56\n  → 총합: 25.20+7.56 = 32.76/적 + 회복량50%감소\n\n이 스킬은 삭제해도 됩니다.' }
+          desc:'【스킬 만드는 법】\n1. "새 스킬" 클릭 → ID/이름 입력\n2. 각 항목을 설정 후 저장\n\n【카테고리 설명】\nsingleAttack = 단일 공격 (적 1체)\naoeAttack = 광역 공격 (전체 적)\nsingleCC = 단일 CC (적 1체 + 행동방해)\naoeCC = 광역 CC (전체 적 + 행동방해)\nsingleHeal = 단일 회복 (아군 1체)\naoeHeal = 광역 회복 (전체 아군)\nbuff = 버프 (자신/아군 강화)\nutility = 유틸리티 (자원/상태 관리)\n\n【은신(stealth) 버프 만드는 법】\n은신은 buff 카테고리 스킬로 만듭니다.\n1. 카테고리: buff\n2. 대상: self (자기 자신)\n3. 버프 스탯: 원하는 스탯 (예: agi +5)\n4. 지속 턴: 원하는 턴수 (예: 3)\n5. 은신 체크박스: 체크 ✓\n효과: 은신 중에는 모든 공격 대상에서 제외됩니다.\n  보스를 포함한 모든 적의 공격에서 은신이 적용됩니다.\n  은신 상태에서 공격하면 즉시 은신이 해제됩니다.\n  지속 턴이 끝나도 자동 해제됩니다.\n\n【특수효과 설정법】\n장비와 스킬에 특수효과를 추가할 수 있습니다.\n1. 효과 종류: 버프(자신/아군 강화) 또는 디버프(적에게 받는 피해 증가)\n2. 발동확률: 0~100% (장비는 피격/공격 시, 스킬은 사용 시)\n3. 효과 선택: 버프는 다양한 효과, 디버프는 받는 피해 증가만 선택 가능\n4. 효과 수치: 효과의 크기 (%, 절대값 등)\n버프: 자신이나 아군의 해당 효과 증가\n디버프: 적에게 받는 피해 증가 적용 (물리/마법/속성별 받는 피해 증가)\n\n【대상 설명】\nsingleEnemy = 적 1체\nallEnemies = 전체 적 (광역)\nrowFront = 전열 적만 (전열 광역)\nrowMid = 중열 적만\nrowBack = 후열 적만\nrowFrontMid = 전열+중열 적\nrowMidBack = 중열+후열 적\nsingleAlly = 아군 1체\nallAllies = 전체 아군\nself = 자기 자신\n※ 열 공격: 해당 열이 비면 가장 앞 열의 적을 공격\n\n【CC 종류 설명】\nstun = 기절 (행동불가, 2턴, 이후 5턴 면역)\nbind = 속박 (감각-50%, 명중률-50%, 이후 5턴 면역)\nsleep = 수면 (행동불가, 3턴, 피격 시 해제, 이후 5턴 면역)\nsilence = 침묵 (스킬 사용불가)\nslow = 둔화 (명중률-30%, 회피율-50%)\nblind = 실명 (명중률-50%)\nfreeze = 빙결 (행동불가, 2턴, 이후 5턴 면역)\nparalyze = 마비 (행동불가, 2턴, 이후 5턴 면역)\n※ CC 확률: 비우면 100%. 0~1 사이 소수로 입력 (예: 0.3=30%)\n\n【속성-상태이상 매칭】\n빛→실명, 어둠→저주, 불→화상, 물→둔화, 대지→기절, 바람→출혈, 얼음→빙결, 전기→마비\n\n【상태이상 설명 및 기본 확률/턴수】\npoison = 독 — 확률23%, 3턴, 최대3중첩\n  효과: 매턴 방어무시 DoT (기본값×계수×0.2×중첩수)\nbleed = 출혈 — 확률23%, 3턴\n  효과: 발동 시 해당 공격 피해의 30% 추가피해(1회)\n  + 3턴간 받는 회복량 50% 감소\nburn = 화상 — 확률23%, 5턴, 최대5중첩\n  효과: 매턴 방어무시 DoT (기본값×계수×0.12×중첩수)\n  + 받는 데미지 +10% (중첩 무관)\ncurse = 저주 — 확률18%, 3턴 (하드CC, 이후 5턴 면역)\n  효과: 등급별 공격력 감소 + 받는 피해 증가 (E:10%~S:30%)\nsilence = 침묵 — 확률20%, 2턴\n  효과: 스킬 사용불가 (기본공격만 가능)\nslow = 둔화 — 확률25%, 3턴\n  효과: 명중률 -30%, 회피율 -50%\nbind = 속박 — 확률18%, 2턴 (하드CC, 이후 5턴 면역)\n  효과: 감각(SENSE) -50%, 명중률 -50% (크리율도 함께 감소)\n  둔화보다 명중 감소폭이 크고, 감각 감소로 크리티컬률도 하락\n\n※ 상태이상 확률: 비우면 위 기본값 자동 적용\n0~1 사이 소수로 입력 (예: 0.5=50%)\n\n【등급별 계수 — 순수 공격 (단일 기준)】\n하한 → 상한\nE: 1.2 → 1.5\nD: 1.92 → 2.4\nC: 2.88 → 3.6\nB: 4.8 → 6.0\nA: 7.68 → 9.6\nS: 11.52 → 14.4\n광역/열공격 = 단일 × 0.58\n\n【CC/상태이상 스킬 추천 계수】\n상태이상이 붙는 스킬은 직접 데미지를 낮추는 대신\n상태이상 효과로 총 가치를 보상하는 구조.\n추천: 순수공격 하한값 × 0.8 (20% 약화)\n\n단일 CC/상태이상 추천계수 (기본확률일 경우):\nE: 0.96 / D: 1.54 / C: 2.30\nB: 3.84 / A: 6.14 / S: 9.22\n\n광역 CC/상태이상 추천계수 (단일×0.58):\nE: 0.56 / D: 0.89 / C: 1.33\nB: 2.23 / A: 3.56 / S: 5.35\n\n※ 밸런스 기준:\n직접피해 + 상태이상 효과(DoT/추가피해/디버프)\n총합이 최소 상한계수급 이상이면 적절.\n독/화상: 총합≈상한의 102%\n출혈: 직접+즉시추가≈상한의 83% + 회복량50%감소 유틸\n상태이상이 강할수록 계수를 더 낮춰도 됨.\n\n【데미지 공식】\n데미지 기본값 = (2 × 주스탯) + (3 × ATK)\n회복 기본값 = 주스탯 × 0.5\n힐 전용 계수: E:1.2~1.3 / D:1.4~1.5 / C:1.6~1.7 / B:1.8~2.0 / A:2.1~2.3 / S:2.4~2.6\n광역힐 = 단일힐 계수 × 0.58\n최종데미지 = 기본값 × 계수 × 크리배율 × 속성배율\n※ 크리티컬: ×1.5 / 속성유리: ×1.25 / 속성불리: ×0.75\n\n【상태이상 효과 공식】\n독(DoT): 매턴 기본값 × 계수 × 0.2 × 중첩수 (최대3)\n화상(DoT): 매턴 기본값 × 계수 × 0.12 × 중첩수 (최대5)\n  + 받는 데미지 +10% (중첩 무관)\n출혈: 발동 시 해당 공격 피해의 30% 추가피해(1회)\n  + 3턴간 받는 회복량 50% 감소\n저주: 등급별 공격력 감소 + 받는 피해 증가 (E:10%~S:30%)\n\n【E급 예시 (주스탯15, ATK5)】\n기본값 = (2×15)+(3×5) = 45\n상한 직접피해 = 45×1.5 = 67.5\n\n■ 순수 단일공격 (계수1.35): 45×1.35 = 60.75\n■ 순수 광역공격 (계수0.78): 45×0.78 = 35.10\n\n■ 단일CC/상태이상 (추천계수0.96):\n  직접피해: 45×0.96 = 43.20\n  독1중첩 3턴합: 45×0.96×0.2×3 = 25.92\n  → 총합: 43.20+25.92 = 69.12 (상한의 102%) ✓\n  화상1중첩 5턴합: 45×0.96×0.12×5 = 25.92\n  → 총합: 43.20+25.92 = 69.12 + 피격+10% ✓\n  출혈 즉시추가: 43.20×0.3 = 12.96\n  → 총합: 43.20+12.96 = 56.16 (상한83%) + 회복량50%감소 ✓\n\n■ 광역CC/상태이상 (추천계수0.56):\n  직접피해: 45×0.56 = 25.20 (각 적)\n  독1중첩 3턴합: 45×0.56×0.2×3 = 15.12\n  → 총합: 25.20+15.12 = 40.32/적\n  출혈 즉시추가: 25.20×0.3 = 7.56\n  → 총합: 25.20+7.56 = 32.76/적 + 회복량50%감소\n\n이 스킬은 삭제해도 됩니다.' }
       ],
       rareMaterialPack: deepClone(DEFAULT_RARE_MATERIAL_PACK),
       rareMaterialCatalog: [],
@@ -1639,6 +2311,7 @@ function buildDefaultState() {
     auctionSell: null,
     charInvTab: 'equip',   // 'equip' | 'items'
     personaInvTab: 'equip', // 'equip' | 'items'
+    gatePartyDetailId: '',  // 게이트 파티탭 상세보기 선택 유닛 uid
     teamView: 'members',   // 'members' | 'settle'
     settleItemSel: {},     // { key: true/false } 판매할 아이템 선택
     settleDistMode: 'equal' // 'equal' | 'ratio'
@@ -1805,7 +2478,7 @@ function buildDefaultState() {
       skills: Array.isArray(entry.skills) ? entry.skills.slice() : [],
       ai: entry.ai || null,
       buffs: Array.isArray(entry.buffs) ? deepClone(entry.buffs) : [],
-      statuses: Object.assign({ stun:0, bind:0, sleep:0, poison:0, bleed:0, burn:0, curse:0, poisonStacks:0, poisonPower:0, bleedPower:0, burnStacks:0, burnPower:0, stunResistTimer:0, sleepResistTimer:0, bleedHealReduction:0 }, deepClone(entry.statuses || {})),
+      statuses: Object.assign({ stun:0, bind:0, sleep:0, poison:0, bleed:0, burn:0, curse:0, blind:0, freeze:0, paralyze:0, poisonStacks:0, poisonPower:0, bleedPower:0, burnStacks:0, burnPower:0, stunResistTimer:0, sleepResistTimer:0, freezeResistTimer:0, paralyzeResistTimer:0, bindResistTimer:0, curseResistTimer:0, bleedHealReduction:0 }, deepClone(entry.statuses || {})),
       cooldowns: {},
       lastAction:'',
       dead:false,
@@ -1829,6 +2502,14 @@ function buildDefaultState() {
     applyPassiveInitialization(unit);
     // 장비 특성 전투 적용: 장착 장비 traits → 전투 보너스
     unit.traitBonuses = isMonster ? {} : calcEquipTraitBonuses(entry);
+    // 스탯 특성 적용: stat_str_up, stat_con_up, stat_int_up, stat_agi_up, stat_sense_up
+    if (!isMonster && unit.traitBonuses) {
+      const statMap = { stat_str_up:'str', stat_con_up:'con', stat_int_up:'int', stat_agi_up:'agi', stat_sense_up:'sense' };
+      Object.entries(statMap).forEach(([traitId, statKey]) => {
+        const val = Number(unit.traitBonuses[traitId] || 0);
+        if (val > 0) unit.stats[statKey] = (unit.stats[statKey] || 0) + val;
+      });
+    }
     return unit;
   }
 
@@ -3258,9 +3939,18 @@ function stageTemplateForSize(size) {
 function buildPartyEntriesFromSetup() {
   return (model.db.battleSetup.partySlots || []).map(id => getCharById(id) || getPersonaById(id)).filter(Boolean).map(base => {
     const e = deepClone(base);
-    e.currentHp = Number(e.hp || 0);
-    e.currentMp = Number(e.mp || 0);
-    e.currentSp = Number(e.sp || 0);
+    // 장비 보너스를 반영하여 ATK 등 재계산
+    recalcCharDerivedStats(e);
+    // 현재 HP/MP/SP: 영구 저장된 값이 있으면 사용, 없으면 최대치
+    const maxHp = Number(e.hp || 0);
+    const maxMp = Number(e.mp || 0);
+    const maxSp = Number(e.sp || 0);
+    const savedCurHp = Number(base.currentHp);
+    const savedCurMp = Number(base.currentMp);
+    const savedCurSp = Number(base.currentSp);
+    e.currentHp = (savedCurHp > 0 && savedCurHp <= maxHp) ? savedCurHp : maxHp;
+    e.currentMp = (savedCurMp > 0 && savedCurMp <= maxMp) ? savedCurMp : maxMp;
+    e.currentSp = (savedCurSp > 0 && savedCurSp <= maxSp) ? savedCurSp : maxSp;
     e.buffs = [];
     e.statuses = { stun:0, bind:0, sleep:0, poison:0, bleed:0, burn:0, curse:0, poisonPower:0, bleedPower:0, burnPower:0 };
     return e;
@@ -3529,6 +4219,8 @@ function advanceGateRunAfterMainRoom(run, stageIndex, room) {
   const stage = run.stages[stageIndex];
   if (stage) stage.cleared = true;
   applyRoomTraversalMinutes(run, room, 30);
+  // 방 이동 시 파티원 SP 6 소모
+  deductPartySp(run, 6);
   if (run.secretPlan && !run.secretPlan.discovered && !run.secretPlan.resolved && run.secretPlan.hostStageIndex === stageIndex) {
     if (Math.random() < GATE_SECRET_DISCOVER_CHANCE) {
       run.secretPlan.discovered = true;
@@ -3539,11 +4231,19 @@ function advanceGateRunAfterMainRoom(run, stageIndex, room) {
   run.currentStage = Math.min(run.stages.length, stageIndex + 1);
   if (run.currentStage >= run.stages.length) {
     run.completed = true;
+    // 게이트 완료 시에도 현재 HP 상태를 캐릭터 DB에 저장
+    syncPartyHpToDb(run);
     pushGateLog(run, '게이트의 마지막 방을 넘었다.');
   }
 }
 function beginGateRunFromSelectedGate() {
   if (activeGateRun()) return false;
+  // 전멸 상태 확인: 같은 날이면 게이트 진입 불가
+  const gd = model.db.gameDate || { year:2026, month:1, day:1 };
+  const wd = model.db.lastWipeDate;
+  if (wd && wd.year === gd.year && wd.month === gd.month && wd.day === gd.day) {
+    throw new Error('오늘 전멸한 상태입니다. 집에서 하루 휴식 후 다시 도전할 수 있습니다.');
+  }
   const gate = getSelectedGeneratedGate();
   if (!gate) throw new Error('선택된 게이트가 없다.');
   const party = buildPartyEntriesFromSetup();
@@ -3554,12 +4254,28 @@ function beginGateRunFromSelectedGate() {
   model.state.view = 'gate';
   return true;
 }
+// ── 동명 유닛 구분용 (A, B, C …) ──
+function numberDuplicateUnits(units) {
+  if (!Array.isArray(units)) return;
+  const nameCount = {};
+  units.forEach(u => { nameCount[u.name] = (nameCount[u.name] || 0) + 1; });
+  const nameIdx = {};
+  const SUFFIX = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  units.forEach(u => {
+    if (nameCount[u.name] > 1) {
+      const i = nameIdx[u.name] = (nameIdx[u.name] || 0);
+      u.name = `${u.name} ${SUFFIX[i] || (i+1)}`;
+      nameIdx[u.name.split(' ').slice(0,-1).join(' ')] = i + 1;
+    }
+  });
+}
 function buildBattleFromEntries(partyEntries, enemyEntries) {
   const runtime = buildDefaultRuntime();
   runtime.party = (partyEntries || []).map((e, idx) => buildUnit(e, 'party', idx)).slice(0, MAX_PARTY);
   runtime.enemies = (enemyEntries || []).map((e, idx) => buildUnit(e, 'enemies', idx)).slice(0, MAX_ENEMIES);
   if (!runtime.party.length) throw new Error('파티가 비어 있다.');
   if (!runtime.enemies.length) throw new Error('적이 비어 있다.');
+  numberDuplicateUnits(runtime.enemies);
   runtime.started = true;
   model.state.runtime = runtime;
 }
@@ -3669,20 +4385,32 @@ function buildDropEquipment(rank, forcePart) {
   const part = forcePart || EQUIP_PARTS[Math.floor(Math.random() * EQUIP_PARTS.length)];
   const maxInfuseBase = EQUIP_MAX_INFUSE[part] || 1;
   // 보조무기·악세서리는 기본 특성 1개 보유; 그 외 장비는 20% 확률
-  const hasTrait = (part === 'subweapon' || part === 'accessory') ? true : (Math.random() < 0.20);
+  const builtInTrait = (part === 'subweapon' || part === 'accessory');
+  const hasTrait = builtInTrait ? true : (Math.random() < 0.20);
   const traits = [];
   let maxInfuse = maxInfuseBase;
   let traitName = '';
   if (hasTrait) {
-    const traitId = EQUIP_TRAIT_TYPES[Math.floor(Math.random() * EQUIP_TRAIT_TYPES.length)];
+    const traitId = builtInTrait
+      ? (Math.random() < 0.20 ? RARE_TRAIT_POOL : NORMAL_TRAIT_POOL)[Math.floor(Math.random() * (Math.random() < 0.20 ? RARE_TRAIT_POOL : NORMAL_TRAIT_POOL).length)]
+      : EQUIP_TRAIT_TYPES[Math.floor(Math.random() * EQUIP_TRAIT_TYPES.length)];
     traits.push(traitId);
-    if (part !== 'subweapon' && part !== 'accessory') maxInfuse = maxInfuseBase + 1;
+    // 특수효과는 주입이 아니므로 maxInfuse를 늘리지 않음
     traitName = EQUIP_TRAIT_LABELS[traitId] || traitId;
+  }
+  // 특수효과(내장 특성)는 주입 횟수를 사용하지 않음
+  const infuseCount = builtInTrait ? 0 : traits.length;
+  // 보조무기 서브타입 결정 (방패 여부)
+  let subSuffix = null;
+  let isShield = false;
+  if (part === 'subweapon') {
+    const subSuffArr = EQUIP_NAME_SUFFIXES.subweapon || ['방패'];
+    subSuffix = subSuffArr[Math.floor(Math.random() * subSuffArr.length)];
+    isShield = (subSuffix === '방패');
   }
   const basePrice = calcEquipRandomPrice(r, part);
   // 무기·방어구 특성: 희귀재료 기준가 × 1.25
   // 보조무기·악세서리 내장 특성: 티어별 희귀재료 가격 차등 적용
-  const builtInTrait = (part === 'subweapon' || part === 'accessory');
   let traitBonus = 0;
   if (hasTrait && !builtInTrait) {
     traitBonus = Math.round((RARE_MATERIAL_BASE_WON[r] || RARE_MATERIAL_BASE_WON.E) * 1.25);
@@ -3696,12 +4424,15 @@ function buildDropEquipment(rank, forcePart) {
   const price = basePrice + traitBonus;
   const uid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const partLabel = EQUIP_PART_LABELS[part] || part;
-  const nameSuffixes = { weapon:['검','창','활','완드','도끼'], armor:['갑옷','로브','체인메일','플레이트'], subweapon:['방패'], accessory:['반지','목걸이','팔찌'] };
-  const suffArr = nameSuffixes[part] || [partLabel];
-  const suff = suffArr[Math.floor(Math.random() * suffArr.length)];
+  // Armor subtype selection
+  let armorSubtype = null;
+  if (part === 'armor') {
+    const subKey = ARMOR_SUBTYPE_KEYS[Math.floor(Math.random() * ARMOR_SUBTYPE_KEYS.length)];
+    armorSubtype = { key: subKey, ...ARMOR_SUBTYPES[subKey] };
+  }
   // 희귀도 자동 판정
   const { rarity: autoRarity, traitTier: autoTier } = assignEquipRarity(part, traits[0] || '');
-  const name = `${r}급 드랍 ${suff}${hasTrait ? ` [${traitName}]` : ''}`;
+  const name = generateEquipName(r, part, armorSubtype ? armorSubtype.key : null, hasTrait ? traitName : '', subSuffix);
   return {
     id: `drop_equip_${r.toLowerCase()}_${part}_${uid}`,
     name,
@@ -3710,7 +4441,7 @@ function buildDropEquipment(rank, forcePart) {
     rarity: autoRarity,
     traitTier: autoTier,
     enhance: 0,
-    infuse: traits.length,
+    infuse: infuseCount,
     maxInfuse,
     traits,
     durability: 100,
@@ -3722,10 +4453,12 @@ function buildDropEquipment(rank, forcePart) {
     unitWeightG: EQUIP_WEIGHT_G[part] || 1000,
     stackKey: `equipment:drop_${r}_${part}_${uid}`,
     note: hasTrait ? `게이트 드랍. 특성: ${traitName} | 특성주입 최대 ${maxInfuse}회` : `게이트 드랍. 특성주입 최대 ${maxInfuse}회`,
-    atk: part === 'weapon' ? (WEAPON_BASE_ATK[r] || 5) : 0,
-    pdef: part === 'armor' ? Math.round((ARMOR_STAT_BY_RANK[r]||{defRange:[0,5]}).defRange[1] * 0.5) : (part === 'subweapon' ? Math.round((ARMOR_STAT_BY_RANK[r]||{defRange:[0,5]}).defRange[1] * 0.25) : 0),
-    mdef: part === 'armor' ? Math.round((ARMOR_STAT_BY_RANK[r]||{defRange:[0,5]}).defRange[1] * 0.3) : 0,
-    mainStat: part === 'weapon' ? (Math.random() < 0.5 ? 'str' : 'int') : (part === 'armor' ? 'con' : 'str'),
+    atk: part === 'weapon' ? (WEAPON_BASE_ATK[r] || 5) : (part === 'armor' && armorSubtype && armorSubtype.atkMul ? Math.round((WEAPON_BASE_ATK[r] || 5) * armorSubtype.atkMul) : 0),
+    pdef: part === 'armor' ? (() => { const base = (ARMOR_STAT_BY_RANK[r]||{defRange:[0,5]}).defRange[1]; const [lo,hi] = armorSubtype ? armorSubtype.defMul : [0.5,0.5]; const mul = lo + Math.random()*(hi-lo); return Math.round(base * mul); })() : (part === 'subweapon' && isShield ? Math.round((ARMOR_STAT_BY_RANK[r]||{defRange:[0,5]}).defRange[1] * 0.25) : 0),
+    mdef: part === 'armor' ? (() => { const base = (ARMOR_STAT_BY_RANK[r]||{defRange:[0,5]}).defRange[1]; const [lo,hi] = armorSubtype ? armorSubtype.defMul : [0.5,0.5]; const mul = lo + Math.random()*(hi-lo); return Math.round(base * mul); })() : 0,
+    mainStat: part === 'weapon' ? (Math.random() < 0.5 ? 'str' : 'int') : (part === 'armor' && armorSubtype ? armorSubtype.statPool[Math.floor(Math.random() * armorSubtype.statPool.length)] : (part === 'subweapon' && isShield ? 'con' : (part === 'armor' ? 'con' : ''))),
+    armorSubtype: armorSubtype ? armorSubtype.key : undefined,
+    armorStatBonusMul: armorSubtype ? armorSubtype.statBonusMul : undefined,
     resistType: '',
     resistPct: 0
   };
@@ -3988,6 +4721,10 @@ function resolveGateBattleAftermath(victory) {
   const rt = model.state.runtime;
   if (!rt.started || !rt.finished) throw new Error('전투가 아직 끝나지 않았다.');
   if (!victory) {
+    // 전멸 시 HP 상태를 캐릭터 DB에 저장 + 전멸 날짜 기록
+    syncPartyHpToDb(run);
+    const gd = model.db.gameDate || { year:2026, month:1, day:1 };
+    model.db.lastWipeDate = { year: gd.year, month: gd.month, day: gd.day };
     run.failed = true;
     run.postBattle = null;
     run.pendingBattleRoomId = '';
@@ -4153,12 +4890,33 @@ function skipCampRoom(run) {
 }
 function retreatFromGateRun(run) {
   if (!run) return;
+  // 후퇴 시 현재 HP/MP/SP를 캐릭터 DB에 저장 (풀피 복구 안함)
+  syncPartyHpToDb(run);
   run.failed = true;
   run.postBattle = null;
   run.pendingBattleRoomId = '';
   pushGateLog(run, '게이트에서 후퇴했다.');
+  // 게이트 진행 상태를 완전히 해제하여 후퇴 후 즉시 게이트에서 나올 수 있게 함
+  const gs = gateStateSafe();
+  gs.run = null;
   model.state.view = 'gate';
   model.state.runtime = buildDefaultRuntime();
+}
+
+// 게이트 파티 상태의 현재 HP/MP/SP를 캐릭터 DB에 저장
+function syncPartyHpToDb(run) {
+  if (!run || !run.partyState) return;
+  const chars = model.db.characters || [];
+  const personas = model.db.personas || [];
+  (run.partyState || []).forEach(u => {
+    const id = u.baseId || u.id;
+    if (!id) return;
+    const dbChar = chars.find(c => c.id === id) || personas.find(p => p.id === id);
+    if (!dbChar) return;
+    dbChar.currentHp = Math.max(0, Math.floor(Number(u.currentHp || 0)));
+    dbChar.currentMp = Math.max(0, Math.floor(Number(u.currentMp || 0)));
+    dbChar.currentSp = Math.max(0, Math.floor(Number(u.currentSp || 0)));
+  });
 }
 
 function migrateLegacyCampSupplies(run) {
@@ -4212,14 +4970,14 @@ function currentGatePrompt(run) {
     const potions = inv.items.filter(it => it.category === 'potion');
     if (!potions.length) return '<div class="gb-panel"><div class="gb-sub">소지 중인 물약이 없다.</div><div class="gb-btn-row"><button class="gb-btn" id="gb-pb-potion-close">닫기</button></div></div>';
     const daily = getPotionUsesToday();
-    const remaining = Math.max(0, POTION_DAILY_MAX - daily.count);
+    const remaining = Math.max(0, POTION_DAILY_MAX_RECOVERY - daily.recovery);
     const party = (run.partyState || []).filter(u => Number(u.currentHp || u.hp || 0) > 0);
     const potionOpts = potions.map(p => `<option value="${escapeHtml(p.stackKey)}">${escapeHtml(p.name)} x${p.count} — ${escapeHtml(p.note||'')}</option>`).join('');
     const targetOpts = party.map((u, i) => `<option value="${i}">${escapeHtml(u.name)} (HP ${Math.floor(Number(u.currentHp||0))}/${Math.floor(Number(u.hp||0))})</option>`).join('');
     return `
       <div class="gb-panel">
         <div class="gb-section-title">🧪 물약 사용 (전투 후)</div>
-        <div class="gb-sub">남은 일일 사용 횟수: ${remaining}/${POTION_DAILY_MAX}${daily.count >= POTION_DAILY_MAX ? ' ⚠️ 한도 도달 — 다음 사용 시 효율 20%' : ''}</div>
+        <div class="gb-sub">회복포션: ${remaining}/${POTION_DAILY_MAX_RECOVERY + 1}회 남음${daily.recovery >= POTION_DAILY_MAX_RECOVERY ? ' ⚠️ 다음 사용 시 효율 20%' : ''}${daily.recovery > POTION_DAILY_MAX_RECOVERY ? ' (한도초과)' : ''} | 버프포션: ${Math.max(0, POTION_DAILY_MAX_BUFF - daily.buff)}/${POTION_DAILY_MAX_BUFF}회 | 해제포션: 무제한</div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;">
           <select class="gb-input" id="gb-pb-potion-select">${potionOpts}</select>
           <span style="color:#94a3b8;">→</span>
@@ -4287,29 +5045,233 @@ function renderGateRunPanel(run) {
   const stashLines = rewardBucketDropLines(run.stash);
   const sup = campSupplyStock();
   const used = !!(run.campSupplies && run.campSupplies.used);
+  const gateTab = model.state.gateRunTab || 'main';
+
+  // ── Party status cards (compact) ──
+  const alive = (run.partyState || []).filter(u => Number(u.currentHp || u.hp || 0) > 0);
+  const dead = (run.partyState || []).filter(u => Number(u.currentHp || u.hp || 0) <= 0);
+  function gatePartyCard(u) {
+    const hp = Number(u.currentHp || u.hp || 0);
+    const maxHp = Number(u.hp || 1);
+    const mp = Number(u.currentMp || u.mp || 0);
+    const maxMp = Number(u.mp || 1);
+    const sp = Number(u.currentSp || u.sp || 0);
+    const maxSp = Number(u.sp || 1);
+    const hpPct = maxHp > 0 ? Math.round(hp / maxHp * 100) : 0;
+    const mpPct = maxMp > 0 ? Math.round(mp / maxMp * 100) : 0;
+    const spPct = maxSp > 0 ? Math.round(sp / maxSp * 100) : 0;
+    const isDead = hp <= 0;
+    const statusTags = [];
+    const st = u.statuses || {};
+    if (st.poison > 0) statusTags.push('<span style="color:#22c55e;font-size:10px;">독</span>');
+    if (st.bleed > 0) statusTags.push('<span style="color:#ef4444;font-size:10px;">출혈</span>');
+    if (st.burn > 0) statusTags.push('<span style="color:#f97316;font-size:10px;">화상</span>');
+    if (st.curse > 0) statusTags.push('<span style="color:#a855f7;font-size:10px;">저주</span>');
+    if (st.stun > 0) statusTags.push('<span style="color:#fbbf24;font-size:10px;">기절</span>');
+    return `<div class="gb-unit${isDead ? ' is-dead' : ''}" style="padding:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div><strong style="font-size:13px;">${escapeHtml(u.name)}</strong> <span class="gb-badge">${escapeHtml(u.rank||'')}</span></div>
+        <div style="font-size:10px;color:#94a3b8;">${escapeHtml(u.job || '')} / ${escapeHtml(u.row || '')}</div>
+      </div>
+      ${statusTags.length ? `<div style="margin-top:2px;">${statusTags.join(' ')}</div>` : ''}
+      <div class="gb-bar-wrap" style="margin-top:4px;"><span style="font-size:10px;">HP ${Math.floor(hp)}/${Math.floor(maxHp)}</span><div class="gb-bar"><div class="gb-bar-fill hp" style="width:${hpPct}%"></div></div></div>
+      <div class="gb-bar-wrap"><span style="font-size:10px;">MP ${Math.floor(mp)}/${Math.floor(maxMp)}</span><div class="gb-bar"><div class="gb-bar-fill mp" style="width:${mpPct}%"></div></div></div>
+      <div class="gb-bar-wrap"><span style="font-size:10px;">SP ${Math.floor(sp)}/${Math.floor(maxSp)}</span><div class="gb-bar"><div class="gb-bar-fill sp" style="width:${spPct}%"></div></div></div>
+    </div>`;
+  }
+
+  // ── Current room encounter enemies ──
+  const room = getActiveRoom(run);
+  const encounter = room && room.encounter ? room.encounter : null;
+  const enemyCards = encounter && Array.isArray(encounter.enemies)
+    ? encounter.enemies.map(e => {
+        const hp = Number(e.currentHp || e.hp || 0);
+        const maxHp = Number(e.hp || 1);
+        const hpPct = maxHp > 0 ? Math.round(hp / maxHp * 100) : 0;
+        const isDead = hp <= 0;
+        return `<div class="gb-unit${isDead ? ' is-dead' : ''}" style="padding:8px;">
+          <div><strong style="font-size:13px;">${escapeHtml(e.name || e.id || '???')}</strong> <span class="gb-badge">${escapeHtml(e.rank || '')}</span> <span class="gb-badge" style="background:rgba(239,68,68,0.18);color:#fca5a5;">${escapeHtml(e.kind || '')}</span></div>
+          <div class="gb-bar-wrap" style="margin-top:4px;"><span style="font-size:10px;">HP ${Math.floor(hp)}/${Math.floor(maxHp)}</span><div class="gb-bar"><div class="gb-bar-fill hp" style="width:${hpPct}%"></div></div></div>
+        </div>`;
+      }).join('')
+    : '<div class="gb-sub">현재 조우한 적이 없다.</div>';
+
+  // ── Tab content ──
+  let tabContent = '';
+  if (gateTab === 'party') {
+    // 파티 관리 탭: 클릭 시 장비/스킬/인벤 상세 보기
+    const detailId = model.state.gatePartyDetailId || '';
+    const skillMap = getAllSkillMap();
+    const catLabel = { singleAttack:'단일공격', aoeAttack:'광역공격', singleCC:'단일CC', aoeCC:'광역CC', buff:'버프', singleHeal:'힐', aoeHeal:'광역힐', passive:'패시브', utility:'유틸' };
+    tabContent = `
+      <div class="gb-panel">
+        <div class="gb-section-title">👥 파티원 상세 <span class="gb-sub" style="font-size:11px;">(클릭하면 상세정보)</span></div>
+        ${(run.partyState || []).map(u => {
+          const hp = Number(u.currentHp || u.hp || 0);
+          const maxHp = Number(u.hp || 1);
+          const mp = Number(u.currentMp || u.mp || 0);
+          const maxMp = Number(u.mp || 1);
+          const sp = Number(u.currentSp || u.sp || 0);
+          const maxSp = Number(u.sp || 1);
+          const isDead = hp <= 0;
+          const stats = u.stats || {};
+          const uid = u.uid || u.id || u.baseId || '';
+          const isOpen = (detailId === uid);
+          // 장비 정보
+          let equipHtml = '';
+          let invHtml = '';
+          if (isOpen) {
+            const dbId = u.baseId || u.id;
+            const dbChar = (model.db.characters || []).find(c => c.id === dbId) || (model.db.personas || []).find(p => p.id === dbId);
+            if (dbChar) {
+              const inv = getPersonalInv(
+                (model.db.characters || []).find(c => c.id === dbId) ? 'character' : 'persona',
+                dbId
+              );
+              if (inv) {
+                const eqParts = EQUIP_PARTS.map(p => {
+                  const eq = inv.equipped[p];
+                  if (!eq) return `<div class="gb-sub" style="padding:2px 0;">${EQUIP_PART_LABELS[p]}: <span style="color:#64748b;">없음</span></div>`;
+                  const traitStr = (eq.traits || []).map(t => escapeHtml(t.label || t.id)).join(', ');
+                  const enhStr = eq.enhance > 0 ? ` +${eq.enhance}` : '';
+                  const rarStr = eq.rarity && eq.rarity !== 'Normal' ? ` <span class="gb-badge" style="background:${rarityColor(eq.rarity)};color:#000;font-size:9px;">${escapeHtml(eq.rarity)}</span>` : '';
+                  const statStr = [];
+                  if (eq.atk) statStr.push('ATK:' + eq.atk);
+                  if (eq.pdef) statStr.push('물방:' + eq.pdef);
+                  if (eq.mdef) statStr.push('마방:' + eq.mdef);
+                  return `<div class="gb-sub" style="padding:2px 0;">${EQUIP_PART_LABELS[p]}: <strong style="${rarityStyle(eq.rarity)}">${escapeHtml(eq.name||eq.id)}${enhStr}</strong>${rarStr}${statStr.length ? ' <span style="font-size:10px;color:#94a3b8;">[' + statStr.join('/') + ']</span>' : ''}${traitStr ? ' <span style="font-size:10px;color:#a78bfa;">(' + escapeHtml(traitStr) + ')</span>' : ''}</div>`;
+                });
+                equipHtml = `<div style="margin-top:6px;"><div style="font-weight:600;font-size:12px;margin-bottom:4px;">🛡️ 장착 장비</div>${eqParts.join('')}</div>`;
+                // 개인 인벤토리 아이템 수
+                const itemCount = Array.isArray(inv.items) ? inv.items.length : 0;
+                if (itemCount > 0) {
+                  const itemLines = inv.items.slice(0, 8).map(it => `<span class="gb-badge" style="font-size:9px;margin:1px;">${escapeHtml(it.name||it.id)}</span>`).join('');
+                  const moreStr = itemCount > 8 ? ` <span class="gb-sub" style="font-size:10px;">외 ${itemCount - 8}개</span>` : '';
+                  invHtml = `<div style="margin-top:6px;"><div style="font-weight:600;font-size:12px;margin-bottom:4px;">🎒 개인 인벤토리 (${itemCount}개)</div><div style="display:flex;flex-wrap:wrap;gap:2px;">${itemLines}${moreStr}</div></div>`;
+                }
+              }
+            }
+            // 스킬 상세
+            const skillDetails = (u.skills || []).map(sId => {
+              const sk = skillMap[sId];
+              if (!sk) return `<div class="gb-sub" style="padding:1px 0;font-size:11px;">• ${escapeHtml(sId)}</div>`;
+              const costStr = sk.costs ? [sk.costs.mp ? 'MP:'+sk.costs.mp : '', sk.costs.sp ? 'SP:'+sk.costs.sp : ''].filter(Boolean).join('/') : '';
+              const coefStr = sk.coef != null ? '계수:' + sk.coef : '';
+              const cat = catLabel[sk.category] || sk.category;
+              return `<div class="gb-sub" style="padding:1px 0;font-size:11px;">• <strong>${escapeHtml(sk.name)}</strong> <span class="gb-badge" style="font-size:9px;">${cat}</span>${coefStr ? ' <span class="gb-badge" style="font-size:9px;">'+coefStr+'</span>' : ''}${costStr ? ' <span style="font-size:10px;color:#94a3b8;">['+costStr+']</span>' : ''}${sk.desc ? ' — '+escapeHtml(sk.desc) : ''}</div>`;
+            }).join('') || '<div class="gb-sub" style="font-size:11px;">스킬 없음</div>';
+          }
+          return `<div class="gb-unit${isDead ? ' is-dead' : ''}" data-gate-party-detail="${escapeHtml(uid)}" style="cursor:pointer;">
+            <div class="gb-unit-top">
+              <div><strong>${escapeHtml(u.name)}</strong> <span class="gb-badge">${escapeHtml(u.rank||'')}</span> <span class="gb-badge">${escapeHtml(u.row || '')}</span> ${isOpen ? '▲' : '▼'}</div>
+              <div class="gb-sub">${escapeHtml(u.job || '')} / ${escapeHtml(u.position || '')} / ${escapeHtml(u.damageType || '')}</div>
+            </div>
+            <div class="gb-bar-wrap"><span>HP ${Math.floor(hp)}/${Math.floor(maxHp)}</span><div class="gb-bar"><div class="gb-bar-fill hp" style="width:${maxHp>0?Math.round(hp/maxHp*100):0}%"></div></div></div>
+            <div class="gb-bar-wrap"><span>MP ${Math.floor(mp)}/${Math.floor(maxMp)}</span><div class="gb-bar"><div class="gb-bar-fill mp" style="width:${maxMp>0?Math.round(mp/maxMp*100):0}%"></div></div></div>
+            <div class="gb-bar-wrap"><span>SP ${Math.floor(sp)}/${Math.floor(maxSp)}</span><div class="gb-bar"><div class="gb-bar-fill sp" style="width:${maxSp>0?Math.round(sp/maxSp*100):0}%"></div></div></div>
+            <div class="gb-sub" style="margin-top:4px;">STR ${stats.str||0} CON ${stats.con||0} INT ${stats.int||0} AGI ${stats.agi||0} SEN ${stats.sense||0} | ATK ${u.atk||0} PDEF ${u.pdef||0} MDEF ${u.mdef||0}</div>
+            ${isOpen ? `<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(148,163,184,0.2);">
+              <div style="font-weight:600;font-size:12px;margin-bottom:4px;">📜 스킬 상세</div>
+              ${(u.skills || []).map(sId => {
+                const sk = skillMap[sId];
+                if (!sk) return '<div class="gb-sub" style="padding:1px 0;font-size:11px;">• ' + escapeHtml(sId) + '</div>';
+                const costStr = sk.costs ? [sk.costs.mp ? 'MP:'+sk.costs.mp : '', sk.costs.sp ? 'SP:'+sk.costs.sp : ''].filter(Boolean).join('/') : '';
+                const coefStr = sk.coef != null ? '계수:' + sk.coef : '';
+                const cat = catLabel[sk.category] || sk.category;
+                return '<div class="gb-sub" style="padding:1px 0;font-size:11px;">• <strong>' + escapeHtml(sk.name) + '</strong> <span class="gb-badge" style="font-size:9px;">' + cat + '</span>' + (coefStr ? ' <span class="gb-badge" style="font-size:9px;">'+coefStr+'</span>' : '') + (costStr ? ' <span style="font-size:10px;color:#94a3b8;">['+costStr+']</span>' : '') + (sk.desc ? ' — '+escapeHtml(sk.desc) : '') + '</div>';
+              }).join('') || '<div class="gb-sub" style="font-size:11px;">스킬 없음</div>'}
+              ${equipHtml}
+              ${invHtml}
+            </div>` : `<div class="gb-sub">스킬: ${(u.skills||[]).length ? (u.skills||[]).map(s => { const sk = skillMap[s]; return sk ? escapeHtml(sk.name) : escapeHtml(s); }).join(', ') : '없음'}</div>`}
+          </div>`;
+        }).join('')}
+      </div>`;
+  } else if (gateTab === 'inventory') {
+    // 공용 인벤토리 빠른 보기
+    const inv = getInventory();
+    const cap = inventoryCapacity();
+    const usedSlots = inventoryUsedSlots(inv);
+    const usedWeight = inventoryUsedWeightG(inv);
+    const invItems = (inv.items || []);
+    tabContent = `
+      <div class="gb-panel">
+        <div class="gb-section-title">📦 공용 인벤토리</div>
+        <div class="gb-sub">슬롯 <strong>${usedSlots}/${cap.slots}</strong> / 무게 ${formatWeightG(usedWeight)} / ${formatWeightG(cap.maxWeightG)}</div>
+        <div style="max-height:300px;overflow:auto;margin-top:8px;">
+          ${invItems.length ? invItems.map(it => {
+            const isEq = it.category === 'equipment';
+            return `<div style="font-size:12px;padding:3px 0;border-bottom:1px solid rgba(148,163,184,0.08);">
+              ${escapeHtml(it.name||it.id)}${it.rank ? ` <span class="gb-badge">${it.rank}</span>` : ''}${isEq && it.part ? ` <span class="gb-badge">${EQUIP_PART_LABELS[it.part]||it.part}</span>` : ''}${it.count > 1 ? ` ×${it.count}` : ''}
+            </div>`;
+          }).join('') : '<div class="gb-sub">인벤토리가 비어있다.</div>'}
+        </div>
+      </div>`;
+  } else if (gateTab === 'logs') {
+    tabContent = `
+      <div class="gb-panel">
+        <div class="gb-section-title">📜 게이트 전체 로그</div>
+        <textarea class="gb-textarea" readonly>${escapeHtml(((run.fullLogs || []).slice(-1200)).join('\n'))}</textarea>
+      </div>`;
+  } else {
+    // main tab: prompt + rewards + recent logs
+    tabContent = `
+      ${currentGatePrompt(run)}
+      <div class="gb-grid two">
+        <div class="gb-panel">
+          <div class="gb-section-title">최근 로그</div>
+          <div class="gb-log" style="max-height:240px;">${(run.logs || []).slice(0, 80).map(t => `<div>• ${escapeHtml(t)}</div>`).join('') || '<div>아직 로그가 없다.</div>'}</div>
+        </div>
+        <div class="gb-panel">
+          <div class="gb-section-title">현재 정산</div>
+          <div class="gb-log" style="max-height:240px;">${stashLines.length ? stashLines.map(t => `<div>• ${escapeHtml(t)}</div>`).join('') : '<div>아직 획득한 보상이 없다.</div>'}</div>
+        </div>
+      </div>`;
+  }
+
+  // ── Full immersive layout ──
   return `
-    <div class="gb-panel">
-      <div class="gb-section-title">진행 중인 게이트</div>
-      <div><strong>${escapeHtml(run.title)}</strong> <span class="gb-badge">${escapeHtml(run.rank)}</span> <span class="gb-badge">${escapeHtml(run.sizeLabel)}</span></div>
-      <div class="gb-sub">${escapeHtml(run.primarySpeciesLabel)} + ${escapeHtml(run.secondarySpeciesLabel)} / 내부 배치 정보 비공개</div>
-      <div class="gb-log"><div>${tokens}</div></div>
-      <div class="gb-sub">생존 파티 ${run.partyState.length}명 / 현재 단계 ${Math.min(run.currentStage + 1, run.stages.length)}/${run.stages.length} / 경과 ${Math.floor((run.elapsedMinutes || 0)/60)}h ${(run.elapsedMinutes || 0)%60}m</div>
-      <div class="gb-sub">야영 보급(인벤 기준): 텐트 ${sup.tent || 0} / 식량 ${sup.ration || 0} / 물 ${sup.water || 0}${used ? ' / 야영 사용 완료' : ''}</div>
-    </div>
-    ${currentGatePrompt(run)}
-    <div class="gb-grid two">
-      <div class="gb-panel">
-        <div class="gb-section-title">최근 로그</div>
-        <div class="gb-log">${(run.logs || []).slice(0, 150).map(t => `<div>• ${escapeHtml(t)}</div>`).join('') || '<div>아직 로그가 없다.</div>'}</div>
+    <div style="border:2px solid rgba(37,99,235,0.4);border-radius:16px;padding:14px;background:linear-gradient(180deg,#0d1020 0%,#0f1117 100%);">
+      <!-- Header bar -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div>
+          <strong style="font-size:16px;">⚔️ ${escapeHtml(run.title)}</strong>
+          <span class="gb-badge">${escapeHtml(run.rank)}</span>
+          <span class="gb-badge">${escapeHtml(run.sizeLabel)}</span>
+          <span class="gb-sub" style="margin-left:8px;">${escapeHtml(run.primarySpeciesLabel)} + ${escapeHtml(run.secondarySpeciesLabel)}</span>
+        </div>
+        <button class="gb-btn tiny" id="gb-gate-fullscreen-close" style="font-size:12px;">✕ 게이트 선택으로</button>
       </div>
-      <div class="gb-panel">
-        <div class="gb-section-title">현재 정산</div>
-        <div class="gb-log">${stashLines.length ? stashLines.map(t => `<div>• ${escapeHtml(t)}</div>`).join('') : '<div>아직 획득한 보상이 없다.</div>'}</div>
+
+      <!-- Stage progress -->
+      <div class="gb-panel" style="padding:8px 12px;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:12px;font-weight:700;color:#60a5fa;">노드 진행:</span>
+          ${tokens}
+        </div>
+        <div class="gb-sub" style="margin-top:4px;">생존 ${alive.length}명${dead.length ? ` / 사망 ${dead.length}명` : ''} / 단계 ${Math.min(run.currentStage + 1, run.stages.length)}/${run.stages.length} / 경과 ${Math.floor((run.elapsedMinutes || 0)/60)}h ${(run.elapsedMinutes || 0)%60}m / 보급: 텐트${sup.tent||0} 식량${sup.ration||0} 물${sup.water||0}${used ? ' (야영완료)' : ''}</div>
       </div>
-    </div>
-    <div class="gb-panel">
-      <div class="gb-section-title">게이트 전체 로그</div>
-      <textarea class="gb-textarea" readonly>${escapeHtml(((run.fullLogs || []).slice(-1200)).join('\n'))}</textarea>
+
+      <!-- Main 2-column: Party (left) vs Enemies (right) -->
+      <div class="gb-grid two" style="align-items:start;margin-bottom:10px;">
+        <div class="gb-panel" style="max-height:420px;overflow:auto;">
+          <div class="gb-section-title" style="color:#60a5fa;">👥 파티 (${alive.length}/${run.partyState.length})</div>
+          ${(run.partyState || []).map(u => gatePartyCard(u)).join('')}
+        </div>
+        <div class="gb-panel" style="max-height:420px;overflow:auto;">
+          <div class="gb-section-title" style="color:#fca5a5;">👹 적</div>
+          ${enemyCards}
+        </div>
+      </div>
+
+      <!-- Tab navigation -->
+      <div class="gb-btn-row" style="margin-bottom:8px;">
+        <button class="gb-btn${gateTab==='main'?' primary':''}" data-gate-run-tab="main">🗺️ 행동/정산</button>
+        <button class="gb-btn${gateTab==='party'?' primary':''}" data-gate-run-tab="party">👥 파티 상세</button>
+        <button class="gb-btn${gateTab==='inventory'?' primary':''}" data-gate-run-tab="inventory">📦 인벤토리</button>
+        <button class="gb-btn${gateTab==='logs'?' primary':''}" data-gate-run-tab="logs">📜 전체 로그</button>
+      </div>
+
+      ${tabContent}
     </div>`;
 }
 async function applyGateSelectionToBattle(goBattle) {
@@ -4366,8 +5328,6 @@ function getBuffedStat(unit, statKey) {
     const cursePct = getCursePenalty(unit);
     if (cursePct > 0) mul *= (1 - cursePct);
     if (unit.species === 'beast' && target && Number(target.statuses.bleed || 0) > 0) mul *= Number(unit.bonusVsBleeding || 1.2);
-    // 소환수 보너스: 제피르 소환 시 질풍격 ×1.2
-    if (skill && skill.id === 'galeStrike' && hasSummonBuff(unit, 'zephyr')) mul *= 1.2;
     return mul;
   }
   function getEffectiveDefense(unit, kind) {
@@ -4422,16 +5382,31 @@ function getBuffedStat(unit, statKey) {
     if (Number(unit.cooldowns && unit.cooldowns[skill.id] || 0) > 0) return false;
     // 침묵: 스킬 사용 불가 (기본 공격만 가능)
     if (Number(unit.statuses && unit.statuses.silence || 0) > 0) return false;
-    // 대지의 치유: 정령 소환 시에만 사용 가능
-    if (skill.id === 'earthHeal' && !hasSummonBuff(unit, 'zephyr') && !hasSummonBuff(unit, 'bark')) return false;
+    // 몬스터는 MP/SP 비용 무시 (쿨타임만 적용)
+    if (unit.isMonster) return true;
     const cost = getSkillCost(unit, skill);
     return unit.mp >= cost.mp && unit.sp >= cost.sp;
   }
+  // 몬스터 스킬 쿨타임 결정: 일반=기본공격1/스킬2, 엘리트·보스=기본공격1/스킬2/광역3
+  function getMonsterSkillCooldown(unit, skill) {
+    const cat = skill.category || '';
+    if (cat === 'aoeAttack' || cat === 'aoeCC' || cat === 'aoeHeal') return 3;
+    if (cat !== 'passive') return 2;  // 단일공격/CC/힐/버프/유틸리티 = 2턴 쿨타임
+    return 0;
+  }
   function paySkillCost(unit, skill) {
     const cost = getSkillCost(unit, skill);
-    unit.mp = Math.max(0, unit.mp - cost.mp);
-    unit.sp = Math.max(0, unit.sp - cost.sp);
-    if (skill.cooldown) unit.cooldowns[skill.id] = Number(skill.cooldown);
+    if (!unit.isMonster) {
+      unit.mp = Math.max(0, unit.mp - cost.mp);
+      unit.sp = Math.max(0, unit.sp - cost.sp);
+    }
+    // 몬스터: 쿨타임 적용 (MP/SP 소모 없음)
+    if (unit.isMonster) {
+      const cd = getMonsterSkillCooldown(unit, skill);
+      if (cd > 0) unit.cooldowns[skill.id] = cd;
+    } else {
+      if (skill.cooldown) unit.cooldowns[skill.id] = Number(skill.cooldown);
+    }
     return cost;
   }
   function critChance(unit) {
@@ -4459,6 +5434,8 @@ function getBuffedStat(unit, statKey) {
       if (Number(attacker.statuses.bind || 0) > 0) accuracy *= 0.5;
       // 둔화된 몬스터: 명중률 -30%
       if (Number(attacker.statuses.slow || 0) > 0) accuracy *= 0.7;
+      // 실명된 몬스터: 명중률 -50%
+      if (Number(attacker.statuses.blind || 0) > 0) accuracy *= 0.5;
     } else {
       // 헌터 명중률 = 70 + 감각 * 0.5
       let sense = getBuffedStat(attacker, 'sense');
@@ -4468,6 +5445,8 @@ function getBuffedStat(unit, statKey) {
       if (Number(attacker.statuses.bind || 0) > 0) accuracy *= 0.5;
       // 둔화된 헌터: 명중률 -30%
       if (Number(attacker.statuses.slow || 0) > 0) accuracy *= 0.7;
+      // 실명된 헌터: 명중률 -50%
+      if (Number(attacker.statuses.blind || 0) > 0) accuracy *= 0.5;
     }
     // 대상 회피율 계산 (등급별, 헌터·몬스터 모두 적용)
     let evasion = getBaseEvasion(target);
@@ -4478,6 +5457,10 @@ function getBuffedStat(unit, statKey) {
     // 공격자 등급 > 대상 등급 → 대상 회피율 0%
     if (rankIndex(attacker.rank) > rankIndex(target.rank)) {
       evasion = 0;
+    }
+    // 같은 등급 몬스터가 헌터 공격 시: 회피율 50% 감소
+    if (attacker.isMonster && !target.isMonster && rankIndex(attacker.rank) === rankIndex(target.rank)) {
+      evasion *= 0.5;
     }
     // 둔화된 대상: 회피율 -50%
     if (Number(target.statuses.slow || 0) > 0) {
@@ -4515,6 +5498,8 @@ function getBuffedStat(unit, statKey) {
     if (attacker && attacker.isMonster && Number(attacker.monsterBaseDamage || 0) > 0) {
       const isSkill = !!(skill && skill.id && skill.id !== 'basicAttack');
       rawBase = Number(attacker.monsterBaseDamage || 1) * (isSkill ? Number(attacker.monsterSkillMul || 1) : 1);
+      // 몬스터 광역 스킬: 대상당 데미지 ×0.58 감소 (헌터 광역 계수와 동일)
+      if (skill && (skill.category === 'aoeAttack' || skill.category === 'aoeCC')) rawBase *= 0.58;
     } else {
       const mainStat = getStatPower(attacker, skill);
       rawBase = (2 * mainStat) + (3 * Number(attacker.atk || 0));
@@ -4560,7 +5545,7 @@ function getBuffedStat(unit, statKey) {
   }
   function computeHeal(caster, skill) {
     const mainStat = getStatPower(caster, skill);
-    const ss = (2 * mainStat) + (3 * Number(caster.atk || 0));
+    const ss = mainStat * 0.5;
     const coef = Number(skill && skill.coef != null ? skill.coef : 1.0);
     // 장비 특성: 치유량 증가
     const healDoneBonus = 1 + Number((caster.traitBonuses && caster.traitBonuses.healing_done) || 0) / 100;
@@ -4662,6 +5647,53 @@ function getBuffedStat(unit, statKey) {
     }
     if (target.hp <= 0) target.dead = true;
   }
+
+  // ── 내구도 소모 헬퍼 ──
+  function applyDurabilityLoss(unit, slot, amount) {
+    if (!unit || !unit.inventory || !unit.inventory.equipped) return;
+    const eq = unit.inventory.equipped[slot];
+    if (!eq || eq.durability == null) return;
+    eq.durability = Math.max(0, Number(eq.durability) - amount);
+  }
+  function applyDurabilityOnAttack(runtime, actor, isSkill) {
+    if (!actor || actor.isMonster) return;
+    const baseId = actor.baseId || actor.id;
+    const dbChar = (model.db.characters || []).find(c => c.id === baseId) || (model.db.personas || []).find(p => p.id === baseId);
+    if (!dbChar) return;
+    // 무기 내구도
+    applyDurabilityLoss(dbChar, 'weapon', isSkill ? DURABILITY_COST.weaponSkillAttack : DURABILITY_COST.weaponBasicAttack);
+    // 보조무기 (방패가 아닌 경우)
+    const sub = dbChar.inventory && dbChar.inventory.equipped && dbChar.inventory.equipped.subweapon;
+    if (sub && sub.subtype !== 'shield' && !(sub.name && sub.name.includes('방패'))) {
+      applyDurabilityLoss(dbChar, 'subweapon', isSkill ? DURABILITY_COST.subweaponSkill : DURABILITY_COST.subweaponAttack);
+    }
+    // 악세서리 내구도
+    applyDurabilityLoss(dbChar, 'accessory', DURABILITY_COST.accessoryAction);
+  }
+  function applyDurabilityOnHit(runtime, target) {
+    if (!target || target.isMonster) return;
+    const baseId = target.baseId || target.id;
+    const dbChar = (model.db.characters || []).find(c => c.id === baseId) || (model.db.personas || []).find(p => p.id === baseId);
+    if (!dbChar) return;
+    // 방어구 내구도
+    applyDurabilityLoss(dbChar, 'armor', DURABILITY_COST.armorHit);
+    // 방패 (보조무기 중 shield) 내구도
+    const sub = dbChar.inventory && dbChar.inventory.equipped && dbChar.inventory.equipped.subweapon;
+    if (sub && (sub.subtype === 'shield' || (sub.name && sub.name.includes('방패')))) {
+      applyDurabilityLoss(dbChar, 'subweapon', DURABILITY_COST.shieldHit);
+    }
+  }
+
+  // ── 파티 SP 소모 헬퍼 ──
+  function deductPartySp(run, amount) {
+    if (!run || !run.partyState) return;
+    run.partyState.forEach(u => {
+      if (Number(u.currentHp || 0) > 0) {
+        u.currentSp = Math.max(0, Number(u.currentSp || 0) - amount);
+      }
+    });
+  }
+
   function applyHeal(target, heal) {
     // Bleed reduces healing received by 50%
     let effectiveHeal = heal;
@@ -4733,11 +5765,6 @@ function getBuffedStat(unit, statKey) {
       if (!type) return;
       // CC 확률 판정
       let ccChance = skill.cc.chance != null ? Number(skill.cc.chance) : 1.0;
-      // 소환수 보너스: 바크 소환 시 뿌리속박 CC +10%
-      if (skill.id === 'rootBind') {
-        const caster = runtime ? (runtime.party.concat(runtime.enemies)).find(u => u.name === sourceName) : null;
-        if (caster && hasSummonBuff(caster, 'bark')) ccChance = Math.min(1.0, ccChance + 0.10);
-      }
       if (ccChance < 1.0 && Math.random() > ccChance) return;
       if (unitHasImmunity(target, type)) {
         addRoundHighlight(summary, `${target.name}은(는) ${type} 면역`);
@@ -4822,8 +5849,7 @@ function getBuffedStat(unit, statKey) {
       if (Number(target.statuses.stunResistTimer || 0) > 0) return false;
       let t = turns;
       const kind = String(target.kind || '').toLowerCase();
-      if (kind === 'boss') t = Math.min(t, 1);
-      else if (kind === 'elite') t = Math.min(t, 2);
+      if (kind === 'boss' || kind === 'elite') t = Math.min(t, 1);
       target.statuses.stun = Math.max(Number(target.statuses.stun || 0), t);
       target.statuses.stunResistTimer = 5;
     } else if (type === 'sleep') {
@@ -4834,9 +5860,21 @@ function getBuffedStat(unit, statKey) {
       target.statuses.sleep = Math.max(Number(target.statuses.sleep || 0), t);
       target.statuses.sleepResistTimer = 5;
     } else if (type === 'bind') {
-      target.statuses.bind = Math.max(Number(target.statuses.bind || 0), turns);
+      if (Number(target.statuses.bindResistTimer || 0) > 0) return false;
+      let t = turns;
+      const kind = String(target.kind || '').toLowerCase();
+      if (kind === 'boss') t = Math.min(t, 1);
+      else if (kind === 'elite') t = Math.min(t, 2);
+      target.statuses.bind = Math.max(Number(target.statuses.bind || 0), t);
+      target.statuses.bindResistTimer = 5;
     } else if (type === 'curse') {
-      target.statuses.curse = Math.max(Number(target.statuses.curse || 0), turns);
+      if (Number(target.statuses.curseResistTimer || 0) > 0) return false;
+      let t = turns;
+      const kind = String(target.kind || '').toLowerCase();
+      if (kind === 'boss') t = Math.min(t, 1);
+      else if (kind === 'elite') t = Math.min(t, 2);
+      target.statuses.curse = Math.max(Number(target.statuses.curse || 0), t);
+      target.statuses.curseResistTimer = 5;
     } else if (type === 'poison') {
       // Stack-based: max 3 stacks, 3 turns
       const curStacks = Number(target.statuses.poisonStacks || 0);
@@ -4900,6 +5938,29 @@ function getBuffedStat(unit, statKey) {
       if (kind === 'boss') t = Math.min(t, 2);
       else if (kind === 'elite') t = Math.min(t, 3);
       target.statuses.slow = Math.max(Number(target.statuses.slow || 0), t);
+    } else if (type === 'blind') {
+      // 실명: 명중률 대폭 감소
+      let t = turns;
+      const kind = String(target.kind || '').toLowerCase();
+      if (kind === 'boss') t = Math.min(t, 1);
+      else if (kind === 'elite') t = Math.min(t, 2);
+      target.statuses.blind = Math.max(Number(target.statuses.blind || 0), t);
+    } else if (type === 'freeze') {
+      // 빙결: 행동불가, 5턴 면역
+      if (Number(target.statuses.freezeResistTimer || 0) > 0) return false;
+      let t = turns;
+      const kind = String(target.kind || '').toLowerCase();
+      if (kind === 'boss' || kind === 'elite') t = Math.min(t, 1);
+      target.statuses.freeze = Math.max(Number(target.statuses.freeze || 0), t);
+      target.statuses.freezeResistTimer = 5;
+    } else if (type === 'paralyze') {
+      // 마비: 행동불가, 5턴 면역
+      if (Number(target.statuses.paralyzeResistTimer || 0) > 0) return false;
+      let t = turns;
+      const kind = String(target.kind || '').toLowerCase();
+      if (kind === 'boss' || kind === 'elite') t = Math.min(t, 1);
+      target.statuses.paralyze = Math.max(Number(target.statuses.paralyze || 0), t);
+      target.statuses.paralyzeResistTimer = 5;
     }
     addRoundHighlight(summary, `${sourceName}의 ${skill?.name || '공격'} → ${target.name} ${type}`);
     pushBattleLog(runtime, `${sourceName} 사용: ${skill?.name || '공격'} → ${target.name} ${type}`);
@@ -5009,13 +6070,7 @@ function getBuffedStat(unit, statKey) {
       const target = enemyBoss || enemyElite;
       if (!target.dead) return { type:'skill', skillId:tauntEnemy.id, target:target.uid };
     }
-    // 소환 스킬 (제피르, 바크) - 아직 소환 안 된 경우 우선
-    const summonSkill = skillPool.find(sk => sk.buff && sk.buff.summon && !hasSummonBuff(unit, sk.buff.summon));
-    if (summonSkill && Math.random() < 0.7) {
-      return { type:'skill', skillId:summonSkill.id, target:summonSkill.target === 'allAllies' ? 'allAllies' : unit.uid };
-    }
-
-    const buffSkill = skillPool.find(sk => sk.category === 'buff' && sk.id !== 'taunt' && !hasBuff(unit, sk.id) && !(sk.buff && sk.buff.forcedTaunt) && !(sk.buff && sk.buff.summon));
+    const buffSkill = skillPool.find(sk => sk.category === 'buff' && sk.id !== 'taunt' && !hasBuff(unit, sk.id) && !(sk.buff && sk.buff.forcedTaunt));
     if (buffSkill && (pos.includes('서포터') || pos.includes('원거리') || pos.includes('힐러') || Math.random() < 0.2)) {
       return { type:'skill', skillId:buffSkill.id, target:buffSkill.target === 'allAllies' ? 'allAllies' : unit.uid };
     }
@@ -5034,6 +6089,10 @@ function getBuffedStat(unit, statKey) {
     const utilityBuff = skillPool.find(sk => sk.category === 'utility' && sk.buff && !hasBuff(unit, sk.id));
     if (utilityBuff && unit.hp / unit.maxHp <= 0.5 && Math.random() < 0.6) return { type:'skill', skillId:utilityBuff.id, target:unit.uid };
     const singleAtk = skillPool.filter(sk => sk.category === 'singleAttack').sort((a,b)=>(b.coef||0)-(a.coef||0))[0];
+    // 몬스터: 기본공격 쿨타임 중이면 스킬 사용, 스킬 쿨타임 중이면 기본공격
+    const basicOnCooldown = unit.isMonster && Number(unit.cooldowns && unit.cooldowns['basicAttack'] || 0) > 0;
+    if (basicOnCooldown && singleAtk) return { type:'skill', skillId:singleAtk.id, target:(choosePriorityTarget(unit, foes, singleAtk) || {}).uid };
+    if (!basicOnCooldown && unit.isMonster) return { type:'basic', target:(choosePriorityTarget(unit, foes, null) || {}).uid };
     if (singleAtk) return { type:'skill', skillId:singleAtk.id, target:(choosePriorityTarget(unit, foes, singleAtk) || {}).uid };
     return { type:'basic', target:(choosePriorityTarget(unit, foes, null) || {}).uid };
   }
@@ -5079,11 +6138,16 @@ function getBuffedStat(unit, statKey) {
         actor.lastAction = `기본 공격 → ${target.name} 빗나감`;
         addRoundHighlight(summary, `${actor.name}의 공격이 빗나갔다`);
         pushBattleLog(runtime, `${actor.name}의 기본 공격이 ${target.name}에게 빗나감`);
+        // 몬스터 기본공격 쿨타임 1턴
+        if (actor.isMonster) actor.cooldowns['basicAttack'] = 1;
         return;
       }
       const dmg = computeDamage(actor, target, skill, hit.crit);
       const hpBefore = Number(target.hp || 0);
       applyDamage(target, dmg);
+      applyDurabilityOnAttack(runtime, actor, false);
+      applyDurabilityOnHit(runtime, target);
+      if (actor.side === 'party') { actor.sp = Math.max(0, (actor.sp || 0) - 1); }
       if (Number(target.statuses.sleep || 0) > 0) target.statuses.sleep = 0;
       if (actor.onHitStatus) applyStatus(target, { name:'기본 공격', status:{ type:actor.onHitStatus, chance:actor.onHitChance, turns:actor.onHitTurns } }, summary, actor.name, null, runtime, actor, dmg);
       actor.lastAction = `기본 공격 → ${target.name} ${dmg}`;
@@ -5095,6 +6159,8 @@ function getBuffedStat(unit, statKey) {
       if (hit.crit) addRoundHighlight(summary, `${actor.name} 치명타`);
       pushDamageEventLog(runtime, actor, target, '기본 공격', dmg, hit.crit, target.dead);
       pushHpShiftLog(runtime, target, hpBefore);
+      // 몬스터 기본공격 쿨타임 1턴
+      if (actor.isMonster) actor.cooldowns['basicAttack'] = 1;
       return;
     }
 
@@ -5102,6 +6168,8 @@ function getBuffedStat(unit, statKey) {
     if (!skill || !canUseSkill(actor, skill)) return resolveSkillOrBasic(runtime, actor, { type:'basic', target:action.target || null }, summary);
     const cost = paySkillCost(actor, skill);
     actor.lastAction = skill.name;
+    // 스킬 사용 시 무기/보조무기/악세서리 내구도 소모
+    applyDurabilityOnAttack(runtime, actor, true);
 
     if (skill.category === 'buff') {
       const targets = getTargetListForAction(runtime, actor, action, skill);
@@ -5203,6 +6271,7 @@ function getBuffedStat(unit, statKey) {
       totalDamage += dmg;
       const hpBefore = Number(target.hp || 0);
       applyDamage(target, dmg);
+      applyDurabilityOnHit(runtime, target);
       if (Number(target.statuses.sleep || 0) > 0) target.statuses.sleep = 0;
       if (skill.cc) ccTargets.push(target);
       applyStatus(target, skill, summary, actor.name, null, runtime, actor, dmg);
@@ -5326,7 +6395,7 @@ function getBuffedStat(unit, statKey) {
       }
 
       // 상태이상 턴 감소
-      ['stun','bind','sleep','poison','bleed','burn','curse','silence','slow'].forEach(key => {
+      ['stun','bind','sleep','poison','bleed','burn','curse','silence','slow','blind','freeze','paralyze'].forEach(key => {
         unit.statuses[key] = Math.max(0, Number(unit.statuses[key] || 0) - 1);
       });
       // 독/화상: 턴이 0이 되면 스택 초기화
@@ -5336,12 +6405,24 @@ function getBuffedStat(unit, statKey) {
       if (Number(unit.statuses.bleedHealReduction || 0) > 0) {
         unit.statuses.bleedHealReduction = Math.max(0, unit.statuses.bleedHealReduction - 1);
       }
-      // 기절/수면/도발 저항 타이머 감소
+      // 기절/수면/빙결/마비/속박/저주/도발 저항 타이머 감소
       if (Number(unit.statuses.stunResistTimer || 0) > 0) {
         unit.statuses.stunResistTimer = Math.max(0, unit.statuses.stunResistTimer - 1);
       }
       if (Number(unit.statuses.sleepResistTimer || 0) > 0) {
         unit.statuses.sleepResistTimer = Math.max(0, unit.statuses.sleepResistTimer - 1);
+      }
+      if (Number(unit.statuses.freezeResistTimer || 0) > 0) {
+        unit.statuses.freezeResistTimer = Math.max(0, unit.statuses.freezeResistTimer - 1);
+      }
+      if (Number(unit.statuses.paralyzeResistTimer || 0) > 0) {
+        unit.statuses.paralyzeResistTimer = Math.max(0, unit.statuses.paralyzeResistTimer - 1);
+      }
+      if (Number(unit.statuses.bindResistTimer || 0) > 0) {
+        unit.statuses.bindResistTimer = Math.max(0, unit.statuses.bindResistTimer - 1);
+      }
+      if (Number(unit.statuses.curseResistTimer || 0) > 0) {
+        unit.statuses.curseResistTimer = Math.max(0, unit.statuses.curseResistTimer - 1);
       }
       if (Number(unit.statuses.tauntResistTimer || 0) > 0) {
         unit.statuses.tauntResistTimer = Math.max(0, unit.statuses.tauntResistTimer - 1);
@@ -5450,6 +6531,14 @@ function getBuffedStat(unit, statKey) {
         addRoundHighlight(summary, `${actor.name} 수면으로 행동 불가`);
         continue;
       }
+      if (Number(actor.statuses.freeze || 0) > 0) {
+        addRoundHighlight(summary, `${actor.name} 빙결로 행동 불가`);
+        continue;
+      }
+      if (Number(actor.statuses.paralyze || 0) > 0) {
+        addRoundHighlight(summary, `${actor.name} 마비로 행동 불가`);
+        continue;
+      }
       const action = actor.side === 'party' ? resolvePartyAction(runtime, actor, allies, foes) : chooseEnemyAction(actor, allies, foes, false);
       resolveSkillOrBasic(runtime, actor, action, summary);
       if (checkBattleEnd(runtime)) break;
@@ -5518,6 +6607,7 @@ function getBuffedStat(unit, statKey) {
     runtime.enemies = enemies.slice(0, MAX_ENEMIES);
     if (!runtime.party.length) throw new Error('파티 슬롯이 비어 있다.');
     if (!runtime.enemies.length) throw new Error('적 슬롯이 비어 있다.');
+    numberDuplicateUnits(runtime.enemies);
     runtime.started = true;
     runtime.finished = false;
     model.state.runtime = runtime;
@@ -5775,6 +6865,16 @@ function renderHub() {
     ${runInfo}
     ${currentInfo}
     <div class="gb-panel">
+      <div class="gb-section-title">💾 데이터 관리</div>
+      <div class="gb-sub">플러그인 업데이트 전 반드시 데이터를 내보내기(백업) 해두세요. 불러오기로 이전 데이터를 복원할 수 있습니다.</div>
+      <div class="gb-btn-row" style="margin-top:8px;">
+        <button class="gb-btn primary" id="gb-data-export">📥 데이터 내보내기 (백업)</button>
+        <button class="gb-btn" id="gb-data-import">📤 데이터 불러오기 (복원)</button>
+        <button class="gb-btn" id="gb-data-clear" style="background:rgba(239,68,68,0.15);color:#fca5a5;">🗑️ 저장 데이터 전체 삭제</button>
+      </div>
+      <input type="file" id="gb-data-import-file" accept=".json" style="display:none;">
+    </div>
+    <div class="gb-panel">
       <div class="gb-section-title">v7.2 범위</div>
       <div class="gb-sub">허브 / 게이트 / 전투 / 파티 / 캐릭터 / 공용인벤 / DB / 협회(정산·경매) / 상점 / 주거 / 길드 / 가방·무게 / 게이트 자동 생성 / 방 단위 진행 / 광맥 채굴.</div>
       <div class="gb-rule">광역CC = 단일CC의 1/2 계수 + 자원 소모 2배</div>
@@ -5841,84 +6941,174 @@ function seedNpcAuctionListings() {
   const npcCount = model.db.auctionListings.filter(l => l.isNpc).length;
   const needed = AUCTION_NPC_MAX - npcCount;
   if (needed <= 0) return;
-  const grades = ['E','E','E','D','D','D','C','C','B','A'];
-  const parts = EQUIP_PARTS;
+
+  // 등급 분배: D50% C40% B8% A1.9% S0.1% (E급 제외)
+  function pickAuctionRank() {
+    const r = Math.random() * 100;
+    if (r < 50) return 'D';
+    if (r < 90) return 'C';
+    if (r < 98) return 'B';
+    if (r < 99.9) return 'A';
+    return 'S';
+  }
+  // 부위 분배 가중치: weapon30 armor50 subweapon24 accessory24 skillbook2
+  const PART_WEIGHTS = [
+    { part:'weapon', w:30 }, { part:'armor', w:50 },
+    { part:'subweapon', w:24 }, { part:'accessory', w:24 },
+    { part:'skillbook', w:2 }
+  ];
+  const PART_TOTAL = PART_WEIGHTS.reduce((s,p)=>s+p.w,0);
+  function pickAuctionPart() {
+    let r = Math.random() * PART_TOTAL;
+    for (const p of PART_WEIGHTS) { r -= p.w; if (r <= 0) return p.part; }
+    return 'weapon';
+  }
+
   for (let i = 0; i < needed; i++) {
-    const rank = grades[Math.floor(Math.random() * grades.length)];
-    if (Math.random() < 0.70) {
-      // 드랍 장비 (보조무기·악세서리는 항상 특성, 무기·방어구는 20% 확률)
-      const part = parts[Math.floor(Math.random() * parts.length)];
-      const maxInfuseBase = EQUIP_MAX_INFUSE[part] || 1;
-      const builtInTrait = (part === 'subweapon' || part === 'accessory');
-      const hasTrait = builtInTrait ? true : (Math.random() < 0.20);
-      // 보조무기·악세서리: 80% 일반(tier3-4) / 20% 희귀(tier1-2) 풀에서 특성 선택
-      let traitId = '';
-      if (hasTrait) {
-        if (builtInTrait) {
-          const pool = Math.random() < 0.20 ? RARE_TRAIT_POOL : NORMAL_TRAIT_POOL;
-          traitId = pool[Math.floor(Math.random() * pool.length)];
-        } else {
-          traitId = EQUIP_TRAIT_TYPES[Math.floor(Math.random() * EQUIP_TRAIT_TYPES.length)];
-        }
+    const rank = pickAuctionRank();
+    const partType = pickAuctionPart();
+    const uid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + i;
+
+    if (partType === 'skillbook') {
+      // ── 스킬북 매물 ──
+      const skillKeys = Object.keys(BUILTIN_SKILLS || {});
+      const matchingSkills = skillKeys.filter(k => {
+        const sk = BUILTIN_SKILLS[k];
+        return sk && sk.grade === rank;
+      });
+      if (matchingSkills.length === 0) continue; // no skills for this rank, skip
+      const pickedKey = matchingSkills[Math.floor(Math.random() * matchingSkills.length)];
+      const skill = BUILTIN_SKILLS[pickedKey];
+      const cat = skill.category || 'utility';
+      const tier = SKILL_BOOK_TIERS[cat] || 4;
+      const bookPrice = calcSkillBookPrice(rank, tier);
+      const ratio = randomAuctionRatio();
+      const askPrice = Math.round(bookPrice * ratio);
+      const item = {
+        id: `npc_skillbook_${rank.toLowerCase()}_${uid}`,
+        name: `📖 ${skill.name || pickedKey} 스킬북`,
+        category: 'skillbook', rank, skillId: pickedKey,
+        skillCategory: cat, skillTier: tier,
+        price: bookPrice, stackable: false,
+        unitWeightG: 200,
+        note: `${rank}급 T${tier} 스킬북 [${cat}]`
+      };
+      model.db.auctionListings.push({ id: `auc_npc_${uid}`, item, askPrice, marketPrice: bookPrice, priceRatio: ratio, isNpc: true, listedAt: Date.now() });
+      continue;
+    }
+
+    const part = partType;
+    // 희귀도: Normal 80% / Rare 20%
+    const isRare = Math.random() < 0.20;
+    const maxInfuseBase = EQUIP_MAX_INFUSE[part] || 1;
+    const builtInTrait = (part === 'subweapon' || part === 'accessory');
+
+    // 특성 결정: Rare면 항상 특성 보유, Normal이면 보조무기/악세는 80%확률 내장특성, 무기/방어구는 특성 없음
+    let hasTrait = false;
+    if (isRare) {
+      hasTrait = true;
+    } else if (builtInTrait) {
+      hasTrait = Math.random() < 0.80;
+    }
+
+    let traitId = '';
+    if (hasTrait) {
+      if (builtInTrait) {
+        const pool = Math.random() < 0.20 ? RARE_TRAIT_POOL : NORMAL_TRAIT_POOL;
+        traitId = pool[Math.floor(Math.random() * pool.length)];
+      } else {
+        traitId = EQUIP_TRAIT_TYPES[Math.floor(Math.random() * EQUIP_TRAIT_TYPES.length)];
       }
-      const traitName = hasTrait ? (EQUIP_TRAIT_LABELS[traitId] || traitId) : '';
-      const maxInfuse = (hasTrait && !builtInTrait) ? maxInfuseBase + 1 : maxInfuseBase;
-      const basePrice = calcEquipRandomPrice(rank, part);
-      // 무기·방어구 특성 보너스: 희귀재료 기준가 × 1.25
-      // 보조무기·악세서리 내장 특성: 티어별 희귀재료 가격 차등 적용
-      let traitBonus = 0;
-      if (hasTrait && !builtInTrait) {
-        traitBonus = Math.round((RARE_MATERIAL_BASE_WON[rank] || RARE_MATERIAL_BASE_WON.E) * 1.25);
-      } else if (hasTrait && builtInTrait) {
-        const tier = TRAIT_TIER_MAP[traitId] || 3;
+    }
+    const traitName = hasTrait ? (EQUIP_TRAIT_LABELS[traitId] || traitId) : '';
+    // 특수효과는 주입이 아니므로 maxInfuse를 늘리지 않음
+    const maxInfuse = maxInfuseBase;
+    const basePrice = calcEquipRandomPrice(rank, part);
+    let traitBonus = 0;
+    if (hasTrait && !builtInTrait) {
+      traitBonus = Math.round((RARE_MATERIAL_BASE_WON[rank] || RARE_MATERIAL_BASE_WON.E) * 1.25);
+    } else if (hasTrait && builtInTrait) {
+      const tier = TRAIT_TIER_MAP[traitId] || 3;
+      const tierPrices = RARE_PRICE_BY_RANK_TIER[rank] || RARE_PRICE_BY_RANK_TIER.E;
+      const tier4Price = tierPrices.tier4;
+      const tierPrice = tierPrices[`tier${tier}`] || tier4Price;
+      traitBonus = tierPrice - tier4Price;
+    }
+    const marketPrice = basePrice + traitBonus;
+    const ratio = randomAuctionRatio();
+    const askPrice = Math.round(marketPrice * ratio);
+    const _armorSub = part === 'armor' ? (() => { const k = ARMOR_SUBTYPE_KEYS[Math.floor(Math.random()*ARMOR_SUBTYPE_KEYS.length)]; return {key:k,...ARMOR_SUBTYPES[k]}; })() : null;
+    // 보조무기 서브타입 결정 (방패 여부)
+    let _subSuffix = null;
+    let _isShield = false;
+    if (part === 'subweapon') {
+      const subSuffArr = EQUIP_NAME_SUFFIXES.subweapon || ['방패'];
+      _subSuffix = subSuffArr[Math.floor(Math.random() * subSuffArr.length)];
+      _isShield = (_subSuffix === '방패');
+    }
+    const { rarity: npcRarity, traitTier: npcTier } = hasTrait ? assignEquipRarity(part, traitId) : { rarity: 'Normal', traitTier: 0 };
+    const equipNameStr = generateEquipName(rank, part, _armorSub ? _armorSub.key : null, hasTrait ? traitName : '', _subSuffix);
+    // 특수효과(내장 특성)는 주입 횟수를 사용하지 않음
+    const infuseCount = (hasTrait && builtInTrait) ? 0 : (hasTrait ? 1 : 0);
+    const item = {
+      id: `npc_drop_equip_${rank.toLowerCase()}_${part}_${uid}`,
+      name: equipNameStr,
+      part, rank, rarity: isRare ? npcRarity : 'Normal', traitTier: npcTier,
+      enhance: 0, infuse: infuseCount, maxInfuse, traits: hasTrait ? [traitId] : [],
+      durability: 100, maxDurability: 100, price: marketPrice,
+      category: 'equipment', isDropped: true, stackable: false,
+      unitWeightG: EQUIP_WEIGHT_G[part] || 1000,
+      stackKey: `equipment:npc_${uid}`, note: `NPC 경매 등록${hasTrait ? `. 특성: ${traitName}` : ''}`,
+      atk: part === 'weapon' ? (WEAPON_BASE_ATK[rank] || 5) : (part === 'armor' && _armorSub && _armorSub.atkMul ? Math.round((WEAPON_BASE_ATK[rank] || 5) * _armorSub.atkMul) : 0),
+      pdef: part === 'armor' ? (() => { const base = (ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1]; const [lo,hi] = _armorSub ? _armorSub.defMul : [0.5,0.5]; const mul = lo + Math.random()*(hi-lo); return Math.round(base * mul); })() : (part === 'subweapon' && _isShield ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.25) : 0),
+      mdef: part === 'armor' ? (() => { const base = (ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1]; const [lo,hi] = _armorSub ? _armorSub.defMul : [0.5,0.5]; const mul = lo + Math.random()*(hi-lo); return Math.round(base * mul); })() : 0,
+      mainStat: part === 'weapon' ? (Math.random() < 0.5 ? 'str' : 'int') : (part === 'armor' && _armorSub ? _armorSub.statPool[Math.floor(Math.random() * _armorSub.statPool.length)] : (part === 'subweapon' && _isShield ? 'con' : (part === 'armor' ? 'con' : ''))),
+      armorSubtype: _armorSub ? _armorSub.key : undefined,
+      armorStatBonusMul: _armorSub ? _armorSub.statBonusMul : undefined,
+      resistType: '', resistPct: 0
+    };
+    model.db.auctionListings.push({ id: `auc_npc_${uid}`, item, askPrice, marketPrice, priceRatio: ratio, isNpc: true, listedAt: Date.now() });
+  }
+
+  // ── 희귀재료 매물 ──
+  if (!Array.isArray(model.db.auctionRareMats)) model.db.auctionRareMats = [];
+  const rareMatCount = model.db.auctionRareMats.filter(l => l.isNpc).length;
+  const rareMatNeeded = 15 - rareMatCount;
+  if (rareMatNeeded > 0) {
+    function pickRareMatRank() {
+      const r = Math.random() * 100;
+      if (r < 30) return 'E';
+      if (r < 60) return 'D';
+      if (r < 80) return 'C';
+      if (r < 98) return 'B';
+      if (r < 99.9) return 'A';
+      return 'S';
+    }
+    const rareMatCatalog = (model.db.rareMaterialCatalog || []);
+    for (let rm = 0; rm < rareMatNeeded; rm++) {
+      const rank = pickRareMatRank();
+      const uid2 = Date.now().toString(36) + Math.random().toString(36).slice(2,6) + 'rm' + rm;
+      const matchMats = rareMatCatalog.filter(m => m.rank === rank);
+      let matItem;
+      if (matchMats.length > 0) {
+        const picked = matchMats[Math.floor(Math.random() * matchMats.length)];
+        // 티어별 가격 적용
+        const tier = TRAIT_TIER_MAP[picked.traitId] || 3;
         const tierPrices = RARE_PRICE_BY_RANK_TIER[rank] || RARE_PRICE_BY_RANK_TIER.E;
-        const tier4Price = tierPrices.tier4;
-        const tierPrice = tierPrices[`tier${tier}`] || tier4Price;
-        traitBonus = tierPrice - tier4Price;
+        const baseWon = tierPrices[`tier${tier}`] || RARE_MATERIAL_BASE_WON[rank] || RARE_MATERIAL_BASE_WON.E;
+        const ratio2 = 0.85 + Math.random() * 0.30;
+        const askP = Math.round(baseWon * ratio2);
+        // 효과 설명 추가
+        const traitLabel = picked.traitId ? (EQUIP_TRAIT_LABELS[picked.traitId] || picked.traitId) : '';
+        const effectNote = traitLabel ? `[${traitLabel}] ${picked.note || `${rank}급 희귀재료`}` : (picked.note || `${rank}급 희귀재료`);
+        matItem = { id: `auc_rmat_${uid2}`, item: { id: `rmat_${rank.toLowerCase()}_${uid2}`, name: picked.name || `${rank}급 희귀재료`, category: 'rareMaterial', rank, traitId: picked.traitId || '', suggestedPrice: baseWon, stackable: false, unitWeightG: 200, note: effectNote }, askPrice: askP, marketPrice: baseWon, priceRatio: ratio2, isNpc: true, listedAt: Date.now() };
+      } else {
+        const baseWon = RARE_MATERIAL_BASE_WON[rank] || RARE_MATERIAL_BASE_WON.E;
+        const ratio2 = 0.85 + Math.random() * 0.30;
+        const askP = Math.round(baseWon * ratio2);
+        matItem = { id: `auc_rmat_${uid2}`, item: { id: `rmat_${rank.toLowerCase()}_${uid2}`, name: `${rank}급 희귀재료`, category: 'rareMaterial', rank, traitId: '', suggestedPrice: baseWon, stackable: false, unitWeightG: 200, note: `${rank}급 희귀재료` }, askPrice: askP, marketPrice: baseWon, priceRatio: ratio2, isNpc: true, listedAt: Date.now() };
       }
-      const marketPrice = basePrice + traitBonus;
-      const ratio = randomAuctionRatio();
-      const askPrice = Math.round(marketPrice * ratio);
-      const uid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + i;
-      const nameSuffixes = { weapon:['검','창','활','완드','도끼'], armor:['갑옷','로브','체인메일','플레이트'], subweapon:['방패'], accessory:['반지','목걸이','팔찌'] };
-      const suffArr = nameSuffixes[part] || [EQUIP_PART_LABELS[part]||part];
-      const suff = suffArr[Math.floor(Math.random() * suffArr.length)];
-      // 희귀도 자동 판정: 실제 특성 ID 기반
-      const { rarity: npcRarity, traitTier: npcTier } = assignEquipRarity(part, traitId);
-      const traitLabel = hasTrait ? ` [${traitName}]` : '';
-      const item = {
-        id: `npc_drop_equip_${rank.toLowerCase()}_${part}_${uid}`,
-        name: `${rank}급 드랍 ${suff}${traitLabel}`,
-        part, rank, rarity: npcRarity, traitTier: npcTier,
-        enhance: 0, infuse: hasTrait ? 1 : 0, maxInfuse, traits: hasTrait ? [traitId] : [],
-        durability: 100, maxDurability: 100, price: marketPrice,
-        category: 'equipment', isDropped: true, stackable: false,
-        unitWeightG: EQUIP_WEIGHT_G[part] || 1000,
-        stackKey: `equipment:npc_${uid}`, note: `NPC 경매 등록${hasTrait ? `. 특성: ${traitName}` : ''}`,
-        atk: part === 'weapon' ? (WEAPON_BASE_ATK[rank] || 5) : 0,
-        pdef: part === 'armor' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.5) : (part === 'subweapon' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.25) : 0),
-        mdef: part === 'armor' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.3) : 0,
-        mainStat: part === 'weapon' ? (Math.random() < 0.5 ? 'str' : 'int') : (part === 'armor' ? 'con' : 'str'),
-        resistType: '', resistPct: 0
-      };
-      model.db.auctionListings.push({ id: `auc_npc_${uid}`, item, askPrice, marketPrice, priceRatio: ratio, isNpc: true, listedAt: Date.now() });
-    } else {
-      // 희귀재료 (NPC) — 티어별 가격 적용
-      const traitId = EQUIP_TRAIT_TYPES[Math.floor(Math.random() * EQUIP_TRAIT_TYPES.length)];
-      const traitName = EQUIP_TRAIT_LABELS[traitId] || traitId;
-      const traitLabel = equipTraitDisplay(traitId, rank);
-      const marketPrice = getRareMatTierPrice(rank, traitId);
-      const ratio = randomAuctionRatio();
-      const askPrice = Math.round(marketPrice * ratio);
-      const uid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + '_r' + i;
-      const item = {
-        id: `npc_rare_${rank.toLowerCase()}_${uid}`,
-        name: `${rank}급 희귀재료 [${traitLabel}]`,
-        category: 'rareMaterial', rank, count: 1, traitId, traitName,
-        suggestedPrice: marketPrice, stackable: true, stackKey: `rareMaterial:${rank}:${traitId}`,
-        note: traitName, unitWeightG: 100
-      };
-      model.db.auctionListings.push({ id: `auc_npc_${uid}`, item, askPrice, marketPrice, priceRatio: ratio, isNpc: true, listedAt: Date.now() });
+      model.db.auctionRareMats.push(matItem);
     }
   }
 }
@@ -5987,6 +7177,7 @@ function renderAuctionHouseHtml() {
   const tabBar = `<div class="gb-btn-row">
     <button class="gb-btn${tab==='browse'?' primary':''}" data-auction-tab="browse">🔍 구매</button>
     <button class="gb-btn${tab==='sell'?' primary':''}" data-auction-tab="sell">📦 판매 등록</button>
+    <button class="gb-btn${tab==='manastone'?' primary':''}" data-auction-tab="manastone">💎 마정석 거래</button>
   </div>`;
 
   let content = '';
@@ -6040,57 +7231,136 @@ function renderAuctionHouseHtml() {
           ${actionArea}
         </div>`;
     } else {
-      const listings = model.db.auctionListings;
+      const browseType = model.state.auctionBrowseType || 'equip';
+      const browseSubTabs = `<div class="gb-btn-row" style="margin-bottom:6px;">
+        <button class="gb-btn${browseType==='equip'?' primary':''}" data-auction-browse-type="equip">⚔️ 장비 & 스킬북</button>
+        <button class="gb-btn${browseType==='raremat'?' primary':''}" data-auction-browse-type="raremat">💎 희귀재료</button>
+      </div>`;
       const rankFilter = model.state.auctionRankFilter || '';
       const searchQ = (model.state.auctionSearchQ || '').trim().toLowerCase();
-      const filtered = listings.filter(l => {
-        const it = l.item;
-        const rankOk = !rankFilter || (it.rank||'E') === rankFilter;
-        const searchOk = !searchQ || (it.name||it.id||'').toLowerCase().includes(searchQ) ||
-          (it.note||'').toLowerCase().includes(searchQ) ||
-          ((it.traits||[]).some(t => (EQUIP_TRAIT_LABELS[t]||t).includes(searchQ)));
-        // 유니크/전설 아이템은 경매장에 표시하지 않음
-        const rarityOk = !it.rarity || (it.rarity !== 'Unique' && it.rarity !== 'Legendary');
-        return rankOk && searchOk && rarityOk;
-      });
 
       const rankBtns = ['','E','D','C','B','A','S'].map(r =>
         `<button class="gb-btn${rankFilter===r?' primary':''}" data-auction-rank="${escapeHtml(r)}">${r||'전체'}</button>`
       ).join('');
 
-      const listingsHtml = filtered.length === 0
-        ? '<div class="gb-sub">검색 결과 없음.</div>'
-        : filtered.map(l => {
-            const it = l.item;
-            const mktPrice = l.marketPrice || it.price || it.suggestedPrice || 0;
-            const isEquip = it.category === 'equipment';
-            const traitTxt = isEquip && (it.traits||[]).length ? `<span class="gb-badge" style="background:#7c3aed;">${(it.traits||[]).map(t=>equipTraitDisplay(t, it.rank)).join(', ')}</span>` : (!isEquip && it.traitId ? `<span class="gb-badge" style="background:#7c3aed;">${escapeHtml(equipTraitDisplay(it.traitId, it.rank))}</span>` : '');
-            const npcBadge = l.isNpc ? '<span class="gb-badge">NPC</span>' : '<span class="gb-badge" style="background:#0284c7;">플레이어</span>';
-            return `<div class="gb-unit" style="margin-bottom:6px;padding:8px;border:1px solid rgba(148,163,184,0.15);border-radius:6px;">
-              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
-                <div>
-                  <strong style="${rarityStyle(it.rarity)}">${escapeHtml(it.name||it.id)}</strong>
-                  <span class="gb-badge">${escapeHtml(it.rank||'E')}</span>
-                  ${isEquip ? `<span class="gb-badge">${escapeHtml(EQUIP_PART_LABELS[it.part]||it.part||'')}</span>` : '<span class="gb-badge">희귀재료</span>'}
-                  ${isEquip && it.rarity && it.rarity !== 'Normal' ? `<span class="gb-badge" style="background:${rarityColor(it.rarity)};color:#000;">${escapeHtml(it.rarity)}</span>` : ''}
-                  ${npcBadge} ${traitTxt}
-                  ${isEquip ? `<div class="gb-sub">주입 최대 ${it.maxInfuse||1}회 | 내구 ${it.durability||100}/${it.maxDurability||100}</div>` : ''}
-                  <div class="gb-sub">시장가: ${fmt(mktPrice)}</div>
+      let listingsHtml = '';
+      let totalCount = 0;
+
+      if (browseType === 'raremat') {
+        // 희귀재료 매물
+        const rareMatListings = (model.db.auctionRareMats || []);
+        const filteredMats = rareMatListings.filter(l => {
+          const it = l.item;
+          const rankOk = !rankFilter || (it.rank||'E') === rankFilter;
+          const searchOk = !searchQ || (it.name||it.id||'').toLowerCase().includes(searchQ) || (it.note||'').toLowerCase().includes(searchQ) || (it.traitId && (EQUIP_TRAIT_LABELS[it.traitId]||it.traitId).toLowerCase().includes(searchQ));
+          return rankOk && searchOk;
+        });
+        totalCount = filteredMats.length;
+        listingsHtml = filteredMats.length === 0
+          ? '<div class="gb-sub">검색 결과 없음.</div>'
+          : filteredMats.map(l => {
+              const it = l.item;
+              const mktPrice = l.marketPrice || it.suggestedPrice || 0;
+              const traitTxt = it.traitId ? `<span class="gb-badge" style="background:#7c3aed;">${escapeHtml(equipTraitDisplay(it.traitId, it.rank))}</span>` : '';
+              const npcBadge = l.isNpc ? '<span class="gb-badge">NPC</span>' : '<span class="gb-badge" style="background:#0284c7;">플레이어</span>';
+              return `<div class="gb-unit" style="margin-bottom:6px;padding:8px;border:1px solid rgba(148,163,184,0.15);border-radius:6px;">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+                  <div>
+                    <strong>${escapeHtml(it.name||it.id)}</strong>
+                    <span class="gb-badge">${escapeHtml(it.rank||'E')}</span>
+                    <span class="gb-badge">희귀재료</span>
+                    ${npcBadge} ${traitTxt}
+                    <div class="gb-sub">${escapeHtml(it.note||'')}</div>
+                    <div class="gb-sub">시장가: ${fmt(mktPrice)}</div>
+                  </div>
+                  <button class="gb-btn primary" data-auction-bid-raremat="${escapeHtml(l.id)}" data-auction-bid-mkt="${mktPrice}" style="white-space:nowrap;">🔨 경매 참여</button>
                 </div>
-                <button class="gb-btn primary" data-auction-bid="${escapeHtml(l.id)}" data-auction-bid-mkt="${mktPrice}" style="white-space:nowrap;">🔨 경매 참여</button>
-              </div>
-            </div>`;
-          }).join('');
+              </div>`;
+            }).join('');
+      } else {
+        // 장비 & 스킬북 매물
+        const listings = model.db.auctionListings;
+        const filtered = listings.filter(l => {
+          const it = l.item;
+          const rankOk = !rankFilter || (it.rank||'E') === rankFilter;
+          const searchOk = !searchQ || (it.name||it.id||'').toLowerCase().includes(searchQ) ||
+            (it.note||'').toLowerCase().includes(searchQ) ||
+            ((it.traits||[]).some(t => (EQUIP_TRAIT_LABELS[t]||t).includes(searchQ)));
+          const rarityOk = !it.rarity || (it.rarity !== 'Unique' && it.rarity !== 'Legendary');
+          return rankOk && searchOk && rarityOk;
+        });
+        totalCount = filtered.length;
+        listingsHtml = filtered.length === 0
+          ? '<div class="gb-sub">검색 결과 없음.</div>'
+          : filtered.map(l => {
+              const it = l.item;
+              const mktPrice = l.marketPrice || it.price || it.suggestedPrice || 0;
+              const isEquip = it.category === 'equipment';
+              const isSkillbook = it.category === 'skillbook';
+              const traitTxt = isEquip && (it.traits||[]).length ? `<span class="gb-badge" style="background:#7c3aed;">${(it.traits||[]).map(t=>equipTraitDisplay(t, it.rank)).join(', ')}</span>` : (!isEquip && !isSkillbook && it.traitId ? `<span class="gb-badge" style="background:#7c3aed;">${escapeHtml(equipTraitDisplay(it.traitId, it.rank))}</span>` : '');
+              const npcBadge = l.isNpc ? '<span class="gb-badge">NPC</span>' : '<span class="gb-badge" style="background:#0284c7;">플레이어</span>';
+              const catBadge = isEquip ? `<span class="gb-badge">${escapeHtml(EQUIP_PART_LABELS[it.part]||it.part||'')}</span>` : isSkillbook ? `<span class="gb-badge" style="background:#d97706;">📖 스킬북 T${it.skillTier||'?'}</span>` : '<span class="gb-badge">희귀재료</span>';
+              return `<div class="gb-unit" style="margin-bottom:6px;padding:8px;border:1px solid rgba(148,163,184,0.15);border-radius:6px;">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+                  <div>
+                    <strong style="${rarityStyle(it.rarity)}">${escapeHtml(it.name||it.id)}</strong>
+                    <span class="gb-badge">${escapeHtml(it.rank||'E')}</span>
+                    ${catBadge}
+                    ${isEquip && it.rarity && it.rarity !== 'Normal' ? `<span class="gb-badge" style="background:${rarityColor(it.rarity)};color:#000;">${escapeHtml(it.rarity)}</span>` : ''}
+                    ${npcBadge} ${traitTxt}
+                    ${isEquip ? `<div class="gb-sub">${it.part === 'armor' && it.armorSubtype && ARMOR_SUBTYPES[it.armorSubtype] ? '['+ARMOR_SUBTYPES[it.armorSubtype].label+'] ' : ''}${it.atk ? 'ATK+'+it.atk+' | ' : ''}${it.pdef ? 'PDEF+'+it.pdef+' | ' : ''}${it.mdef ? 'MDEF+'+it.mdef+' | ' : ''}주입 최대 ${it.maxInfuse||1}회 | 내구 ${it.durability||100}/${it.maxDurability||100}</div>` : ''}
+                    ${isSkillbook ? `<div class="gb-sub">${escapeHtml(it.note||'')}</div>` : ''}
+                    <div class="gb-sub">시장가: ${fmt(mktPrice)}</div>
+                  </div>
+                  <button class="gb-btn primary" data-auction-bid="${escapeHtml(l.id)}" data-auction-bid-mkt="${mktPrice}" style="white-space:nowrap;">🔨 경매 참여</button>
+                </div>
+              </div>`;
+            }).join('');
+      }
 
       content = `
-        <div class="gb-sub" style="margin-bottom:6px;">소지금: ${fmt(gold)} | 총 ${filtered.length}개 항목</div>
+        ${browseSubTabs}
+        <div class="gb-sub" style="margin-bottom:6px;">소지금: ${fmt(gold)} | 총 ${totalCount}개 항목</div>
         <div style="display:flex;gap:6px;margin-bottom:6px;">
           <input class="gb-input" id="gb-auction-search" type="text" placeholder="이름·특성 검색..." value="${escapeHtml(model.state.auctionSearchQ||'')}" style="flex:1;">
         </div>
         <div class="gb-btn-row">${rankBtns}</div>
-        <button class="gb-btn" data-auction-refresh style="margin-bottom:8px;">🔄 NPC 목록 갱신</button>
+        <button class="gb-btn" data-auction-refresh style="margin-bottom:8px;">🔄 NPC 목록 갱신 (${(() => { const today = new Date().toISOString().slice(0,10); const cnt = (model.state.auctionRefreshDate === today) ? (model.state.auctionRefreshCount || 0) : 0; return `${3 - cnt}/3`; })()})</button>
         <div>${listingsHtml}</div>`;
     }
+
+  } else if (tab === 'manastone') {
+    // 마정석 거래 탭 — 등급별 카테고리, 순도 91~100 모두 표시
+    const fmt2 = fmt;
+    const MANA_RANKS = ['E','D','C','B','A','S'];
+    let manaHtml = '<div style="display:grid;gap:12px;">';
+    for (const r of MANA_RANKS) {
+      const wonPer = MANA_STONE_WON_PER_PCT[r] || 1000;
+      const label = MANA_STONE_LABELS[r] || (r + '급 마정석');
+      manaHtml += `<details open style="border:1px solid rgba(148,163,184,0.15);border-radius:6px;padding:6px;">
+        <summary style="cursor:pointer;font-weight:bold;padding:4px;">💎 ${escapeHtml(label)} <span class="gb-badge">${r}급</span></summary>
+        <div style="display:grid;gap:4px;padding:4px 0;">`;
+      for (let pur = 100; pur >= 91; pur--) {
+        const baseVal = wonPer * pur;
+        const sellPrice = Math.round(baseVal * 1.20);
+        const canAfford = gold >= sellPrice;
+        manaHtml += `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 6px;background:rgba(15,23,42,0.4);border-radius:4px;">
+            <div>
+              <span style="font-size:0.9em;">${escapeHtml(label)} <span class="gb-badge" style="font-size:0.75em;">순도 ${pur}%</span></span>
+              <span class="gb-sub" style="margin-left:6px;">시세: ${fmt2(baseVal)} → 판매가: ${fmt2(sellPrice)}</span>
+            </div>
+            <button class="gb-btn tiny${canAfford?'':' danger'}" data-buy-manastone="${r}" data-ms-purity="${pur}" data-ms-price="${sellPrice}" ${canAfford?'':'disabled'} style="font-size:0.8em;">
+              ₩${fmt2(sellPrice)}
+            </button>
+          </div>`;
+      }
+      manaHtml += '</div></details>';
+    }
+    manaHtml += '</div>';
+    content = `
+      <div class="gb-sub" style="margin-bottom:6px;">💎 마정석 거래소 — 등급별 마정석을 시세의 120% 가격에 구매할 수 있다. (순도 91~100%)</div>
+      <div class="gb-sub" style="margin-bottom:8px;">소지금: ${fmt(gold)}</div>
+      ${manaHtml}`;
 
   } else {
     // 판매 등록 탭
@@ -6445,7 +7715,6 @@ const SHOP_CATEGORIES = [
   { id:'convenience',  label:'🏪 편의점',    desc:'식료품, 음료, 기본 보급품.' },
   { id:'department',   label:'🏬 백화점',    desc:'의류, 생활용품, 일반 장비.' },
   { id:'hunterstreet', label:'🗡️ 헌터거리',  desc:'헌터 전용 상점가. 수리점·대장간·소모품 등.' },
-  { id:'equip',        label:'⚔️ 장비상점',  desc:'무기, 방어구, 헌터 전용 장비 구매·판매.' },
   { id:'huntermarket', label:'🏷️ 헌터마켓',  desc:'헌터 간 중고장비 거래 플랫폼. 스킬북은 협회 중앙 경매장 전용.' },
   { id:'blackmarket',  label:'🖤 블랙마켓',  desc:'불법 거래소. 수수료 0%·세금 0%. 적발 위험 있음.' },
 ];
@@ -6580,25 +7849,28 @@ function renderEquipShopHtml() {
   const selRank = model.state.shopEquipRank || '';
   const selPart = model.state.shopEquipPart || '';
 
-  const rankBtns = ['', ...GRADE_ORDER].map(r =>
+  const rankBtns = ['', 'E', 'D', 'C'].map(r =>
     `<button class="gb-btn ${selRank===r?'primary':''}" data-equip-shop-rank="${escapeHtml(r)}">${r||'전체'}</button>`
   ).join('');
   const partBtns = ['', ...EQUIP_PARTS].map(p =>
     `<button class="gb-btn ${selPart===p?'primary':''}" data-equip-shop-part="${escapeHtml(p)}">${p ? EQUIP_PART_LABELS[p] : '전체'}</button>`
   ).join('');
 
+  // 장비상점: 노말 아이템만, E~C급만 판매
+  const SHOP_ALLOWED_RANKS = ['E','D','C'];
   const filtered = eqs.filter(e =>
     (!selRank || e.rank === selRank) && (!selPart || e.part === selPart) && !e.statusType &&
-    (!e.rarity || (e.rarity !== 'Unique' && e.rarity !== 'Legendary'))
+    (!e.rarity || e.rarity === 'Normal') &&
+    SHOP_ALLOWED_RANKS.includes(e.rank)
   );
 
   const itemsHtml = filtered.length === 0
     ? '<div class="gb-sub">조건에 맞는 장비가 없다.</div>'
     : filtered.map(e => {
-        const price = Number(e.price || calcEquipEnhancedPrice(calcEquipBasePrice(e.rank, e.part), e.enhance||0, e.rank));
-        const canAfford = gold >= price;
+        const price = (e.price != null && e.price !== '' && Number(e.price) >= 0) ? Number(e.price) : calcEquipEnhancedPrice(calcEquipBasePrice(e.rank, e.part), e.enhance||0, e.rank);
+        const canAfford = price === 0 || gold >= price;
         const traitTags = (e.traits||[]).map(t => `<span class="gb-badge">${escapeHtml(equipTraitDisplay(t, e.rank))}</span>`).join(' ');
-        const atkLine = e.part==='weapon' ? `ATK+${e.atk||WEAPON_BASE_ATK[e.rank]||0}` : e.part==='subweapon' ? `물리방어+${e.pdef||0} / ATK${-Math.ceil((e.pdef||0)/2)}` : e.part==='armor' ? `물리방어+${e.pdef||0} / 마법방어+${e.mdef||0}${e.resistType?` / ${escapeHtml(EQUIP_TRAIT_LABELS[''+e.resistType]||e.resistType)} 저항 ${e.resistPct||0}%`:''}` : e.part==='accessory' ? (e.traits&&e.traits.length ? `특성: ${(e.traits||[]).map(t=>equipTraitDisplay(t,e.rank)).join(', ')}` : '특성 없음') : '';
+        const atkLine = e.part==='weapon' ? `ATK+${e.atk||WEAPON_BASE_ATK[e.rank]||0}` : e.part==='subweapon' ? (Number(e.pdef||0)>0 ? `물리방어+${e.pdef} / ATK${-Math.ceil(e.pdef/2)}` : '특수효과 전용') : e.part==='armor' ? `${e.armorSubtype && ARMOR_SUBTYPES[e.armorSubtype] ? '['+ARMOR_SUBTYPES[e.armorSubtype].label+'] ' : ''}물리방어+${e.pdef||0} / 마법방어+${e.mdef||0}${e.resistType?` / ${escapeHtml(EQUIP_TRAIT_LABELS[''+e.resistType]||e.resistType)} 저항 ${e.resistPct||0}%`:''}` : e.part==='accessory' ? (e.traits&&e.traits.length ? `특성: ${(e.traits||[]).map(t=>equipTraitDisplay(t,e.rank)).join(', ')}` : '특성 없음') : '';
         const fmt = n => n >= 1e8 ? `${(n/1e8).toFixed(2)}억` : n >= 10000 ? `${Math.round(n/10000)}만` : n.toLocaleString('en-US');
         return `<div class="gb-unit">
           <div class="gb-unit-top">
@@ -6614,7 +7886,7 @@ function renderEquipShopHtml() {
             </div>
             <div>
               <button class="gb-btn tiny${canAfford?'':' danger'}" data-equip-shop-buy="${escapeHtml(e.id)}" ${canAfford?'':'disabled'}>
-                ₩${fmt(price)}
+                ${price === 0 ? '🆓 무료' : `₩${fmt(price)}`}
               </button>
             </div>
           </div>
@@ -6624,7 +7896,7 @@ function renderEquipShopHtml() {
   return `
     <div class="gb-panel">
       <div class="gb-section-title">⚔️ 장비상점</div>
-      <div class="gb-sub">무기, 방어구, 보조무기, 악세서리 구매 (신품 +0)</div>
+      <div class="gb-sub">E~C급 노말 장비 판매 (협회지급 E급 무기는 무료)</div>
       <div class="gb-sub">소지금: ₩${gold.toLocaleString('en-US')}</div>
       <div class="gb-btn-row" style="margin-top:6px;flex-wrap:wrap;">
         <span class="gb-sub" style="align-self:center;">등급:</span> ${rankBtns}
@@ -6682,26 +7954,26 @@ function seedNpcUsedListings() {
     const conditionMul = calcUsedEquipConditionMul(dur, maxDur);
     const usedPrice = Math.round(marketPrice * conditionMul);
     const uid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + i;
-    const nameSuffixes = { weapon:['검','창','활','완드','도끼'], armor:['갑옷','로브','체인메일','플레이트'], subweapon:['방패'], accessory:['반지','목걸이','팔찌'] };
-    const suffArr = nameSuffixes[part] || [EQUIP_PART_LABELS[part]||part];
-    const suff = suffArr[Math.floor(Math.random() * suffArr.length)];
+    const _armorSub = part === 'armor' ? (() => { const k = ARMOR_SUBTYPE_KEYS[Math.floor(Math.random()*ARMOR_SUBTYPE_KEYS.length)]; return {key:k,...ARMOR_SUBTYPES[k]}; })() : null;
     const enhLabel = enhance > 0 ? ` +${enhance}` : '';
-    const traitLabel = hasTrait ? ` [${traitName}]` : '';
     // 희귀도 자동 판정
     const { rarity: usedRarity, traitTier: usedTier } = assignEquipRarity(part, traits[0] || '');
+    const equipNameStr = generateEquipName(rank, part, _armorSub ? _armorSub.key : null, hasTrait ? traitName : '') + enhLabel;
     const item = {
       id: `npc_used_${rank.toLowerCase()}_${part}_${uid}`,
-      name: `${rank}급 ${suff}${enhLabel}${traitLabel}`,
+      name: equipNameStr,
       part, rank, rarity: usedRarity, traitTier: usedTier, enhance, infuse: traits.length, maxInfuse, traits,
       durability: dur, maxDurability: maxDur, price: marketPrice,
       category: 'equipment', isDropped: true, stackable: false,
       unitWeightG: EQUIP_WEIGHT_G[part] || 1000,
       stackKey: `equipment:npc_used_${uid}`,
       note: `NPC 중고 등록${hasTrait ? `. 특성: ${traitName}` : ''}`,
-      atk: part === 'weapon' ? (WEAPON_BASE_ATK[rank] || 5) : 0,
-      pdef: part === 'armor' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.5) : (part === 'subweapon' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.25) : 0),
-      mdef: part === 'armor' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.3) : 0,
-      mainStat: part === 'weapon' ? (Math.random() < 0.5 ? 'str' : 'int') : (part === 'armor' ? 'con' : 'str'),
+      atk: part === 'weapon' ? (WEAPON_BASE_ATK[rank] || 5) : (part === 'armor' && _armorSub && _armorSub.atkMul ? Math.round((WEAPON_BASE_ATK[rank] || 5) * _armorSub.atkMul) : 0),
+      pdef: part === 'armor' ? (() => { const base = (ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1]; const [lo,hi] = _armorSub ? _armorSub.defMul : [0.5,0.5]; const mul = lo + Math.random()*(hi-lo); return Math.round(base * mul); })() : (part === 'subweapon' ? Math.round((ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1] * 0.25) : 0),
+      mdef: part === 'armor' ? (() => { const base = (ARMOR_STAT_BY_RANK[rank]||{defRange:[0,5]}).defRange[1]; const [lo,hi] = _armorSub ? _armorSub.defMul : [0.5,0.5]; const mul = lo + Math.random()*(hi-lo); return Math.round(base * mul); })() : 0,
+      mainStat: part === 'weapon' ? (Math.random() < 0.5 ? 'str' : 'int') : (part === 'armor' && _armorSub ? _armorSub.statPool[Math.floor(Math.random() * _armorSub.statPool.length)] : (part === 'armor' ? 'con' : 'str')),
+      armorSubtype: _armorSub ? _armorSub.key : undefined,
+      armorStatBonusMul: _armorSub ? _armorSub.statBonusMul : undefined,
       resistType: '', resistPct: 0
     };
     model.db.hmUsedListings.push({
@@ -6803,6 +8075,7 @@ function renderHunterMarketHtml() {
   // 장비 상세 툴팁 헬퍼
   function hmItemTooltip(e) {
     const lines = [`${e.name}${e.rank ? ` [${e.rank}급]` : ''}`, `부위: ${EQUIP_PART_LABELS[e.part||'weapon']||e.part||''}  |  내구도: ${Number(e.durability??100)}/${Number(e.maxDurability??100)}`];
+    if (e.part === 'armor' && e.armorSubtype && ARMOR_SUBTYPES[e.armorSubtype]) lines.push(`종류: ${ARMOR_SUBTYPES[e.armorSubtype].label}`);
     if (e.enhance > 0) lines.push(`강화: +${e.enhance}`);
     if (Number(e.atk||0) > 0) lines.push(`ATK: +${e.atk}`);
     if (Number(e.pdef||0) > 0) lines.push(`물리방어: +${e.pdef}`);
@@ -7489,6 +8762,13 @@ function renderHomeView() {
         ${home.desc ? `<div class="gb-sub" style="margin-top:4px;">${escapeHtml(home.desc)}</div>` : ''}
       </div>
       ${feeSection}
+      <div class="gb-panel" style="border-color:#34d399;">
+        <div class="gb-section-title">🛏️ 휴식</div>
+        <div class="gb-sub">하루 휴식을 취하면 다음 날로 넘어가며 모든 파티원의 HP/MP/SP가 완전히 회복됩니다.</div>
+        <div style="margin-top:6px;">
+          <button class="gb-btn primary" id="gb-home-rest">🛏️ 하루 휴식 (다음 날로)</button>
+        </div>
+      </div>
       <div class="gb-panel">
         <div class="gb-section-title">📦 보관함 목록</div>
         ${storageList}
@@ -7754,6 +9034,12 @@ function renderGateView() {
   const selected = getSelectedGeneratedGate();
   const list = (gs.generated || []);
   const run = getGateRun();
+
+  // Active gate run → show immersive full-screen layout only
+  if (run && !run.completed && !run.failed) {
+    return renderGateRunPanel(run);
+  }
+
   const rankButtons = GRADE_ORDER.map(r => `<button class="gb-btn ${rank===r?'primary':''}" data-gate-rank="${r}">${escapeHtml(r)}</button>`).join('');
   const sizeButtons = ['small','medium','large'].map(k => `<button class="gb-btn ${size===k?'primary':''}" data-gate-size="${k}">${escapeHtml(GATE_SIZE_META[k].label)}</button>`).join('');
   const cards = list.length ? list.map(g => `
@@ -7898,6 +9184,7 @@ function renderInventoryView() {
       `분류: ${it.category || '기타'} | 수량: ${Number(it.count||1)} | 무게: ${formatWeightG(Math.round(inventoryBaseWeightG(it) * cap.weightMul))}`
     ];
     if (it.part) lines.push(`부위: ${EQUIP_PART_LABELS[it.part] || it.part}`);
+    if (it.part === 'armor' && it.armorSubtype && ARMOR_SUBTYPES[it.armorSubtype]) lines.push(`갑옷 종류: ${ARMOR_SUBTYPES[it.armorSubtype].label}`);
     if (it.enhance > 0) lines.push(`강화: +${it.enhance}`);
     if (it.durability != null) lines.push(`내구도: ${it.durability}/${it.maxDurability||it.durability}`);
     if (it.category === 'equipment') {
@@ -8091,7 +9378,12 @@ function renderPartyView() {
           <div style="width:${expPct}%;height:100%;background:#3b82f6;border-radius:3px;"></div>
         </div>
       </div>
-      <div class="gb-sub" style="margin:4px 0;">HP:${Number(u.hp||0)} MP:${Number(u.mp||0)} SP:${Number(u.sp||0)} ATK:${Number(u.atk||0)}</div>
+      <div class="gb-sub" style="margin:4px 0;">
+        <div class="gb-bar-wrap"><span>HP ${Number(u.currentHp ?? u.hp ?? 0)}/${Number(u.hp||0)}</span><div class="gb-bar"><div class="gb-bar-fill hp" style="width:${Number(u.hp||0)>0?Math.round(Number(u.currentHp ?? u.hp ?? 0)/Number(u.hp||1)*100):0}%"></div></div></div>
+        <div class="gb-bar-wrap"><span>MP ${Number(u.currentMp ?? u.mp ?? 0)}/${Number(u.mp||0)}</span><div class="gb-bar"><div class="gb-bar-fill mp" style="width:${Number(u.mp||0)>0?Math.round(Number(u.currentMp ?? u.mp ?? 0)/Number(u.mp||1)*100):0}%"></div></div></div>
+        <div class="gb-bar-wrap"><span>SP ${Number(u.currentSp ?? u.sp ?? 0)}/${Number(u.sp||0)}</span><div class="gb-bar"><div class="gb-bar-fill sp" style="width:${Number(u.sp||0)>0?Math.round(Number(u.currentSp ?? u.sp ?? 0)/Number(u.sp||1)*100):0}%"></div></div></div>
+        <div class="gb-sub" style="font-size:11px;margin-top:2px;">ATK:${Number(u.atk||0)} PDEF:${Number(u.pdef||0)} MDEF:${Number(u.mdef||0)}</div>
+      </div>
       <div class="gb-sub" style="margin:2px 0;">💰 소지금: ${fmtG(personalGold)}원</div>
       ${freePoints > 0 ? `<div style="color:#34d399;font-weight:600;font-size:13px;margin:4px 0;">🌟 배분 가능 스탯포인트: ${freePoints}</div>` : ''}
       <div class="gb-sub" style="font-size:11px;margin:2px 0;">스탯 상한: ${statCap} (${u.rank || 'E'}등급)</div>
@@ -8254,9 +9546,9 @@ function renderCharacterView() {
         </div>
       </div>
       <div class="gb-grid two" style="margin:8px 0;">
-        <div class="gb-sub">❤️ HP: <strong>${Number(u.hp||0)}</strong></div>
-        <div class="gb-sub">💧 MP: <strong>${Number(u.mp||0)}</strong></div>
-        <div class="gb-sub">⚡ SP: <strong>${Number(u.sp||0)}</strong></div>
+        <div class="gb-sub">❤️ HP: <strong>${Number(u.currentHp ?? u.hp ?? 0)}</strong> / ${Number(u.hp||0)}</div>
+        <div class="gb-sub">💧 MP: <strong>${Number(u.currentMp ?? u.mp ?? 0)}</strong> / ${Number(u.mp||0)}</div>
+        <div class="gb-sub">⚡ SP: <strong>${Number(u.currentSp ?? u.sp ?? 0)}</strong> / ${Number(u.sp||0)}</div>
         <div class="gb-sub">⚔️ ATK: <strong>${Number(u.atk||0)}</strong></div>
         <div class="gb-sub">🛡️ 물리방어: <strong>${Number(u.pdef||0)}</strong></div>
         <div class="gb-sub">🔮 마법방어: <strong>${Number(u.mdef||0)}</strong></div>
@@ -8370,14 +9662,14 @@ function renderCommandPanel(runtime) {
     const potions = inv.items.filter(it => it.category === 'potion');
     if (!potions.length) return '<div class="gb-panel"><div class="gb-sub">소지 중인 물약이 없다.</div><div class="gb-btn-row"><button class="gb-btn" id="gb-battle-potion-close">닫기</button></div></div>';
     const daily = getPotionUsesToday();
-    const remaining = Math.max(0, POTION_DAILY_MAX - daily.count);
+    const remaining = Math.max(0, POTION_DAILY_MAX_RECOVERY - daily.recovery);
     const partyAlive = getAlive(runtime.party);
     const potionOpts = potions.map(p => `<option value="${escapeHtml(p.stackKey)}">${escapeHtml(p.name)} x${p.count} — ${escapeHtml(p.note||'')}</option>`).join('');
     const targetOpts = partyAlive.map(u => `<option value="${escapeHtml(u.uid)}">${escapeHtml(u.name)} (HP ${Math.floor(u.hp)}/${Math.floor(u.maxHp)})</option>`).join('');
     return `
       <div class="gb-panel">
         <div class="gb-section-title">🧪 물약 사용 (전투 중)</div>
-        <div class="gb-sub">남은 일일 사용 횟수: ${remaining}/${POTION_DAILY_MAX}${daily.count >= POTION_DAILY_MAX ? ' ⚠️ 한도 도달 — 다음 사용 시 효율 20%' : ''}</div>
+        <div class="gb-sub">회복포션: ${remaining}/${POTION_DAILY_MAX_RECOVERY + 1}회 남음${daily.recovery >= POTION_DAILY_MAX_RECOVERY ? ' ⚠️ 다음 사용 시 효율 20%' : ''}${daily.recovery > POTION_DAILY_MAX_RECOVERY ? ' (한도초과)' : ''} | 버프포션: ${Math.max(0, POTION_DAILY_MAX_BUFF - daily.buff)}/${POTION_DAILY_MAX_BUFF}회 | 해제포션: 무제한</div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;">
           <select class="gb-input" id="gb-battle-potion-select">${potionOpts}</select>
           <span style="color:#94a3b8;">→</span>
@@ -8503,6 +9795,25 @@ function renderCommandPanel(runtime) {
     return entity.inventory;
   }
 
+  // 캐릭터/페르소나의 장착 무기 ATK를 포함하여 파생 스탯(HP/MP/SP/ATK/PDEF/MDEF) 재계산
+  function recalcCharDerivedStats(entity) {
+    if (!entity || !entity.stats) return;
+    const s = entity.stats;
+    const lvBonus = Math.max(0, (Number(entity.level) || 1) - 1) * 2;
+    entity.hp = 100 + (Number(s.con)||0) * 10 + (Number(s.str)||0) * 3 + lvBonus;
+    entity.mp = 100 + (Number(s.int)||0) * 10 + (Number(s.sense)||0) * 3 + lvBonus;
+    entity.sp = 100 + (Number(s.agi)||0) * 10 + (Number(s.sense)||0) * 3 + lvBonus;
+    // 장착 무기 ATK 반영
+    let weaponAtk = 0;
+    const inv = entity.inventory;
+    if (inv && inv.equipped && inv.equipped.weapon) {
+      weaponAtk = Number(inv.equipped.weapon.atk || 0);
+    }
+    entity.atk = Math.round(weaponAtk + (Number(s.str)||0) * 0.2 + (Number(s.agi)||0) * 0.2 + (Number(s.int)||0) * 0.3);
+    entity.pdef = Math.round((Number(s.con)||0) * 0.4);
+    entity.mdef = Math.round(((Number(s.int)||0) + (Number(s.sense)||0)) * 0.25);
+  }
+
   // 장착 장비 스탯 합산 반환 { atk, pdef, mdef, str, con, int, agi, sense }
   function calcEquippedStatBonus(equipped) {
     const bonus = { atk:0, pdef:0, mdef:0, str:0, con:0, int:0, agi:0, sense:0 };
@@ -8516,7 +9827,9 @@ function renderCommandPanel(runtime) {
       // 방어구/악세서리만 totalStatSum 기반 주스탯 보너스 적용 (무기/보조무기는 주스탯 없음)
       if (part === 'armor' && eq.mainStat && bonus[eq.mainStat] !== undefined) {
         const armorData = ARMOR_STAT_BY_RANK[eq.rank || 'E'] || ARMOR_STAT_BY_RANK.E;
-        bonus[eq.mainStat] += armorData.totalStatSum || 0;
+        const baseStat = armorData.totalStatSum || 0;
+        const subBonusMul = (eq.armorSubtype && ARMOR_SUBTYPES[eq.armorSubtype]) ? ARMOR_SUBTYPES[eq.armorSubtype].statBonusMul : 0;
+        bonus[eq.mainStat] += Math.round(baseStat * (1 + subBonusMul));
       }
       if (part === 'accessory' && eq.mainStat && bonus[eq.mainStat] !== undefined) {
         const accData = ACCESSORY_STAT_BY_RANK[eq.rank || 'E'] || ACCESSORY_STAT_BY_RANK.E;
@@ -8558,6 +9871,23 @@ function renderCommandPanel(runtime) {
         <div>SENSE ${fmtDiff(Number(stats.sense||0), bonus.sense)}</div>
       </div>` : '<div class="gb-sub">—</div>'}
     </div>`;
+  }
+
+  function personalInvCapacity(type, entityId) {
+    const arr = type === 'persona' ? (model.db.personas || []) : (model.db.characters || []);
+    const entity = arr.find(x => x.id === entityId);
+    if (!entity) return { slots: PERSONAL_INV_BASE_SLOTS, maxWeightG: PERSONAL_INV_BASE_MAX_WEIGHT_G, weightMul: 1.0 };
+    const equippedBagId = (entity.inventory && entity.inventory.equipped && entity.inventory.equipped.bag && entity.inventory.equipped.bag.bagId) || null;
+    const bagId = equippedBagId || entity.bagId || 'none';
+    const bag = PARTY_BAGS[bagId] || PARTY_BAGS.none;
+    return {
+      slots: PERSONAL_INV_BASE_SLOTS + Number(bag.slotBonus || 0),
+      maxWeightG: PERSONAL_INV_BASE_MAX_WEIGHT_G + Number(bag.maxWeightBonusG || 0),
+      weightMul: Number(bag.weightMul || 1.0)
+    };
+  }
+  function personalInvUsedWeightG(inv, pCap) {
+    return Math.round((Array.isArray(inv.items) ? inv.items : []).reduce((s, it) => s + inventoryBaseWeightG(it), 0) * pCap.weightMul);
   }
 
   function renderPersonalInventoryHtml(type, entityId) {
@@ -8679,10 +10009,27 @@ function renderCommandPanel(runtime) {
             <button class="gb-btn tiny primary" data-shared-to-personal="${type}:${entityId}:${escapeHtml(ikey)}">개인으로 이동</button>
           </div></div>`;
         }).join('');
+    const pCap = personalInvCapacity(type, entityId);
+    const pUsedSlots = inventoryUsedSlots(inv);
+    const pUsedWeight = personalInvUsedWeightG(inv, pCap);
+    const slotPct = pCap.slots > 0 ? Math.min(100, Math.round(pUsedSlots / pCap.slots * 100)) : 0;
+    const weightPct = pCap.maxWeightG > 0 ? Math.min(100, Math.round(pUsedWeight / pCap.maxWeightG * 100)) : 0;
+    const slotColor = slotPct >= 90 ? '#ef4444' : slotPct >= 70 ? '#eab308' : '#34d399';
+    const weightColor = weightPct >= 90 ? '#ef4444' : weightPct >= 70 ? '#eab308' : '#34d399';
     return `<div class="gb-panel" style="margin-top:10px;">
       <div class="gb-section-title">⚔️ 개인 장비창 / 인벤토리</div>
       ${tabBar}
-      <div class="gb-section-title" style="margin-top:8px;">개인 인벤 (${items.length}개)</div>
+      <div class="gb-section-title" style="margin-top:8px;">개인 인벤</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px;font-size:12px;">
+        <div style="flex:1;min-width:140px;">
+          <div style="display:flex;justify-content:space-between;"><span>슬롯</span><strong style="color:${slotColor}">${pUsedSlots} / ${pCap.slots}</strong></div>
+          <div style="height:6px;background:#1e293b;border-radius:99px;margin-top:3px;overflow:hidden;"><div style="width:${slotPct}%;height:100%;background:${slotColor};border-radius:99px;"></div></div>
+        </div>
+        <div style="flex:1;min-width:140px;">
+          <div style="display:flex;justify-content:space-between;"><span>무게</span><strong style="color:${weightColor}">${formatWeightG(pUsedWeight)} / ${formatWeightG(pCap.maxWeightG)}</strong></div>
+          <div style="height:6px;background:#1e293b;border-radius:99px;margin-top:3px;overflow:hidden;"><div style="width:${weightPct}%;height:100%;background:${weightColor};border-radius:99px;"></div></div>
+        </div>
+      </div>
       ${itemsHtml}
       <div class="gb-section-title" style="margin-top:8px;">📦 공용 인벤에서 이동</div>
       ${fromSharedHtml}
@@ -8826,32 +10173,42 @@ function renderCommandPanel(runtime) {
         statusChance: (sk.status && sk.status.chance != null) ? sk.status.chance : '',
         cooldown: sk.cooldown || 0,
         desc: sk.desc || '',
-        specialEffect: sk.specialEffect || null
       };
     } else {
       item = {
         id:'', name:'', grade:'E', rarity:'Normal', category:'singleAttack', target:'singleEnemy', coef:0, mp:0, sp:0,
-        damageType:'physical', element:'none', statTypes:'', duration:0, ccType:'', ccTurns:0, ccChance:'', buffStat:'', buffValue:0, stealth:false, statusType:'', statusTurns:0, statusChance:'', cooldown:0, desc:'',
-        specialEffect:null
+        damageType:'physical', element:'none', statTypes:'', duration:0, ccType:'', ccTurns:0, ccChance:'', buffStat:'', buffValue:0, stealth:false, statusType:'', statusTurns:0, statusChance:'', cooldown:0, desc:''
       };
     }
     const catLabels = { singleAttack:'단일공격', aoeAttack:'광역공격', singleCC:'단일CC', aoeCC:'광역CC', singleHeal:'힐', aoeHeal:'광역힐', buff:'버프', passive:'패시브', utility:'유틸' };
+    const catIcons = { singleAttack:'⚔️', aoeAttack:'💥', singleCC:'🔗', aoeCC:'🌀', singleHeal:'💚', aoeHeal:'🌿', buff:'✨', passive:'🛡️', utility:'🔧' };
     const customOverrides = new Set((model.db.customSkills || []).map(s => s.id));
-    const builtins = Object.values(BUILTIN_SKILLS).map(sk => {
+    // Group builtin skills by category
+    const builtinsByCategory = {};
+    Object.values(BUILTIN_SKILLS).forEach(sk => {
+      const catKey = sk.category || 'etc';
+      if (!builtinsByCategory[catKey]) builtinsByCategory[catKey] = [];
+      builtinsByCategory[catKey].push(sk);
+    });
+    // Merge custom skills into builtin accordion categories
+    const customFiltered = (model.db.customSkills || []).filter(c => !BUILTIN_SKILLS[c.id]);
+    customFiltered.forEach(c => {
+      const catKey = c.category || 'etc';
+      if (!builtinsByCategory[catKey]) builtinsByCategory[catKey] = [];
+      builtinsByCategory[catKey].push({ ...c, _isCustom: true });
+    });
+    function renderSkillRow(sk) {
       const cat = catLabels[sk.category] || sk.category;
       const grade = sk.grade || '?';
       const rarity = sk.rarity ? ` <span class="gb-badge" style="background:#a855f7;color:#fff;">${escapeHtml(sk.rarity)}</span>` : '';
       const isOverridden = customOverrides.has(sk.id);
       const overrideBadge = isOverridden ? ' <span class="gb-badge" style="background:#ef4444;color:#fff;">수정됨</span>' : '';
-      // 비용
       const costs = sk.costs || {};
       const costParts = [];
       if (costs.mp) costParts.push('MP:' + costs.mp);
       if (costs.sp) costParts.push('SP:' + costs.sp);
       const costStr = costParts.length ? costParts.join(' / ') : '';
-      // 계수
       const coefStr = sk.coef != null ? '계수:' + sk.coef : (sk.baseSingleCoef != null ? '기본계수:' + sk.baseSingleCoef + ' (광역CC→½)' : '');
-      // 성장형 byRank
       const byRankStr = sk.byRank ? Object.entries(sk.byRank).map(([g, v]) => {
         const parts = [];
         if (v.coef != null) parts.push('계수:' + v.coef);
@@ -8860,7 +10217,6 @@ function renderCommandPanel(runtime) {
         if (v.passiveBonuses) parts.push('패시브:' + Object.entries(v.passiveBonuses).map(([s,n])=>s.toUpperCase()+'+'+n).join(','));
         return parts.length ? g + '(' + parts.join(', ') + ')' : '';
       }).filter(Boolean).join(' | ') : '';
-      // 기타 정보
       const extras = [];
       if (sk.damageType) extras.push(sk.damageType === 'physical' ? '물리' : '마법');
       if (sk.element && sk.element !== 'none') extras.push('속성:' + sk.element);
@@ -8873,28 +10229,45 @@ function renderCommandPanel(runtime) {
       if (sk.statTypes) extras.push('스탯:' + (Array.isArray(sk.statTypes) ? sk.statTypes : [sk.statTypes]).join('/'));
       if (sk.cooldown) extras.push('쿨타임:' + sk.cooldown + '턴');
       const extraStr = extras.join(' · ');
-      return `<div class="gb-skill-row" data-load-builtin-skill="${escapeHtml(sk.id)}" style="padding:6px 0;border-bottom:1px solid rgba(148,163,184,0.1);cursor:pointer;" title="클릭하면 편집기로 불러옵니다">
-        <div><strong>${escapeHtml(sk.name)}</strong> <span class="gb-badge">${escapeHtml(grade)}</span>${rarity} <span class="gb-badge">${escapeHtml(cat)}</span> <span class="gb-badge">${escapeHtml(sk.id)}</span>${overrideBadge}</div>
+      const isCustom = sk._isCustom;
+      const clickAttr = isCustom ? `data-select-type="skills" data-id="${escapeHtml(sk.id)}"` : `data-load-builtin-skill="${escapeHtml(sk.id)}"`;
+      const customBadge = isCustom ? ' <span class="gb-badge" style="background:#22c55e;color:#fff;">커스텀</span>' : '';
+      const isActive = isCustom && sk.id === model.state.selected.skills;
+      return `<div class="gb-skill-row" ${clickAttr} style="padding:6px 0;border-bottom:1px solid rgba(148,163,184,0.1);cursor:pointer;${isActive?'background:#1e293b;border-radius:6px;padding-left:6px;':''}" title="클릭하면 편집기로 불러옵니다">
+        <div><strong>${escapeHtml(sk.name)}</strong> <span class="gb-badge">${escapeHtml(grade)}</span>${rarity} <span class="gb-badge">${escapeHtml(cat)}</span> <span class="gb-badge">${escapeHtml(sk.id)}</span>${overrideBadge}${customBadge}</div>
         <div style="font-size:12px;margin-top:2px;">${coefStr ? `<span style="color:#3b82f6;font-weight:600;">${escapeHtml(coefStr)}</span>` : ''}${costStr ? ` <span style="color:#f59e0b;">[${escapeHtml(costStr)}]</span>` : ''}</div>
         ${byRankStr ? `<div class="gb-sub" style="font-size:11px;margin-top:2px;">📈 성장: ${escapeHtml(byRankStr)}</div>` : ''}
         ${extraStr ? `<div class="gb-sub" style="font-size:11px;margin-top:1px;">${escapeHtml(extraStr)}</div>` : ''}
         <div class="gb-skill-desc" style="margin-top:2px;">${escapeHtml(sk.desc || '')}</div>
       </div>`;
-    }).join('');
-    const list = (model.db.customSkills || []).filter(c => !BUILTIN_SKILLS[c.id]).map(c => {
-      const rStyle = rarityStyle(c.rarity);
-      const rBadge = c.rarity && c.rarity !== 'Normal' ? ' <span class="gb-badge" style="background:'+rarityColor(c.rarity)+';color:#000;font-size:10px;">'+escapeHtml(c.rarity)+'</span>' : '';
-      return `<button class="gb-list-item ${c.id===model.state.selected.skills?'is-active':''}" data-select-type="skills" data-id="${escapeHtml(c.id)}" style="${rStyle}">${escapeHtml(c.name)}${rBadge} <span class="gb-sub">[${escapeHtml(c.id)}]</span></button>`;
+    }
+    const catOrder = ['singleAttack','aoeAttack','singleCC','aoeCC','singleHeal','aoeHeal','buff','passive','utility'];
+    const builtinAccordionOrder = [...catOrder];
+    if (builtinsByCategory['etc'] && builtinsByCategory['etc'].length) builtinAccordionOrder.push('etc');
+    const builtinAccordion = builtinAccordionOrder.filter(c => builtinsByCategory[c] && builtinsByCategory[c].length).map(catKey => {
+      const label = catKey === 'etc' ? '기타' : (catLabels[catKey] || catKey);
+      const icon = catKey === 'etc' ? '📋' : (catIcons[catKey] || '📋');
+      const items = builtinsByCategory[catKey];
+      const rows = items.map(renderSkillRow).join('');
+      return `<div class="gb-skill-accordion">
+        <div class="gb-skill-accordion-header" data-accordion-cat="${escapeHtml(catKey)}">
+          <span>${icon} ${escapeHtml(label)} <span class="gb-sub">(${items.length}종)</span></span>
+          <span class="gb-skill-accordion-arrow">▶</span>
+        </div>
+        <div class="gb-skill-accordion-body" data-accordion-body="${escapeHtml(catKey)}" style="display:none;">
+          <div class="gb-skill-list">${rows}</div>
+        </div>
+      </div>`;
     }).join('');
     const isEditingBuiltin = item.id && BUILTIN_SKILLS[item.id];
     const editorTitle = isEditingBuiltin ? `내장 스킬 편집 — <span style="color:#3b82f6;">${escapeHtml(item.name || item.id)}</span>` : '커스텀 스킬 편집';
     return `
-      ${builtins ? `<div class="gb-panel">
-        <div class="gb-section-title">내장 스킬 <span class="gb-sub">(클릭하면 편집기에 불러옴)</span></div>
-        <div class="gb-skill-list">${builtins}</div>
+      ${builtinAccordion ? `<div class="gb-panel">
+        <div class="gb-section-title">내장 스킬 <span class="gb-sub">(카테고리를 클릭하여 펼치기 · 스킬 클릭시 편집기에 불러옴)</span></div>
+        ${builtinAccordion}
       </div>` : ''}
       <div class="gb-grid db" style="margin-top:12px;">
-        <div class="gb-panel"><div class="gb-section-title">커스텀 스킬 목록</div>${list || '<div class="gb-sub">등록된 커스텀 스킬 없음.</div>'}<div class="gb-btn-row"><button class="gb-btn" id="gb-skill-new">새 스킬</button><button class="gb-btn danger" id="gb-skill-clear-all">스킬 전체삭제</button></div></div>
+        <div class="gb-panel"><div class="gb-section-title">커스텀 스킬 관리</div><div class="gb-sub">커스텀 스킬은 위 카테고리 아코디언에 <span class="gb-badge" style="background:#22c55e;color:#fff;">커스텀</span> 태그와 함께 표시됩니다.</div><div class="gb-btn-row"><button class="gb-btn" id="gb-skill-new">새 스킬</button><button class="gb-btn danger" id="gb-skill-clear-all">스킬 전체삭제</button></div></div>
         <div class="gb-panel">
           <div class="gb-section-title">${editorTitle}</div>
           <div class="gb-grid two">
@@ -8904,7 +10277,7 @@ function renderCommandPanel(runtime) {
             <label>희귀도<select class="gb-input" id="gb-skill-rarity" style="${rarityStyle(item.rarity||'Normal')}">
               ${RARITY_LIST.map(r => `<option value="${r}" ${(item.rarity||'Normal')===r?'selected':''} style="color:${rarityColor(r)}">${r}</option>`).join('')}
             </select></label>
-            <label>카테고리<select class="gb-input" id="gb-skill-category">${['singleAttack','aoeAttack','singleCC','aoeCC','singleHeal','aoeHeal','buff','utility'].map(v=>optionHtml(v,v,item.category===v)).join('')}</select></label>
+            <label>카테고리<select class="gb-input" id="gb-skill-category">${['singleAttack','aoeAttack','singleCC','aoeCC','singleHeal','aoeHeal','buff','passive','utility'].map(v=>optionHtml(v,v,item.category===v)).join('')}</select></label>
             <label>대상<select class="gb-input" id="gb-skill-target">${['singleEnemy','allEnemies','rowFront','rowMid','rowBack','rowFrontMid','rowMidBack','singleAlly','allAllies','self'].map(v=>optionHtml(v,v,item.target===v)).join('')}</select></label>
             <label>계수<input class="gb-input" id="gb-skill-coef" type="number" step="0.001" value="${escapeHtml(item.coef)}" /></label>
             <label>MP 비용<input class="gb-input" id="gb-skill-mp" type="number" value="${escapeHtml(item.mp)}" /></label>
@@ -8923,29 +10296,6 @@ function renderCommandPanel(runtime) {
             <label>상태이상 턴<input class="gb-input" id="gb-skill-statusturns" type="number" value="${escapeHtml(item.statusTurns)}" /></label>
             <label>상태이상 확률(0~1)<input class="gb-input" id="gb-skill-statuschance" type="number" step="0.01" min="0" max="1" value="${escapeHtml(item.statusChance)}" placeholder="비우면 기본값" /></label>
             <label>쿨타임(턴)<input class="gb-input" id="gb-skill-cooldown" type="number" value="${escapeHtml(item.cooldown)}" placeholder="0=없음" /></label>
-          </div>
-
-          <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(148,163,184,0.15);">
-            <div class="gb-section-title">✨ 특수효과 (Special Effect)</div>
-            <div class="gb-sub">버프=아군 강화 효과, 디버프=적에게 받는 피해 증가 효과.</div>
-            <div class="gb-grid two" style="margin-top:6px;">
-              <label>효과 종류<select class="gb-input" id="gb-skill-sme-type">
-                <option value="" ${!(item.specialEffect&&item.specialEffect.type)?'selected':''}>없음</option>
-                <option value="buff" ${(item.specialEffect&&item.specialEffect.type)==='buff'?'selected':''}>버프 (아군 강화)</option>
-                <option value="debuff" ${(item.specialEffect&&item.specialEffect.type)==='debuff'?'selected':''}>디버프 (받는 피해 증가)</option>
-              </select></label>
-              <label>발동확률 (%)<input class="gb-input" id="gb-skill-sme-chance" type="number" min="0" max="100" value="${(item.specialEffect&&item.specialEffect.chance)||0}" /></label>
-              <label>효과 선택<select class="gb-input" id="gb-skill-sme-effect">
-                ${smeOptionsHtml((item.specialEffect&&item.specialEffect.effectId)||'', (item.specialEffect&&item.specialEffect.type)||'')}
-              </select></label>
-              <label>효과 수치<input class="gb-input" id="gb-skill-sme-value" type="number" value="${(item.specialEffect&&item.specialEffect.value)||0}" /></label>
-            </div>
-            ${item.specialEffect && item.specialEffect.effectId ? (() => {
-              const eff = getSpecialMaterialEffectById(item.specialEffect.effectId);
-              if (!eff) return '';
-              const desc = (item.specialEffect.type === 'debuff' && eff.canDebuff) ? eff.debuffDesc : eff.buffDesc;
-              return '<div class="gb-sub" style="margin-top:4px;color:#a78bfa;">미리보기: ' + escapeHtml((desc||'').replace(/N/g, String(item.specialEffect.value||0))) + ' (발동확률 ' + (item.specialEffect.chance||0) + '%)</div>';
-            })() : ''}
           </div>
 
           <label>설명<textarea class="gb-textarea short" id="gb-skill-desc">${escapeHtml(item.desc || '')}</textarea></label>
@@ -9046,7 +10396,7 @@ function renderCommandPanel(runtime) {
       infuse:0, traits:[], durability:100,
       atk:0, pdef:0, mdef:0, stats:{ str:0, con:0, int:0, agi:0, sense:0 },
       note:'', price:0, resistType:'', resistPct:0, statusType:'',
-      rarity:'Normal', specialEffect:null
+      rarity:'Normal', specialEffect:null, armorSubtype:''
     });
 
     // Auto-preview calculated values
@@ -9057,6 +10407,13 @@ function renderCommandPanel(runtime) {
     const maxInfuse = EQUIP_MAX_INFUSE[part] || 1;
     const autoBasePrice = calcEquipBasePrice(rank, part);
     const autoEnhPrice = calcEquipEnhancedPrice(autoBasePrice, enhance, rank);
+    // Trait bonus price: each trait adds tier-based rare material price
+    const itemTraits = item.traits || [];
+    let traitPriceBonus = 0;
+    itemTraits.forEach(tid => {
+      traitPriceBonus += getRareMatTierPrice(rank, tid);
+    });
+    const autoTotalPrice = autoEnhPrice + traitPriceBonus;
     const rangeText = (() => {
       const r = EQUIP_PRICE_RANGE[rank];
       if (!r) return '';
@@ -9072,11 +10429,28 @@ function renderCommandPanel(runtime) {
     ).join('');
 
     const filteredEqs = partFilter ? eqs.filter(e => e.part === partFilter) : eqs;
-    const list = filteredEqs.map(e => {
-      const label = `${e.name || e.id} [${EQUIP_PART_LABELS[e.part]||e.part}/${e.rank}+${e.enhance||0}]`;
-      const rStyle = rarityStyle(e.rarity);
-      return `<button class="gb-list-item ${e.id===sel?'is-active':''}" data-select-type="equipment" data-id="${escapeHtml(e.id)}" style="${rStyle}">${escapeHtml(label)}${e.rarity && e.rarity !== 'Normal' ? ' <span class="gb-badge" style="background:'+rarityColor(e.rarity)+';color:#000;font-size:10px;">'+escapeHtml(e.rarity)+'</span>' : ''}</button>`;
-    }).join('');
+    // 장비 목록을 부위별 + 등급별 접는 방식(details/summary)으로 그룹화
+    const listHtml = (() => {
+      if (!filteredEqs.length) return '<div class="gb-sub">등록된 장비 없음.</div>';
+      const grouped = {};
+      filteredEqs.forEach(e => {
+        const key = `${EQUIP_PART_LABELS[e.part]||e.part}`;
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(e);
+      });
+      return Object.entries(grouped).map(([groupLabel, items]) => {
+        const hasActive = items.some(e => e.id === sel);
+        const rows = items.map(e => {
+          const label = `${e.name || e.id} [${e.rank}+${e.enhance||0}]`;
+          const rStyle = rarityStyle(e.rarity);
+          return `<button class="gb-list-item ${e.id===sel?'is-active':''}" data-select-type="equipment" data-id="${escapeHtml(e.id)}" style="${rStyle}">${escapeHtml(label)}${e.rarity && e.rarity !== 'Normal' ? ' <span class="gb-badge" style="background:'+rarityColor(e.rarity)+';color:#000;font-size:10px;">'+escapeHtml(e.rarity)+'</span>' : ''}</button>`;
+        }).join('');
+        return `<details ${hasActive ? 'open' : ''} style="margin-bottom:4px;border:1px solid rgba(148,163,184,0.12);border-radius:6px;">
+          <summary style="cursor:pointer;font-weight:bold;padding:4px 8px;font-size:0.9em;">${escapeHtml(groupLabel)} (${items.length})</summary>
+          <div style="max-height:200px;overflow-y:auto;padding:2px 4px;">${rows}</div>
+        </details>`;
+      }).join('');
+    })();
 
     const traitsHtml = EQUIP_TRAIT_TYPES.map(t => {
       const hasTrait = (item.traits || []).includes(t);
@@ -9091,11 +10465,16 @@ function renderCommandPanel(runtime) {
     const accessoryStat = ACCESSORY_STAT_BY_RANK[rank] || {};
 
     const priceDisplay = (() => {
-      const p = Number(item.price || autoEnhPrice);
+      const p = Number(item.price || autoTotalPrice);
       if (p >= 1e8) return `${(p/1e8).toFixed(2)}억원`;
       if (p >= 10000) return `${Math.round(p/10000)}만원`;
       return `${p.toLocaleString('en-US')}원`;
     })();
+    const traitPriceText = traitPriceBonus > 0 ? (() => {
+      if (traitPriceBonus >= 1e8) return `+${(traitPriceBonus/1e8).toFixed(2)}억`;
+      if (traitPriceBonus >= 10000) return `+${Math.round(traitPriceBonus/10000)}만`;
+      return `+${traitPriceBonus.toLocaleString('en-US')}원`;
+    })() : '';
 
     return `
       <div class="gb-grid db">
@@ -9105,7 +10484,7 @@ function renderCommandPanel(runtime) {
             <button class="gb-btn ${!partFilter?'primary':''}" data-eq-part-filter="">전체</button>
             ${partList}
           </div>
-          <div style="margin-top:6px;">${list || '<div class="gb-sub">등록된 장비 없음.</div>'}</div>
+          <div style="margin-top:6px;">${listHtml}</div>
           <div class="gb-btn-row" style="margin-top:8px;">
             <button class="gb-btn" id="gb-eq-new">새 장비</button>
             <button class="gb-btn" id="gb-eq-export">내보내기</button>
@@ -9113,8 +10492,28 @@ function renderCommandPanel(runtime) {
         </div>
         <div class="gb-panel">
           <div class="gb-section-title">장비 편집</div>
-          <div class="gb-sub" style="color:#94a3b8;">등급별 시세: <strong>${escapeHtml(rangeText)}</strong> | 자동 기준가: <strong>${escapeHtml(priceDisplay)}</strong></div>
-          <div class="gb-grid two" style="margin-top:8px;">
+          ${item.id ? (() => {
+            const partLabel = EQUIP_PART_LABELS[part] || part;
+            const rarityLabel = item.rarity && item.rarity !== 'Normal' ? item.rarity : '일반';
+            const traitCount = itemTraits.length;
+            const enhStr = enhance > 0 ? ` +${enhance}강` : '';
+            const infuseStr = Number(item.infuse || 0) > 0 ? ` · 주입 ${item.infuse}회` : '';
+            const traitStr = traitCount > 0 ? ` · 특성 ${traitCount}개` : '';
+            const smeStr = item.specialEffect && item.specialEffect.effectId ? ` · ✨특수효과` : '';
+            const autoRareHint = (item.specialEffect && item.specialEffect.effectId && (part === 'weapon' || part === 'armor') && (!item.rarity || item.rarity === 'Normal')) ? ' <span style="color:#f59e0b;">→ 저장 시 Rare 자동 적용</span>' : '';
+            return '<div style="background:#1a1d2e;border:1px solid rgba(148,163,184,0.15);border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:13px;">' +
+              '<strong style="color:#60a5fa;">' + escapeHtml(item.name || item.id) + '</strong> ' +
+              '<span class="gb-badge">' + escapeHtml(rank) + '</span> ' +
+              '<span style="color:' + rarityColor(item.rarity || 'Normal') + ';">' + escapeHtml(rarityLabel) + '</span> ' +
+              escapeHtml(partLabel) + enhStr +
+              '<div class="gb-sub" style="margin-top:2px;">' + escapeHtml(`내구도 ${item.durability != null ? item.durability : 100}%${infuseStr}${traitStr}${smeStr}`) + autoRareHint + '</div>' +
+            '</div>';
+          })() : ''}
+          <div class="gb-sub" style="color:#94a3b8;">등급별 시세: <strong>${escapeHtml(rangeText)}</strong> | 자동 기준가: <strong>${escapeHtml(priceDisplay)}</strong>${traitPriceText ? ` <span style="color:#a78bfa;">(특성 ${escapeHtml(traitPriceText)})</span>` : ''}</div>
+
+          <details open style="margin-top:8px;border:1px solid rgba(148,163,184,0.12);border-radius:6px;padding:6px;">
+          <summary style="cursor:pointer;font-weight:bold;padding:2px 4px;">📋 기본 정보</summary>
+          <div class="gb-grid two" style="margin-top:6px;">
             <label>ID<input class="gb-input" id="gb-eq-id" value="${escapeHtml(item.id)}" /></label>
             <label>이름<input class="gb-input" id="gb-eq-name" value="${escapeHtml(item.name)}" /></label>
             <label>부위<select class="gb-input" id="gb-eq-part">
@@ -9131,23 +10530,36 @@ function renderCommandPanel(runtime) {
             <label>내구도 (0~100)<input class="gb-input" id="gb-eq-durability" type="number" min="0" max="100" value="${Number(item.durability != null ? item.durability : 100)}" /></label>
             <label>가격 (0=자동)<input class="gb-input" id="gb-eq-price" type="number" min="0" value="${Number(item.price||0)}" /></label>
           </div>
+          </details>
 
           ${part === 'weapon' ? `
-          <div class="gb-sub" style="margin-top:6px;">⚔️ 무기: 기본 ATK <strong>${baseAtk}</strong> + 강화당 <strong>+${atkPerEnhance}</strong> → +${enhance}강 ATK <strong>${baseAtk + enhance*atkPerEnhance}</strong></div>
+          <details open style="margin-top:6px;border:1px solid rgba(148,163,184,0.12);border-radius:6px;padding:6px;">
+          <summary style="cursor:pointer;font-weight:bold;padding:2px 4px;">⚔️ 무기 스탯</summary>
+          <div class="gb-sub">무기: 기본 ATK <strong>${baseAtk}</strong> + 강화당 <strong>+${atkPerEnhance}</strong> → +${enhance}강 ATK <strong>${baseAtk + enhance*atkPerEnhance}</strong></div>
           <div class="gb-grid two">
             <label>ATK (0=자동)<input class="gb-input" id="gb-eq-atk" type="number" value="${Number(item.atk||0)}" /></label>
-          </div>` : ''}
+          </div>
+          </details>` : ''}
 
           ${part === 'subweapon' ? `
-          <div class="gb-sub" style="margin-top:6px;">🛡️ 보조무기(방패): 물리방어 입력 시 ATK는 자동으로 -(물리방어/2) 적용</div>
+          <details open style="margin-top:6px;border:1px solid rgba(148,163,184,0.12);border-radius:6px;padding:6px;">
+          <summary style="cursor:pointer;font-weight:bold;padding:2px 4px;">🛡️ 보조무기 스탯</summary>
+          <div class="gb-sub">보조무기: 방패만 물리방어 보유. 기타(장갑/보호대 등)는 특수효과만 적용.</div>
           <div class="gb-grid two">
             <label>물리방어<input class="gb-input" id="gb-eq-pdef" type="number" value="${Number(item.pdef||0)}" /></label>
-          </div>` : ''}
+          </div>
+          </details>` : ''}
 
           ${part === 'armor' ? `
-          <div class="gb-sub" style="margin-top:6px;">🛡 방어구: 물리방어/마법방어 ${armorStat.defRange?armorStat.defRange[0]+'~'+armorStat.defRange[1]:''} | 총 스탯합 ${armorStat.totalStatSum||0} | 강화당 주스탯 +${armorStat.enhanceStat||0}</div>
+          <details open style="margin-top:6px;border:1px solid rgba(148,163,184,0.12);border-radius:6px;padding:6px;">
+          <summary style="cursor:pointer;font-weight:bold;padding:2px 4px;">🛡 방어구 스탯</summary>
+          <div class="gb-sub">방어구: 물리방어/마법방어 ${armorStat.defRange?armorStat.defRange[0]+'~'+armorStat.defRange[1]:''} | 총 스탯합 ${armorStat.totalStatSum||0} | 강화당 주스탯 +${armorStat.enhanceStat||0}</div>
+          <div class="gb-sub">🛡 방어구 종류: 중갑(방어90~100%,STR/CON,ATK-10%) · 경갑(방어70~80%,STR/CON/AGI) · 가죽(방어50~60%,STR/AGI/INT/SEN,스탯+10%) · 로브(방어40~50%,AGI/INT/SEN,스탯+20%)</div>
           <div class="gb-sub" style="color:#94a3b8;">⚗️ 저항은 희귀재료 인퓨즈로 부여 (DB에서 직접 수정 가능). 기본 저항 없음.</div>
           <div class="gb-grid two">
+            <label>방어구 종류<select class="gb-input" id="gb-eq-armor-subtype">
+              ${ARMOR_SUBTYPE_KEYS.map(k => `<option value="${k}" ${(item.armorSubtype||'')=== k?'selected':''}>${ARMOR_SUBTYPES[k].label} (방어${Math.round(ARMOR_SUBTYPES[k].defMul[0]*100)}~${Math.round(ARMOR_SUBTYPES[k].defMul[1]*100)}%${ARMOR_SUBTYPES[k].atkMul ? ', ATK'+Math.round(ARMOR_SUBTYPES[k].atkMul*100)+'%' : ''}${ARMOR_SUBTYPES[k].statBonusMul ? ', 스탯+'+Math.round(ARMOR_SUBTYPES[k].statBonusMul*100)+'%' : ''})</option>`).join('')}
+            </select></label>
             <label>물리방어<input class="gb-input" id="gb-eq-pdef" type="number" value="${Number(item.pdef||0)}" /></label>
             <label>마법방어<input class="gb-input" id="gb-eq-mdef" type="number" value="${Number(item.mdef||0)}" /></label>
             <label>저항 타입 (인퓨즈 결과)<select class="gb-input" id="gb-eq-resist-type">
@@ -9158,29 +10570,45 @@ function renderCommandPanel(runtime) {
             <label>총 스탯합 적용 주스탯<select class="gb-input" id="gb-eq-main-stat">
               ${['str','con','int','agi','sense'].map(s => `<option value="${s}" ${item.mainStat===s?'selected':''}>${s}</option>`).join('')}
             </select></label>
-          </div>` : ''}
+          </div>
+          </details>` : ''}
 
           ${part === 'accessory' ? `
-          <div class="gb-sub" style="margin-top:6px;">💍 악세서리: 총 스탯합 ${accessoryStat.totalStatSum||0} | 특성 슬롯 ${accessoryStat.traits||1}개 | 강화당 주스탯 +${accessoryStat.enhanceStat||0}</div>
+          <details open style="margin-top:6px;border:1px solid rgba(148,163,184,0.12);border-radius:6px;padding:6px;">
+          <summary style="cursor:pointer;font-weight:bold;padding:2px 4px;">💍 악세서리 스탯</summary>
+          <div class="gb-sub">악세서리: 총 스탯합 ${accessoryStat.totalStatSum||0} | 특성 슬롯 ${accessoryStat.traits||1}개 | 강화당 주스탯 +${accessoryStat.enhanceStat||0}</div>
           <div class="gb-sub" style="color:#a78bfa;">✨ ${rank}등급 특성 효과 예시: 물리/마법 피해 +${(DEFAULT_RARE_MATERIAL_PACK.valueScales.percentSmall||{})[rank]||0}%, 속성/상태이상 +${(DEFAULT_RARE_MATERIAL_PACK.valueScales.statusPercent||{})[rank]||0}%, 치확 +${(DEFAULT_RARE_MATERIAL_PACK.valueScales.critChance||{})[rank]||0}%, 치피 +${(DEFAULT_RARE_MATERIAL_PACK.valueScales.critDamage||{})[rank]||0}%, 방어력 +${(DEFAULT_RARE_MATERIAL_PACK.valueScales.defenseFlat||{})[rank]||0}</div>
           <div class="gb-grid two">
             <label>총 스탯합 적용 주스탯<select class="gb-input" id="gb-eq-main-stat">
               ${['str','con','int','agi','sense'].map(s => `<option value="${s}" ${item.mainStat===s?'selected':''}>${s}</option>`).join('')}
             </select></label>
-          </div>` : ''}
-
-          <div style="margin-top:8px;">
-            <div class="gb-section-title">특성(Trait)</div>
-            <div style="display:flex;flex-wrap:wrap;gap:6px 14px;">${traitsHtml}</div>
           </div>
-          <label style="margin-top:8px;display:block;">메모<textarea class="gb-textarea short" id="gb-eq-note">${escapeHtml(item.note||'')}</textarea></label>
-          <label style="margin-top:8px;">🔮 상태이상 부여 (특수 장비 전용 — 상점/경매 미등록)<select class="gb-input" id="gb-eq-status-type">
-            ${['','poison','bleed','burn','curse','silence','slow','bind','stun','sleep'].map(v=>`<option value="${v}" ${(item.statusType||'')===v?'selected':''}>${v||'(없음)'}</option>`).join('')}
-          </select></label>
+          </details>` : ''}
 
-          <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(148,163,184,0.15);">
-            <div class="gb-section-title">✨ 특수효과 (Special Effect)</div>
+          <details open style="margin-top:8px;border:1px solid rgba(148,163,184,0.12);border-radius:6px;padding:6px;">
+          <summary style="cursor:pointer;font-weight:bold;padding:2px 4px;">🔖 특성(Trait)</summary>
+          <div style="display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:4px;">${traitsHtml}</div>
+          </details>
+
+          <details style="margin-top:6px;border:1px solid rgba(148,163,184,0.12);border-radius:6px;padding:6px;">
+          <summary style="cursor:pointer;font-weight:bold;padding:2px 4px;">⚡ 상태이상 부여 (유니크/전설 전용)</summary>
+          <div class="gb-sub">유니크/전설 장비 전용 상태이상 효과. 상점/경매 미등록 아이템에만 사용.</div>
+          <div class="gb-grid two" style="margin-top:4px;">
+            <label>상태이상 종류<select class="gb-input" id="gb-eq-status-type">
+              ${['','poison','bleed','burn','curse','silence','slow','bind','stun','sleep'].map(v=>`<option value="${v}" ${(item.statusType||'')===v?'selected':''}>${v||'(없음)'}</option>`).join('')}
+            </select></label>
+            <label>발동 확률 (%)<input class="gb-input" id="gb-eq-status-chance" type="number" min="0" max="100" value="${Number(item.statusChance||0)}" /></label>
+          </div>
+          </details>
+
+          <label style="margin-top:8px;display:block;">메모<textarea class="gb-textarea short" id="gb-eq-note">${escapeHtml(item.note||'')}</textarea></label>
+
+          <details style="margin-top:6px;border:1px solid rgba(148,163,184,0.12);border-radius:6px;padding:6px;">
+          <summary style="cursor:pointer;font-weight:bold;padding:2px 4px;">✨ 특수효과 (Special Effect)</summary>
             <div class="gb-sub">특성주입과 별개로 무기/장비에 추가되는 특수 옵션. 버프=자신 강화, 디버프=적에게 받는 피해 증가.</div>
+            <div class="gb-sub" style="color:#f59e0b;">💡 무기/방어구에 특수효과 추가 시 자동으로 Rare 등급 적용. 확률·수치 0이면 등급에 맞게 자동 설정됨.</div>
+            <div class="gb-sub" style="color:#60a5fa;">📌 특수효과는 주입이 아닙니다. maxInfuse를 증가시키지 않으며 주입횟수를 사용하지 않습니다.</div>
+            <div class="gb-sub" style="color:#60a5fa;">📌 보조무기: 특수효과1 + 주입 최대 2회 / 악세서리: 특수효과1 + 주입 최대 1회</div>
             <div class="gb-grid two" style="margin-top:6px;">
               <label>효과 종류<select class="gb-input" id="gb-eq-sme-type">
                 <option value="" ${!(item.specialEffect&&item.specialEffect.type)?'selected':''}>없음</option>
@@ -9199,12 +10627,12 @@ function renderCommandPanel(runtime) {
               const desc = (item.specialEffect.type === 'debuff' && eff.canDebuff) ? eff.debuffDesc : eff.buffDesc;
               return '<div class="gb-sub" style="margin-top:4px;color:#a78bfa;">미리보기: ' + escapeHtml((desc||'').replace(/N/g, String(item.specialEffect.value||0))) + ' (발동확률 ' + (item.specialEffect.chance||0) + '%)</div>';
             })() : ''}
-          </div>
+          </details>
 
-          <div class="gb-btn-row"><button class="gb-btn primary" id="gb-eq-save">저장</button><button class="gb-btn" id="gb-eq-delete">삭제</button></div>
+          <div class="gb-btn-row" style="margin-top:8px;"><button class="gb-btn primary" id="gb-eq-save">저장</button><button class="gb-btn" id="gb-eq-delete">삭제</button><button class="gb-btn" id="gb-eq-send-inventory" title="커스텀 장비를 인벤토리로 전송">📦 인벤토리로 보내기</button></div>
 
-          <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(148,163,184,0.18);">
-            <div class="gb-section-title">🔧 수리비 계산기</div>
+          <details style="margin-top:8px;border:1px solid rgba(148,163,184,0.12);border-radius:6px;padding:6px;">
+          <summary style="cursor:pointer;font-weight:bold;padding:2px 4px;">🔧 수리비 계산기</summary>
             <div class="gb-sub">현재 내구도: <strong>${Number(item.durability != null ? item.durability : 100)}%</strong></div>
             <div class="gb-grid two">
               <label>수리 후 내구도<input class="gb-input" id="gb-eq-repair-target" type="number" min="0" max="100" value="100" /></label>
@@ -9213,15 +10641,15 @@ function renderCommandPanel(runtime) {
               </label>
             </div>
             <div id="gb-eq-repair-result" class="gb-sub"></div>
-          </div>
+          </details>
 
-          <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(148,163,184,0.18);">
-            <div class="gb-section-title">장비 JSON 가져오기</div>
+          <details style="margin-top:6px;border:1px solid rgba(148,163,184,0.12);border-radius:6px;padding:6px;">
+          <summary style="cursor:pointer;font-weight:bold;padding:2px 4px;">📥 장비 JSON 가져오기</summary>
             <textarea class="gb-textarea short" id="gb-eq-json"></textarea>
             <div class="gb-btn-row">
               <button class="gb-btn" id="gb-eq-import-json">JSON 가져오기</button>
             </div>
-          </div>
+          </details>
         </div>
       </div>
     `;
@@ -9300,6 +10728,8 @@ function renderApp() {
     _startSellAuctionTimer();
   }
   const view = model.state.view || 'hub';
+  // Gate immersive fullscreen: skip header/nav when active gate run
+  const gateImmersive = view === 'gate' && activeGateRun();
   let body;
   if      (view === 'hub')         body = renderHub();
   else if (view === 'gate')        body = renderGateView();
@@ -9312,28 +10742,36 @@ function renderApp() {
   else if (view === 'home')        body = renderHomeView();
   else if (view === 'guild')       body = renderGuildView();
   else                             body = renderDbView();
-  root.innerHTML = `
-    <div class="gb-shell ${model.state.visible ? '' : 'hidden'}">
-      <div class="gb-header">
-        <div>
-          <div class="gb-title">⚔️ Gate Battle Prototype v7.4</div>
-          <div class="gb-sub">허브 · 게이트 · 전투 · 파티 · 캐릭터 · 공용인벤 · DB</div>
-        </div>
-        <div style="display:flex; gap:8px; align-items:flex-start; flex-wrap:wrap;">
-          <button class="gb-btn ${view==='hub'?'primary':''}" data-go="hub">허브</button>
-          <button class="gb-btn ${view==='gate'?'primary':''}" data-go="gate">게이트</button>
-          <button class="gb-btn ${view==='battle'?'primary':''}" data-go="battle">전투</button>
-          <button class="gb-btn ${view==='party'?'primary':''}" data-go="party">파티</button>
-          <button class="gb-btn ${view==='inventory'?'primary':''}" data-go="inventory">공용인벤</button>
-          <button class="gb-btn ${view==='character'?'primary':''}" data-go="character">캐릭터</button>
-          <button class="gb-btn ${view==='db'?'primary':''}" data-go="db">DB</button>
-          <button class="gb-btn" id="gb-close-ui">닫기</button>
-        </div>
+  if (gateImmersive) {
+    root.innerHTML = `
+      <div class="gb-shell ${model.state.visible ? '' : 'hidden'}">
+        ${body}
       </div>
-      ${renderDateCharBar()}
-      ${body}
-    </div>
-  `;
+    `;
+  } else {
+    root.innerHTML = `
+      <div class="gb-shell ${model.state.visible ? '' : 'hidden'}">
+        <div class="gb-header">
+          <div>
+            <div class="gb-title">⚔️ Gate Battle Prototype v7.4</div>
+            <div class="gb-sub">허브 · 게이트 · 전투 · 파티 · 캐릭터 · 공용인벤 · DB</div>
+          </div>
+          <div style="display:flex; gap:8px; align-items:flex-start; flex-wrap:wrap;">
+            <button class="gb-btn ${view==='hub'?'primary':''}" data-go="hub">허브</button>
+            <button class="gb-btn ${view==='gate'?'primary':''}" data-go="gate">게이트</button>
+            <button class="gb-btn ${view==='battle'?'primary':''}" data-go="battle">전투</button>
+            <button class="gb-btn ${view==='party'?'primary':''}" data-go="party">파티</button>
+            <button class="gb-btn ${view==='inventory'?'primary':''}" data-go="inventory">공용인벤</button>
+            <button class="gb-btn ${view==='character'?'primary':''}" data-go="character">캐릭터</button>
+            <button class="gb-btn ${view==='db'?'primary':''}" data-go="db">DB</button>
+            <button class="gb-btn" id="gb-close-ui">닫기</button>
+          </div>
+        </div>
+        ${renderDateCharBar()}
+        ${body}
+      </div>
+    `;
+  }
   bindUI();
 }
 
@@ -9351,11 +10789,12 @@ function readPartySlotsFromUI() {
     const runtime = model.state.runtime;
     const pending = {};
     getAlive(runtime.party).forEach(unit => {
-      pending[unit.uid] = {
-        mode: fieldValue(`#gb-act-mode-${unit.uid}`) || 'basic',
-        skillId: fieldValue(`#gb-act-skill-${unit.uid}`) || '',
-        target: fieldValue(`#gb-act-target-${unit.uid}`) || ''
-      };
+      let mode = fieldValue(`#gb-act-mode-${unit.uid}`) || 'basic';
+      const skillId = fieldValue(`#gb-act-skill-${unit.uid}`) || '';
+      const target = fieldValue(`#gb-act-target-${unit.uid}`) || '';
+      // 스킬이 선택되어 있으면 모드가 '기본공격'이어도 자동으로 스킬 모드로 전환
+      if (skillId && mode === 'basic') mode = 'skill';
+      pending[unit.uid] = { mode, skillId, target };
     });
     runtime.pendingActions = pending;
   }
@@ -9406,6 +10845,9 @@ function readPartySlotsFromUI() {
     if (existingChar.inventory) item.inventory = existingChar.inventory;
     if (!item.name) throw new Error('캐릭터 이름이 비어 있다.');
     upsertById(model.db.characters, item);
+    // 장착 무기 ATK를 포함하여 파생 스탯 재계산
+    const saved = getCharById(id);
+    if (saved && saved.stats) recalcCharDerivedStats(saved);
     model.state.selected.characters = id;
     await saveDb(); await saveState(); renderApp(); toast('캐릭터 저장 완료');
   }
@@ -9739,12 +11181,12 @@ async function saveMaterialTraitFromForm() {
         agi: Number(fieldValue('#gb-persona-agi') || 5),
         sense: Number(fieldValue('#gb-persona-sense') || 5),
       },
-      hp: Number(fieldValue('#gb-persona-hp') || 200),
-      mp: Number(fieldValue('#gb-persona-mp') || 80),
-      sp: Number(fieldValue('#gb-persona-sp') || 80),
-      atk: Number(fieldValue('#gb-persona-atk') || 5),
-      pdef: Number(fieldValue('#gb-persona-pdef') || 3),
-      mdef: Number(fieldValue('#gb-persona-mdef') || 3),
+      hp: Number(fieldValue('#gb-persona-hp') || 0),
+      mp: Number(fieldValue('#gb-persona-mp') || 0),
+      sp: Number(fieldValue('#gb-persona-sp') || 0),
+      atk: Number(fieldValue('#gb-persona-atk') || 0),
+      pdef: Number(fieldValue('#gb-persona-pdef') || 0),
+      mdef: Number(fieldValue('#gb-persona-mdef') || 0),
       damageType: fieldValue('#gb-persona-dmgtype') || 'magic',
       attackStat: fieldValue('#gb-persona-atkstat') || 'int',
       skills: fieldValue('#gb-persona-skills').split(',').map(s=>s.trim()).filter(Boolean),
@@ -9753,8 +11195,15 @@ async function saveMaterialTraitFromForm() {
       totalExp: Number(existing.totalExp || 0),
       note: fieldValue('#gb-persona-note') || '',
     });
+    // HP/MP/SP가 0이면 스탯 기반 자동 계산
+    if (item.hp <= 0) item.hp = 100 + (item.stats.con - 10) * 10 + (item.stats.str - 10) * 3;
+    if (item.mp <= 0) item.mp = 100 + (item.stats.int - 10) * 10 + (item.stats.sense - 10) * 3;
+    if (item.sp <= 0) item.sp = 100 + (item.stats.agi - 10) * 10 + (item.stats.sense - 10) * 3;
     if (!item.name) throw new Error('페르소나 이름이 비어 있다.');
     upsertById(model.db.personas, item);
+    // 장착 무기 ATK를 포함하여 파생 스탯 재계산
+    const saved = getPersonaById(id);
+    if (saved && saved.stats) recalcCharDerivedStats(saved);
     model.state.selected.personas = id;
     await saveDb(); await saveState(); renderApp(); toast('페르소나 저장 완료');
   }
@@ -9801,17 +11250,6 @@ async function saveMaterialTraitFromForm() {
       if (stChanceVal !== '') stObj.chance = Math.max(0, Math.min(1, Number(stChanceVal)));
       item.status = stObj;
     }
-    // Special material effect
-    const skillSmeType = fieldValue('#gb-skill-sme-type');
-    const skillSmeEffect = fieldValue('#gb-skill-sme-effect');
-    if (skillSmeType && skillSmeEffect) {
-      item.specialEffect = {
-        type: skillSmeType,
-        effectId: skillSmeEffect,
-        chance: Math.max(0, Math.min(100, Number(fieldValue('#gb-skill-sme-chance')||0))),
-        value: Number(fieldValue('#gb-skill-sme-value')||0)
-      };
-    }
     if (!item.name) throw new Error('스킬 이름이 비어 있다.');
     upsertById(model.db.customSkills, item);
     model.state.selected.skills = id;
@@ -9828,12 +11266,16 @@ async function saveMaterialTraitFromForm() {
     const durability = Math.max(0, Math.min(100, Number(fieldValue('#gb-eq-durability')||100)));
     const priceInput = Number(fieldValue('#gb-eq-price')||0);
     const autoPrice = calcEquipEnhancedPrice(calcEquipBasePrice(rank, part), enhance, rank);
-    const price = priceInput > 0 ? priceInput : autoPrice;
-    // Collect traits
+    // Add trait tier price bonus
     const traits = EQUIP_TRAIT_TYPES.filter(t => {
       const el = document.getElementById(`gb-eq-trait-${t}`);
       return el && el.checked;
     });
+    let traitPriceBonus = 0;
+    traits.forEach(tid => {
+      traitPriceBonus += getRareMatTierPrice(rank, tid);
+    });
+    const price = priceInput > 0 ? priceInput : (autoPrice + traitPriceBonus);
     const item = {
       id,
       name: fieldValue('#gb-eq-name') || id,
@@ -9852,22 +11294,54 @@ async function saveMaterialTraitFromForm() {
       resistType: fieldValue('#gb-eq-resist-type') || '',
       resistPct: Number(fieldValue('#gb-eq-resist-pct')||0),
       statusType: fieldValue('#gb-eq-status-type') || '',
+      statusChance: Number(fieldValue('#gb-eq-status-chance')||0),
       rarity: fieldValue('#gb-eq-rarity') || 'Normal',
       stats: { str:0, con:0, int:0, agi:0, sense:0 }
     };
+    // Armor subtype
+    if (part === 'armor') {
+      const armorSub = fieldValue('#gb-eq-armor-subtype') || 'light';
+      item.armorSubtype = armorSub;
+      item.armorStatBonusMul = ARMOR_SUBTYPES[armorSub] ? ARMOR_SUBTYPES[armorSub].statBonusMul : 0;
+    }
     // Special material effect
     const smeType = fieldValue('#gb-eq-sme-type');
     const smeEffect = fieldValue('#gb-eq-sme-effect');
     if (smeType && smeEffect) {
+      let smeChance = Number(fieldValue('#gb-eq-sme-chance')||0);
+      let smeValue = Number(fieldValue('#gb-eq-sme-value')||0);
+      // Auto-fill: chance=0 → rank-based default (E:10, D:15, C:20, B:25, A:30, S:40)
+      if (smeChance <= 0) {
+        const defaultChance = {E:10,D:15,C:20,B:25,A:30,S:40};
+        smeChance = defaultChance[rank] || 20;
+      }
+      // Auto-fill: value=0 → use trait scale value for current rank
+      if (smeValue <= 0) {
+        const traitDef = (DEFAULT_RARE_MATERIAL_PACK.traits || []).find(t => t.id === smeEffect);
+        if (traitDef && traitDef.scale) {
+          const scaleTable = (DEFAULT_RARE_MATERIAL_PACK.valueScales || {})[traitDef.scale];
+          if (scaleTable && scaleTable[rank] != null) smeValue = scaleTable[rank];
+        }
+        if (smeValue <= 0) {
+          const fallback = (DEFAULT_RARE_MATERIAL_PACK.valueScales.percentSmall || {})[rank] || 3;
+          smeValue = fallback;
+        }
+      }
       item.specialEffect = {
         type: smeType,
         effectId: smeEffect,
-        chance: Math.max(0, Math.min(100, Number(fieldValue('#gb-eq-sme-chance')||0))),
-        value: Number(fieldValue('#gb-eq-sme-value')||0)
+        chance: Math.max(0, Math.min(100, smeChance)),
+        value: smeValue
       };
+      // Auto-set rarity to Rare when special effect is present on weapon/armor
+      if ((part === 'weapon' || part === 'armor') && (item.rarity === 'Normal' || !item.rarity)) {
+        item.rarity = 'Rare';
+      }
     } else {
       item.specialEffect = null;
     }
+    // maxInfuse 자동 설정 (특수효과는 주입이 아님)
+    item.maxInfuse = EQUIP_MAX_INFUSE[part] || 1;
     if (!Array.isArray(model.db.equipments)) model.db.equipments = [];
     upsertById(model.db.equipments, item);
     model.state.selected.equipment = id;
@@ -9903,8 +11377,93 @@ async function saveMaterialTraitFromForm() {
       renderApp();
     });
     on('[data-go]', 'click', async (ev) => {
-      model.state.view = ev.currentTarget.getAttribute('data-go');
+      const target = ev.currentTarget.getAttribute('data-go');
+      // 게이트 진행 중에는 gate/battle/party/hub 외 다른 화면 이동 차단
+      if (activeGateRun()) {
+        const allowed = ['gate', 'battle', 'party', 'hub'];
+        if (!allowed.includes(target)) {
+          alert('⚠️ 게이트 진행 중에는 다른 화면으로 이동할 수 없습니다. 후퇴하거나 클리어 후 이용해 주세요.');
+          return;
+        }
+      }
+      model.state.view = target;
       await saveState();
+      renderApp();
+    });
+    // ── 데이터 관리 핸들러 (내보내기/불러오기/삭제) ────────────────────────────
+    on('#gb-data-export', 'click', () => {
+      try {
+        const exportData = {
+          _exportVersion: 'GateBattleV21',
+          _exportDate: new Date().toISOString(),
+          db: deepClone(model.db),
+          state: deepClone(model.state)
+        };
+        // runtime은 전투 중 임시 데이터이므로 제거
+        delete exportData.state.runtime;
+        const json = JSON.stringify(exportData, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        a.href = url;
+        a.download = `hunter-world-save-${dateStr}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast('💾 데이터를 파일로 내보냈습니다.');
+      } catch (e) { toast('내보내기 실패: ' + (e.message || String(e)), true); }
+    });
+    on('#gb-data-import', 'click', () => {
+      const fileInput = root.querySelector('#gb-data-import-file');
+      if (fileInput) fileInput.click();
+    });
+    on('#gb-data-import-file', 'change', async (ev) => {
+      try {
+        const file = ev.currentTarget.files && ev.currentTarget.files[0];
+        if (!file) return;
+        const text = await file.text();
+        const imported = JSON.parse(text);
+        if (!imported || typeof imported !== 'object' || !imported.db) {
+          throw new Error('유효하지 않은 저장 파일입니다. (db 키가 없음)');
+        }
+        if (!confirm('⚠️ 현재 데이터를 불러온 데이터로 덮어씁니다.\n기존 데이터가 모두 교체됩니다.\n\n계속하시겠습니까?')) return;
+        model.db = Object.assign(buildDefaultDb(), imported.db);
+        if (imported.state && typeof imported.state === 'object') {
+          const next = buildDefaultState();
+          model.state = Object.assign(next, imported.state);
+          model.state.runtime = buildDefaultRuntime();
+          model.state.gate = Object.assign(buildDefaultGateState(), imported.state.gate || {});
+          if (model.state.gate && model.state.gate.run && typeof model.state.gate.run === 'object') {
+            if (model.state.gate.run.elapsedMinutes == null) model.state.gate.run.elapsedMinutes = 0;
+            if (!('postBattle' in model.state.gate.run)) model.state.gate.run.postBattle = null;
+            if (model.state.gate.run.partyStartCount == null) model.state.gate.run.partyStartCount = Array.isArray(model.state.gate.run.partyState) ? model.state.gate.run.partyState.length : 0;
+            if (!model.state.gate.run.campSupplies) model.state.gate.run.campSupplies = { used:false, legacyMigrated:false };
+            ensureGateLogContainers(model.state.gate.run);
+          }
+        }
+        model.state.visible = true;
+        getInventory();
+        if (!Array.isArray(model.db.auctionListings)) model.db.auctionListings = [];
+        if (!Array.isArray(model.db.hmUsedListings)) model.db.hmUsedListings = [];
+        ensureSelections();
+        await saveDb();
+        await saveState();
+        toast('✅ 데이터를 성공적으로 불러왔습니다!');
+        renderApp();
+      } catch (e) { toast('불러오기 실패: ' + (e.message || String(e)), true); }
+      ev.currentTarget.value = '';
+    });
+    on('#gb-data-clear', 'click', async () => {
+      if (!confirm('⚠️ 정말로 모든 저장 데이터를 삭제하시겠습니까?\n캐릭터, 장비, 인벤토리, 게이트 진행 등 모든 데이터가 초기화됩니다.\n\n이 작업은 되돌릴 수 없습니다!')) return;
+      if (!confirm('🔴 최종 확인: 정말 삭제하시겠습니까?')) return;
+      model.db = buildDefaultDb();
+      model.state = buildDefaultState();
+      model.state.visible = true;
+      await saveDb();
+      await saveState();
+      toast('🗑️ 모든 데이터가 초기화되었습니다.');
       renderApp();
     });
     // ── 날짜 시스템 핸들러 ─────────────────────────────────────────────────────
@@ -9931,6 +11490,8 @@ async function saveMaterialTraitFromForm() {
       gd.year = d.getFullYear();
       gd.month = d.getMonth() + 1;
       gd.day = d.getDate();
+      // 날짜 변경 시 전멸 상태 자동 해제 (당일 제한만 적용)
+      model.db.lastWipeDate = null;
       // Process rent evictions
       const evictMsgs = processRentOnDateAdvance(gd);
       await saveDb(); renderApp();
@@ -9999,16 +11560,62 @@ async function saveMaterialTraitFromForm() {
       model.state.auctionSell = null;
       await saveState(); renderApp();
     });
+    on('[data-auction-browse-type]', 'click', async (ev) => {
+      model.state.auctionBrowseType = ev.currentTarget.getAttribute('data-auction-browse-type') || 'equip';
+      await saveState(); renderApp();
+    });
+    on('[data-buy-manastone]', 'click', async (ev) => {
+      const rank = ev.currentTarget.getAttribute('data-buy-manastone');
+      const purity = Number(ev.currentTarget.getAttribute('data-ms-purity') || 95);
+      const price = Number(ev.currentTarget.getAttribute('data-ms-price') || 0);
+      const inv = getActiveInventory();
+      if (Number(inv.gold || 0) < price) { toast('소지금 부족!'); return; }
+      inv.gold = Number(inv.gold || 0) - price;
+      const stoneId = `mana_${rank}_${purity}`;
+      const label = (MANA_STONE_LABELS[rank] || (rank + ' 마정석')) + '(' + purity + ')';
+      const existing = (inv.items || []).find(it => it.id === stoneId && it.category === 'manaStone');
+      if (existing) {
+        existing.count = (existing.count || 1) + 1;
+      } else {
+        if (!inv.items) inv.items = [];
+        inv.items.push({ id: stoneId, name: label, category: 'manaStone', rank, count: 1, unitWeightG: manaStoneUnitWeight(String(purity)), stackable: true, note: String(purity) });
+      }
+      toast(`💎 ${label} 구매 완료! (-₩${price.toLocaleString('en-US')})`);
+      await saveDb(); renderApp();
+    });
+    on('[data-auction-bid-raremat]', 'click', async (ev) => {
+      const listingId = ev.currentTarget.getAttribute('data-auction-bid-raremat');
+      const mktPrice = Number(ev.currentTarget.getAttribute('data-auction-bid-mkt') || 0);
+      const inv = getActiveInventory();
+      const startRatio = AUCTION_BUY_START_RATIO;
+      const startPrice = Math.round(mktPrice * startRatio);
+      if (Number(inv.gold || 0) < startPrice) { toast('소지금 부족! 최소 시작가: ₩' + startPrice.toLocaleString('en-US')); return; }
+      model.state.auctionBid = { listingId, marketPrice: mktPrice, currentRatio: startRatio, step: 0, log: [`[경매 시작] 시장가: ₩${mktPrice.toLocaleString('en-US')} | 시작가: 시장가 ${Math.round(startRatio*100)}% = ₩${startPrice.toLocaleString('en-US')}`], done: false, isRareMat: true };
+      await saveState(); renderApp();
+    });
     on('[data-auction-rank]', 'click', async (ev) => {
       model.state.auctionRankFilter = ev.currentTarget.getAttribute('data-auction-rank') || '';
       await saveState(); renderApp();
     });
     on('[data-auction-refresh]', 'click', async () => {
+      // 하루 3회 제한
+      const today = new Date().toISOString().slice(0, 10);
+      if (!model.state.auctionRefreshDate || model.state.auctionRefreshDate !== today) {
+        model.state.auctionRefreshDate = today;
+        model.state.auctionRefreshCount = 0;
+      }
+      if ((model.state.auctionRefreshCount || 0) >= 3) {
+        toast('⚠️ 오늘 새로고침 횟수를 모두 사용했습니다 (3/3)');
+        return;
+      }
+      model.state.auctionRefreshCount = (model.state.auctionRefreshCount || 0) + 1;
       if (!Array.isArray(model.db.auctionListings)) model.db.auctionListings = [];
       model.db.auctionListings = model.db.auctionListings.filter(l => !l.isNpc);
+      if (!Array.isArray(model.db.auctionRareMats)) model.db.auctionRareMats = [];
+      model.db.auctionRareMats = model.db.auctionRareMats.filter(l => !l.isNpc);
       seedNpcAuctionListings();
-      await saveDb(); renderApp();
-      toast('🔄 NPC 경매 목록 갱신 완료');
+      await saveDb(); await saveState(); renderApp();
+      toast(`🔄 NPC 경매 목록 갱신 완료 (${model.state.auctionRefreshCount}/3)`);
     });
     // 검색박스 입력 — 한글 IME 조합 중에는 리렌더 방지
     let auctionSearchComposing = false;
@@ -10110,10 +11717,12 @@ async function saveMaterialTraitFromForm() {
         const bidState = model.state.auctionBid;
         if (!bidState) throw new Error('경매 데이터가 없다.');
         const auctionId = bidState.listingId;
-        if (!Array.isArray(model.db.auctionListings)) throw new Error('경매 목록이 없다.');
-        const idx = model.db.auctionListings.findIndex(l => l.id === auctionId);
+        // 희귀재료 경매인지 장비 경매인지 구분
+        const listArr = bidState.isRareMat ? (model.db.auctionRareMats || []) : (model.db.auctionListings || []);
+        if (!Array.isArray(listArr)) throw new Error('경매 목록이 없다.');
+        const idx = listArr.findIndex(l => l.id === auctionId);
         if (idx < 0) throw new Error('해당 경매 물품이 이미 없다. (다른 사람이 낙찰)');
-        const listing = model.db.auctionListings[idx];
+        const listing = listArr[idx];
         const inv = getActiveInventory();
         if (Number(inv.gold||0) < bidState.finalPrice) throw new Error(`소지금 부족 (${getActiveLabel()}: 필요 ${bidState.finalPrice.toLocaleString('en-US')}원)`);
         inv.gold = Number(inv.gold||0) - bidState.finalPrice;
@@ -10127,7 +11736,7 @@ async function saveMaterialTraitFromForm() {
           if (!buyItem.unitWeightG) buyItem.unitWeightG = EQUIP_WEIGHT_G[buyItem.part] || 1000;
         }
         grantActiveInventoryItem(buyItem);
-        model.db.auctionListings.splice(idx, 1);
+        listArr.splice(idx, 1);
         model.state.auctionBid = null;
         await saveDb(); await saveState(); renderApp();
         const fmt = n => n >= 1e8 ? `${(n/1e8).toFixed(2)}억원` : n >= 10000 ? `${Math.round(n/10000)}만원` : `${n.toLocaleString('en-US')}원`;
@@ -10587,7 +12196,7 @@ async function saveMaterialTraitFromForm() {
         const id = ev.currentTarget.getAttribute('data-equip-shop-buy') || '';
         const eq = (model.db.equipments || []).find(e => e.id === id);
         if (!eq) throw new Error('장비를 찾을 수 없다.');
-        const price = Number(eq.price || calcEquipEnhancedPrice(calcEquipBasePrice(eq.rank, eq.part), eq.enhance||0, eq.rank));
+        const price = (eq.price != null && eq.price !== '' && Number(eq.price) >= 0) ? Number(eq.price) : calcEquipEnhancedPrice(calcEquipBasePrice(eq.rank, eq.part), eq.enhance||0, eq.rank);
         const inv = getActiveInventory();
         if (Number(inv.gold || 0) < price) throw new Error(`소지금 부족 (${getActiveLabel()}: ${Number(inv.gold||0).toLocaleString('en-US')}원 / 필요 ${price.toLocaleString('en-US')}원)`);
         inv.gold = Number(inv.gold || 0) - price;
@@ -11092,6 +12701,39 @@ async function saveMaterialTraitFromForm() {
         toast(`${payLabel} ₩${rentInfo.totalDebt.toLocaleString('en-US')} 납부 완료.`);
       } catch (e) { toast(e.message || String(e), true); }
     });
+    // ── 하루 휴식 핸들러 ──────────────────────────────────────────────────────
+    on('#gb-home-rest', 'click', async () => {
+      try {
+        if (!model.db.gameDate) model.db.gameDate = { year:2026, month:1, day:1 };
+        const gd = model.db.gameDate;
+        // 날짜 하루 진행
+        const d = new Date(gd.year, gd.month - 1, gd.day);
+        d.setDate(d.getDate() + 1);
+        gd.year = d.getFullYear();
+        gd.month = d.getMonth() + 1;
+        gd.day = d.getDate();
+        // 임대료/관리비 처리
+        const evictMsgs = processRentOnDateAdvance(gd);
+        // 모든 캐릭터/페르소나 HP/MP/SP 완전 회복
+        (model.db.characters || []).forEach(c => {
+          if (c.stats) recalcCharDerivedStats(c);
+          c.currentHp = Number(c.hp || 0);
+          c.currentMp = Number(c.mp || 0);
+          c.currentSp = Number(c.sp || 0);
+        });
+        (model.db.personas || []).forEach(p => {
+          if (p.stats) recalcCharDerivedStats(p);
+          p.currentHp = Number(p.hp || 0);
+          p.currentMp = Number(p.mp || 0);
+          p.currentSp = Number(p.sp || 0);
+        });
+        // 전멸 상태 해제
+        model.db.lastWipeDate = null;
+        await saveDb(); await saveState(); renderApp();
+        for (const msg of evictMsgs) toast(msg, true);
+        toast(`🛏️ 하루 휴식 완료! ${gd.year}년 ${gd.month}월 ${gd.day}일 — 모든 파티원 HP/MP/SP 완전 회복.`);
+      } catch (e) { toast(e.message || String(e), true); }
+    });
     // ── Storage handlers ──────────────────────────────────────────────────────
     on('#gb-home-storage-add-btn', 'click', async (ev) => {
       try {
@@ -11349,17 +12991,8 @@ async function saveMaterialTraitFromForm() {
       if ((unit.stats[statKey] || 0) >= cap) { toast(`${statKey} 스탯이 상한(${cap})에 도달했습니다.`, true); return; }
       unit.stats[statKey] = (unit.stats[statKey] || 0) + 1;
       unit.freeStatPoints -= 1;
-      // 스탯 효과 자동 반영
-      const s = unit.stats;
-      unit.hp = 100 + s.con * 10 + s.str * 3;
-      unit.mp = 100 + s.int * 10 + (s.sense || 0) * 3;
-      unit.sp = 100 + s.agi * 10 + (s.sense || 0) * 3;
-      unit.atk = Math.round((Number(unit.weaponAtk) || 0) + s.str * 0.2 + s.agi * 0.2 + s.int * 0.3);
-      // 레벨업 보너스 HP/MP/SP (+2 per level)
-      const lvBonus = Math.max(0, (Number(unit.level) || 1) - 1) * 2;
-      unit.hp += lvBonus;
-      unit.mp += lvBonus;
-      unit.sp += lvBonus;
+      // 스탯 효과 자동 반영 (장착 무기 ATK 포함)
+      recalcCharDerivedStats(unit);
       await saveDb(); renderApp();
       toast(`${unit.name}: ${statKey} +1 (잔여 ${unit.freeStatPoints}포인트)`);
     });
@@ -11393,16 +13026,8 @@ async function saveMaterialTraitFromForm() {
       if ((unit.stats[statKey] || 0) >= cap) { toast(`${statKey} 스탯이 상한(${cap})에 도달했습니다.`, true); return; }
       unit.stats[statKey] = (unit.stats[statKey] || 0) + 1;
       unit.freeStatPoints -= 1;
-      // 스탯 효과 자동 반영
-      const s = unit.stats;
-      unit.hp = 100 + s.con * 10 + s.str * 3;
-      unit.mp = 100 + s.int * 10 + (s.sense || 0) * 3;
-      unit.sp = 100 + s.agi * 10 + (s.sense || 0) * 3;
-      unit.atk = Math.round((Number(unit.weaponAtk) || 0) + s.str * 0.2 + s.agi * 0.2 + s.int * 0.3);
-      const lvBonus = Math.max(0, (Number(unit.level) || 1) - 1) * 2;
-      unit.hp += lvBonus;
-      unit.mp += lvBonus;
-      unit.sp += lvBonus;
+      // 스탯 효과 자동 반영 (장착 무기 ATK 포함)
+      recalcCharDerivedStats(unit);
       await saveDb(); renderApp();
       toast(`${unit.name}: ${statKey} +1 (잔여 ${unit.freeStatPoints}포인트)`);
     });
@@ -11464,10 +13089,28 @@ async function saveMaterialTraitFromForm() {
       try {
         if (activeGateRun()) { toast('이미 진행 중인 게이트가 있다.'); return; }
         beginGateRunFromSelectedGate();
+        model.state.gateRunTab = 'main';
         await saveState();
         renderApp();
         toast('게이트에 진입했다.');
       } catch (e) { toast(e.message || String(e), true); }
+    });
+    // Gate run tab switching
+    on('[data-gate-run-tab]', 'click', (ev) => {
+      model.state.gateRunTab = ev.currentTarget.getAttribute('data-gate-run-tab') || 'main';
+      model.state.gatePartyDetailId = '';
+      renderApp();
+    });
+    // 게이트 파티탭 파티원 클릭 → 상세 펼침/접기
+    on('[data-gate-party-detail]', 'click', (ev) => {
+      const uid = ev.currentTarget.getAttribute('data-gate-party-detail') || '';
+      model.state.gatePartyDetailId = (model.state.gatePartyDetailId === uid) ? '' : uid;
+      renderApp();
+    });
+    // Gate fullscreen close → return to hub view
+    on('#gb-gate-fullscreen-close', 'click', () => {
+      model.state.view = 'hub';
+      renderApp();
     });
     on('[data-stage-choice]', 'click', async (ev) => {
       try {
@@ -11486,6 +13129,12 @@ async function saveMaterialTraitFromForm() {
       try {
         const run = getGateRun();
         if (!run) throw new Error('진행 중인 게이트가 없다.');
+        // 이미 전투가 진행 중이면 중복 진입 방지
+        const rt = model.state.runtime;
+        if (rt && rt.started && !rt.finished) {
+          toast('⚠️ 이미 전투가 진행 중입니다.', true);
+          return;
+        }
         enterGateRoom(run);
         await saveState();
         renderApp();
@@ -11585,6 +13234,11 @@ async function saveMaterialTraitFromForm() {
     });
     on('#gb-start-battle', 'click', async () => {
       try {
+        // 게이트 진행 중에는 전투탭 전투시작 차단 (게이트가 초기화되는 것 방지)
+        if (activeGateRun()) {
+          toast('⚠️ 게이트 진행 중에는 전투 탭에서 전투를 시작할 수 없습니다. 게이트 내 전투를 이용하세요.', true);
+          return;
+        }
         model.db.battleSetup.partySlots = readPartySlotsFromUI();
         model.db.battleSetup.enemySlots = readEnemySlotsFromUI();
         buildBattleFromSetup();
@@ -11811,11 +13465,13 @@ async function saveMaterialTraitFromForm() {
         inv.equipped[slot] = it;
         inv.items.splice(idx, 1);
         // 가방 장착 시 캐릭터 bagId 동기화
+        const arr = type === 'persona' ? (model.db.personas || []) : (model.db.characters || []);
+        const entity = arr.find(x => x.id === entityId);
         if (isBag) {
-          const arr = type === 'persona' ? (model.db.personas || []) : (model.db.characters || []);
-          const entity = arr.find(x => x.id === entityId);
           if (entity) entity.bagId = it.bagId || it.id;
         }
+        // 장비 장착 후 캐릭터 파생 스탯 재계산 (ATK/HP/MP/SP 등)
+        if (entity && entity.stats) recalcCharDerivedStats(entity);
         await saveDb(); await saveState(); renderApp();
         const msg = isBag ? `🎒 ${it.name} 가방 장착 완료` : `⚔️ ${it.name} 장착 완료 (${EQUIP_PART_LABELS[slot]||slot}) — 내구도 ${it.durability}/${it.maxDurability}`;
         toast(msg);
@@ -11833,11 +13489,13 @@ async function saveMaterialTraitFromForm() {
         if (!Array.isArray(inv.items)) inv.items = [];
         inv.items.push(it);
         // 가방 해제 시 캐릭터 bagId 초기화
+        const arr = type === 'persona' ? (model.db.personas || []) : (model.db.characters || []);
+        const entity = arr.find(x => x.id === entityId);
         if (slot === 'bag') {
-          const arr = type === 'persona' ? (model.db.personas || []) : (model.db.characters || []);
-          const entity = arr.find(x => x.id === entityId);
           if (entity) entity.bagId = 'none';
         }
+        // 장비 해제 후 캐릭터 파생 스탯 재계산
+        if (entity && entity.stats) recalcCharDerivedStats(entity);
         await saveDb(); await saveState(); renderApp();
         toast(`↩️ ${it.name} 해제 완료`);
       } catch(e) { toast(e.message||String(e), true); }
@@ -11946,6 +13604,22 @@ async function saveMaterialTraitFromForm() {
         toast('스킬 JSON 복사 완료');
       } catch (e) { toast('복사 실패', true); }
     });
+    // 내장 스킬 카테고리 아코디언 토글
+    on('[data-accordion-cat]', 'click', (ev) => {
+      const catKey = ev.currentTarget.getAttribute('data-accordion-cat');
+      const accordion = ev.currentTarget.closest('.gb-skill-accordion');
+      if (!accordion) return;
+      const body = accordion.querySelector('[data-accordion-body="' + catKey + '"]');
+      if (!body) return;
+      const isOpen = accordion.classList.contains('open');
+      if (isOpen) {
+        accordion.classList.remove('open');
+        body.style.display = 'none';
+      } else {
+        accordion.classList.add('open');
+        body.style.display = '';
+      }
+    });
     // 내장 스킬 클릭 → 편집기로 불러오기
     on('[data-load-builtin-skill]', 'click', async (ev) => {
       const skillId = ev.currentTarget.getAttribute('data-load-builtin-skill');
@@ -11980,6 +13654,51 @@ async function saveMaterialTraitFromForm() {
     });
     on('#gb-eq-save', 'click', async () => { try { await saveEquipmentFromForm(); } catch (e) { toast(e.message || String(e), true); } });
     on('#gb-eq-delete', 'click', async () => { try { await deleteSelected('equipment'); } catch (e) { toast(e.message || String(e), true); } });
+    on('#gb-eq-send-inventory', 'click', async () => {
+      try {
+        const sel = model.state.selected.equipment;
+        if (!sel) throw new Error('장비를 선택해 주세요.');
+        const equips = model.db.equipments || [];
+        const item = equips.find(e => e.id === sel);
+        if (!item) throw new Error('선택된 장비를 찾을 수 없습니다.');
+        // 커스텀 장비를 공용 인벤토리에 추가 (addInventoryItem → model.db.inventory)
+        const invItem = {
+          category: 'equipment',
+          stackable: false,
+          unitWeightG: EQUIP_WEIGHT_G[item.part] || 1000,
+          stackKey: `equipment:custom_${item.id}_${Date.now()}`,
+          name: item.name || item.id,
+          part: item.part,
+          rank: item.rank,
+          rarity: item.rarity || 'Normal',
+          enhance: item.enhance || 0,
+          infuse: item.infuse || 0,
+          maxInfuse: item.maxInfuse || 2,
+          traits: Array.isArray(item.traits) ? item.traits.slice() : [],
+          durability: item.durability != null ? item.durability : 100,
+          maxDurability: item.maxDurability != null ? item.maxDurability : 100,
+          atk: item.atk || 0,
+          pdef: item.pdef || 0,
+          mdef: item.mdef || 0,
+          mainStat: item.mainStat || '',
+          resistType: item.resistType || '',
+          resistPct: item.resistPct || 0,
+          specialEffect: item.specialEffect || '',
+          specialEffectChance: item.specialEffectChance || 0,
+          specialEffectValue: item.specialEffectValue || 0,
+          statusEffect: item.statusEffect || '',
+          statusEffectChance: item.statusEffectChance || 0,
+          armorSubtype: item.armorSubtype || '',
+          price: item.price || 0,
+          note: item.note || '',
+          count: 1
+        };
+        const res = addInventoryItem(invItem);
+        if (!res.ok) pushInventoryOverflow(invItem);
+        await saveDb();
+        toast(`📦 ${item.name || item.id} → 공용 인벤토리 ${res.ok ? '추가 완료' : '(오버플로우에 추가됨)'}`);
+      } catch (e) { toast(e.message || String(e), true); }
+    });
     on('#gb-eq-export', 'click', async () => {
       const text = JSON.stringify({ equipments: model.db.equipments || [] }, null, 2);
       const el = model.root && model.root.querySelector('#gb-eq-json');
@@ -12024,7 +13743,7 @@ async function saveMaterialTraitFromForm() {
     style.textContent = `
       #${UI_ID} { position:fixed; inset:0; z-index:9999; font-family: Inter, Pretendard, sans-serif; pointer-events:none; }
       #${UI_ID} .hidden { display:none; }
-      #${UI_ID} .gb-shell { background:#0f1117; color:#e2e8f0; height:100%; overflow:auto; padding:18px 18px 100px; pointer-events:auto; }
+      #${UI_ID} .gb-shell { background:#0f1117; color:#e2e8f0; height:100%; overflow:auto; padding:18px 18px 48px; pointer-events:auto; box-sizing:border-box; }
       #${UI_ID} .gb-header { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; margin-bottom:16px; }
       #${UI_ID} .gb-title { font-size:22px; font-weight:800; }
       #${UI_ID} .gb-sub { color:#94a3b8; font-size:12px; line-height:1.45; }
@@ -12090,6 +13809,12 @@ async function saveMaterialTraitFromForm() {
       #${UI_ID} [data-tooltip] { position:relative; }
       #${UI_ID} [data-tooltip]::after { content:attr(data-tooltip); position:absolute; bottom:calc(100% + 5px); left:50%; transform:translateX(-50%); background:#1e2130; color:#e2e8f0; font-size:11px; white-space:nowrap; padding:4px 8px; border-radius:6px; border:1px solid rgba(148,163,184,0.25); pointer-events:none; opacity:0; transition:opacity 0.15s; z-index:100; }
       #${UI_ID} [data-tooltip]:hover::after { opacity:1; }
+      #${UI_ID} .gb-skill-accordion { border:1px solid rgba(148,163,184,0.12); border-radius:10px; margin-bottom:6px; overflow:hidden; }
+      #${UI_ID} .gb-skill-accordion-header { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; cursor:pointer; background:#0d1017; font-size:14px; font-weight:700; user-select:none; transition:background 0.15s; }
+      #${UI_ID} .gb-skill-accordion-header:hover { background:#161b28; }
+      #${UI_ID} .gb-skill-accordion-arrow { font-size:10px; color:#94a3b8; transition:transform 0.2s; }
+      #${UI_ID} .gb-skill-accordion.open .gb-skill-accordion-arrow { transform:rotate(90deg); }
+      #${UI_ID} .gb-skill-accordion-body { padding:8px; background:#0b0d12; }
       @keyframes gb-blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
       @media (max-width: 1200px) {
         #${UI_ID} .gb-grid.two, #${UI_ID} .gb-grid.three, #${UI_ID} .gb-grid.four, #${UI_ID} .gb-grid.db, #${UI_ID} .gb-skill-list { grid-template-columns:1fr; }

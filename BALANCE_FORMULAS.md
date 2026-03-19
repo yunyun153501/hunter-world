@@ -24,11 +24,11 @@
 16. [은신(Stealth) 시스템](#16-은신stealth-시스템)
 17. [몬스터 전투 테이블](#17-몬스터-전투-테이블)
 18. [장비 시스템](#18-장비-시스템)
-19. [장비 특성(Trait) 시스템 — 37종](#19-장비-특성trait-시스템--37종)
-20. [특성 효과 수치 (등급별 %)](#20-특성-효과-수치-등급별-)
+19. [통합 특성(Trait) 시스템 — 58종](#19-통합-특성trait-시스템--58종)
+20. [특성 효과 수치 (등급별)](#20-특성-효과-수치-등급별)
 21. [특성 티어 분류 (TRAIT_TIER_MAP)](#21-특성-티어-분류-trait_tier_map)
 22. [희귀도(Rarity) 시스템](#22-희귀도rarity-시스템)
-23. [특수효과 시스템 (Special Material Effects)](#23-특수효과-시스템-special-material-effects)
+23. [디버프 가능 특성 (10종)](#23-디버프-가능-특성-10종)
 24. [포션 시스템](#24-포션-시스템)
 25. [스킬 계수/비용 기준표](#26-스킬-계수비용-기준표)
 27. [쿨타임 시스템](#27-쿨타임-시스템)
@@ -144,7 +144,6 @@ rawBase = monsterBaseDamage × (스킬 사용 시 monsterSkillMul, 기본공격 
 
 1. **저주(Curse)** — `×(1 - cursePenalty)` (등급별 10~30% 감소)
 2. **야수 vs 출혈 대상** — `×1.2`
-3. **소환수 보너스** — 제피르 소환 시 질풍격 `×1.2`
 
 ---
 
@@ -222,7 +221,8 @@ CritChance = clamp(0.25 × (AGI + SENSE) + buffBonus, 3, 35) / 100
 
 - **패시브 회피 보너스**: 일부 패시브 스킬로 추가
 - **공격자 등급 > 대상 등급** → 대상 회피율 **0%**
-- **몬스터가 공격자** → 헌터 회피율 **50%만** 적용
+- **같은 등급 몬스터가 헌터 공격** → 헌터 회피율 **50%만** 적용
+- **낮은 등급 몬스터가 높은 등급 헌터 공격** → 헌터 회피율 **그대로** 적용
 - **대상 둔화** → 회피율 **-50%**
 - **긴급회피 버프** → 다음 1회 공격 100% 회피 (1회 소모)
 
@@ -239,9 +239,25 @@ CritChance = clamp(0.25 × (AGI + SENSE) + buffBonus, 3, 35) / 100
 ## 7. 회복 공식
 
 ```
-Heal = (2 × MainStat + 3 × ATK) × 스킬계수 × (1 + 치유량증가%)
+Heal = (MainStat × 0.5) × 스킬계수 × (1 + 치유량증가%)
 실제회복 = Heal × (1 + 받는치유량증가%)
 ```
+
+### 7.1 힐 전용 스킬 계수 범위
+
+> 힐 스킬은 공격 계수와 **별도** 범위를 사용합니다.  
+> 광역힐(aoeHeal) = 단일힐 계수 × **0.58**
+
+| 등급 | 단일힐 계수 | 광역힐 계수 (×0.58) |
+|:----:|:----------:|:-------------------:|
+| E | 1.2 ~ 1.3 | 0.70 ~ 0.75 |
+| D | 1.4 ~ 1.5 | 0.81 ~ 0.87 |
+| C | 1.6 ~ 1.7 | 0.93 ~ 0.99 |
+| B | 1.8 ~ 2.0 | 1.04 ~ 1.16 |
+| A | 2.1 ~ 2.3 | 1.22 ~ 1.33 |
+| S | 2.4 ~ 2.6 | 1.39 ~ 1.51 |
+
+### 7.2 회복 관련 상태/특성
 
 | 상태 | 효과 |
 |------|------|
@@ -258,24 +274,25 @@ Heal = (2 × MainStat + 3 × ATK) × 스킬계수 × (1 + 치유량증가%)
 ### 9.1 속성 순환 체인
 
 ```
-dark → light → ice → fire → water → earth → wind → electric → dark ...
+light → dark → electric → wind → earth → water → fire → ice → light (순환)
 ```
+> A → B = A가 B를 이김 (×1.25)
 
 | 관계 | 배율 | 설명 |
 |------|:---:|------|
-| **유리 (체인 이전 속성 공격)** | ×1.25 | 25% 추가 피해 |
-| **불리 (체인 다음 속성 공격)** | ×0.75 | 25% 피해 감소 |
+| **유리 (→ 방향 공격)** | ×1.25 | 25% 추가 피해 |
+| **불리 (← 방향 공격)** | ×0.75 | 25% 피해 감소 |
 | **동속 / none** | ×1.0 | 변동 없음 |
 
 ### 9.2 상성 예시
 
 | 공격 속성 | 대상 속성 | 배율 |
 |-----------|-----------|:---:|
+| light | dark | ×1.25 (유리) |
+| dark | light | ×0.75 (불리) |
 | fire | ice | ×1.25 (유리) |
 | fire | water | ×0.75 (불리) |
 | fire | fire | ×1.0 |
-| dark | light | ×1.25 (유리) |
-| light | dark | ×0.75 (불리) |
 
 ---
 
@@ -283,17 +300,20 @@ dark → light → ice → fire → water → earth → wind → electric → da
 
 ### 10.1 기본 확률/턴수
 
-| 상태이상 | 기본 확률 | 기본 턴수 | 비고 |
-|----------|:---:|:---:|------|
-| **독(poison)** | 28% | 3턴 | 스택형 (최대 3중첩) |
-| **출혈(bleed)** | 28% | 3턴 | 즉시 추가피해 + 회복 감소 |
-| **화상(burn)** | 28% | 5턴 | 스택형 (최대 5중첩) + 피격 증가 |
-| **저주(curse)** | 24% | 3턴 | 공격↓ + 피격↑ |
-| **기절(stun)** | 40% | 1턴 | 행동 불가, 5턴 면역 |
-| **수면(sleep)** | 35% | 2턴 | 행동 불가, 피격 시 해제, 5턴 면역 |
-| **속박(bind)** | 35% | 2턴 | SENSE -50%, 명중률 -50% |
-| **침묵(silence)** | 40% | 3턴 | 스킬 사용 불가 |
-| **둔화(slow)** | 35% | 3턴 | 명중률 -30%, 회피율 -50% |
+| 상태이상 | 기본 확률 | 기본 턴수 | 분류 | 비고 |
+|----------|:---:|:---:|:---:|------|
+| **독(poison)** | 23% | 3턴 | DoT | 스택형 (최대 3중첩) |
+| **출혈(bleed)** | 23% | 3턴 | DoT | 즉시 추가피해 + 회복 감소 |
+| **화상(burn)** | 23% | 5턴 | DoT | 스택형 (최대 5중첩) + 피격 증가 |
+| **저주(curse)** | 18% | 3턴 | 하드CC | 공격↓ + 피격↑, 5턴 면역 |
+| **기절(stun)** | 16% | 2턴 | 하드CC | 행동 불가, 5턴 면역, 보스/엘리트 1턴 |
+| **빙결(freeze)** | 16% | 2턴 | 하드CC | 행동 불가, 5턴 면역, 보스/엘리트 1턴 |
+| **마비(paralyze)** | 16% | 2턴 | 하드CC | 행동 불가, 5턴 면역, 보스/엘리트 1턴 |
+| **수면(sleep)** | 16% | 3턴 | 하드CC | 행동 불가, 피격 시 해제, 5턴 면역, 보스/엘리트 2턴 |
+| **속박(bind)** | 18% | 2턴 | 하드CC | SENSE -50%, 명중률 -50%, 5턴 면역 |
+| **침묵(silence)** | 20% | 2턴 | 소프트CC | 스킬 사용 불가 |
+| **둔화(slow)** | 25% | 3턴 | 소프트CC | 명중률 -30%, 회피율 -50% |
+| **실명(blind)** | 20% | 3턴 | 소프트CC | 명중률 -50% |
 
 ### 10.2 DOT (지속 피해) 공식
 
@@ -336,9 +356,13 @@ dark → light → ice → fire → water → earth → wind → electric → da
 ### 10.4 CC 면역 시스템
 
 - **기절(Stun)**: 기절 종료 후 **5턴 면역** (stunResistTimer)
+- **빙결(Freeze)**: 빙결 종료 후 **5턴 면역** (freezeResistTimer)
+- **마비(Paralyze)**: 마비 종료 후 **5턴 면역** (paralyzeResistTimer)
 - **수면(Sleep)**: 수면 종료 후 **5턴 면역** (sleepResistTimer)
 - **수면 피격 해제**: 수면 중 피격 시 즉시 깨어남
-- 다른 상태이상은 면역 타이머 없음
+- **속박(Bind)**: 속박 종료 후 **5턴 면역** (bindResistTimer)
+- **저주(Curse)**: 저주 종료 후 **5턴 면역** (curseResistTimer)
+- 모든 하드CC(6종)에 5턴 면역 적용
 
 ---
 
@@ -350,9 +374,9 @@ dark → light → ice → fire → water → earth → wind → electric → da
 |------|-----------|------|-----------|------|
 | **언데드** | dark | 독,출혈,저주 | 물리 ×1.10 | — |
 | **고스트** | dark | 독,출혈,저주 | 물리 ×0.50, 마법 ×1.25 | — |
-| **야수** | wind | — | — | 출혈 대상 공격 ×1.2, 혼자일 때 피격 ×1.1 |
+| **야수** | wind | 둔화 | — | 출혈 대상 공격 ×1.2, 혼자일 때 피격 ×1.1 |
 | **식물** | earth | 출혈 | — | 턴당 HP 3% 재생 (화상 시 차단) |
-| **슬라임** | water | 출혈 | 물리 ×0.70, 마법 ×1.10 | — |
+| **슬라임** | water | 둔화 | 물리 ×0.70, 마법 ×1.10 | — |
 | **구조체** | electric | 독,출혈,수면 | 마법 ×0.80, 물리 ×1.15 | — |
 | **정령** | none | — | — | — |
 | **악마** | fire | 화상 | 어둠 ×0.70 | — |
@@ -531,18 +555,26 @@ passiveMods: {
 | **S** | Elite | 37500~50000 | 100~110 | 1.5 |
 | **S** | Boss | 112500~150000 | 130~150 | 1.8 |
 
-### 17.2 몬스터 MP/SP 리소스
+### 17.2 몬스터 스킬 쿨타임 시스템
 
-| 등급 | 물리형 MP | 물리형 SP | 마법형 MP | 마법형 SP |
-|------|:---:|:---:|:---:|:---:|
-| E | 0 | 20 | 20 | 10 |
-| D | 0 | 30 | 35 | 15 |
-| C | 0 | 40 | 50 | 20 |
-| B | 0 | 55 | 70 | 25 |
-| A | 0 | 70 | 90 | 30 |
-| S | 0 | 90 | 120 | 40 |
+몬스터는 **MP/SP가 없으며**, 스킬 사용은 쿨타임으로만 관리됩니다.
 
-> 마법 스킬이 있는 물리형 몬스터: 기본 MP의 25% 확보
+**일반 몬스터 (Normal)**
+
+| 행동 | 쿨타임 |
+|------|:---:|
+| 기본 공격 | 1턴 |
+| 스킬 공격 | 2턴 |
+
+**엘리트/보스 몬스터 (Elite/Boss)**
+
+| 행동 | 쿨타임 |
+|------|:---:|
+| 기본 공격 | 1턴 |
+| 스킬 공격 | 2턴 |
+| 광역 공격 | 3턴 |
+
+> 몬스터는 기본공격과 스킬을 번갈아 사용하며, 쿨타임 중인 행동은 사용 불가
 
 ### 17.3 몬스터 특이사항
 
@@ -582,7 +614,7 @@ passiveMods: {
 
 - **방어구 PDEF** = 방어 범위 × 50%
 - **보조무기 PDEF** = 방어 범위 × 25%
-- **방어구 MDEF** = 방어 범위 × 30%
+- **방어구 MDEF** = 방어 범위 × 50%
 
 ### 18.4 장비 스탯 합산 (calcEquippedStatBonus)
 
@@ -603,24 +635,27 @@ passiveMods: {
 
 ---
 
-## 19. 장비 특성(Trait) 시스템 — 37종
+## 19. 통합 특성(Trait) 시스템 — 58종
+
+> 장비 특성, 재료 특수효과, 스킬 특수효과가 하나의 통합 특성 시스템으로 운영됩니다.
+> 수치는 장비 등급(E~S)에 따라 스케일 테이블로 자동 적용.
 
 ### 19.1 공격 특성 (12종)
 
-| ID | 이름 | 스케일 |
-|----|------|:---:|
-| `physical_damage` | 물리 피해 증가 | percentSmall |
-| `magic_damage` | 마법 피해 증가 | percentSmall |
-| `fire_damage` | 불 속성 피해 증가 | statusPercent |
-| `water_damage` | 물 속성 피해 증가 | statusPercent |
-| `ice_damage` | 얼음 속성 피해 증가 | statusPercent |
-| `earth_damage` | 대지 속성 피해 증가 | statusPercent |
-| `wind_damage` | 바람 속성 피해 증가 | statusPercent |
-| `lightning_damage` | 전기 속성 피해 증가 | statusPercent |
-| `light_damage` | 빛 속성 피해 증가 | statusPercent |
-| `dark_damage` | 어둠 속성 피해 증가 | statusPercent |
-| `crit_chance` | 치명타 확률 증가 | critChance |
-| `crit_damage` | 치명타 피해 증가 | critDamage |
+| ID | 이름 | 스케일 | 디버프 |
+|----|------|:---:|:---:|
+| `physical_damage` | 물리 피해 증가 | percentSmall | ✅ |
+| `magic_damage` | 마법 피해 증가 | percentSmall | ✅ |
+| `fire_damage` | 불 속성 피해 증가 | statusPercent | ✅ |
+| `water_damage` | 물 속성 피해 증가 | statusPercent | ✅ |
+| `ice_damage` | 얼음 속성 피해 증가 | statusPercent | ✅ |
+| `earth_damage` | 대지 속성 피해 증가 | statusPercent | ✅ |
+| `wind_damage` | 바람 속성 피해 증가 | statusPercent | ✅ |
+| `lightning_damage` | 전기 속성 피해 증가 | statusPercent | ✅ |
+| `light_damage` | 빛 속성 피해 증가 | statusPercent | ✅ |
+| `dark_damage` | 어둠 속성 피해 증가 | statusPercent | ✅ |
+| `crit_chance` | 치명타 확률 증가 | critChance | — |
+| `crit_damage` | 치명타 피해 증가 | critDamage | — |
 
 ### 19.2 방어 특성 (12종)
 
@@ -639,23 +674,39 @@ passiveMods: {
 | `light_resist` | 빛 속성 저항 | statusPercent |
 | `dark_resist` | 어둠 속성 저항 | statusPercent |
 
-### 19.3 상태이상 부여 (4종)
+### 19.3 상태이상 부여 (12종)
 
-| ID | 이름 | 스케일 |
-|----|------|:---:|
-| `poison_apply` | 독 부여 확률 증가 | statusPercent |
-| `bleed_apply` | 출혈 부여 확률 증가 | statusPercent |
-| `burn_apply` | 화상 부여 확률 증가 | statusPercent |
-| `curse_apply` | 저주 부여 확률 증가 | statusPercent |
+| ID | 이름 | 스케일 | 티어 |
+|----|------|:---:|:---:|
+| `stun_apply` | 기절 부여 확률 증가 | statusPercent | 1 |
+| `freeze_apply` | 빙결 부여 확률 증가 | statusPercent | 1 |
+| `paralyze_apply` | 마비 부여 확률 증가 | statusPercent | 1 |
+| `sleep_apply` | 수면 부여 확률 증가 | statusPercent | 1 |
+| `poison_apply` | 독 부여 확률 증가 | statusPercent | 2 |
+| `bleed_apply` | 출혈 부여 확률 증가 | statusPercent | 2 |
+| `burn_apply` | 화상 부여 확률 증가 | statusPercent | 2 |
+| `curse_apply` | 저주 부여 확률 증가 | statusPercent | 2 |
+| `bind_apply` | 속박 부여 확률 증가 | statusPercent | 2 |
+| `silence_apply` | 침묵 부여 확률 증가 | statusPercent | 2 |
+| `blind_apply` | 실명 부여 확률 증가 | statusPercent | 2 |
+| `slow_apply` | 둔화 부여 확률 증가 | statusPercent | 3 |
 
-### 19.4 상태이상 저항 (4종)
+### 19.4 상태이상 저항 (12종)
 
-| ID | 이름 | 스케일 |
-|----|------|:---:|
-| `poison_resist` | 독 저항 | statusPercent |
-| `bleed_resist` | 출혈 저항 | statusPercent |
-| `burn_resist` | 화상 저항 | statusPercent |
-| `curse_resist` | 저주 저항 | statusPercent |
+| ID | 이름 | 스케일 | 티어 |
+|----|------|:---:|:---:|
+| `stun_resist` | 기절 저항 | statusPercent | 3 |
+| `freeze_resist` | 빙결 저항 | statusPercent | 3 |
+| `paralyze_resist` | 마비 저항 | statusPercent | 3 |
+| `sleep_resist` | 수면 저항 | statusPercent | 3 |
+| `poison_resist` | 독 저항 | statusPercent | 4 |
+| `bleed_resist` | 출혈 저항 | statusPercent | 4 |
+| `burn_resist` | 화상 저항 | statusPercent | 4 |
+| `curse_resist` | 저주 저항 | statusPercent | 4 |
+| `bind_resist` | 속박 저항 | statusPercent | 4 |
+| `silence_resist` | 침묵 저항 | statusPercent | 4 |
+| `blind_resist` | 실명 저항 | statusPercent | 4 |
+| `slow_resist` | 둔화 저항 | statusPercent | 4 |
 
 ### 19.5 지원 특성 (5종)
 
@@ -663,13 +714,23 @@ passiveMods: {
 |----|------|:---:|
 | `healing_done` | 치유량 증가 | percentSmall |
 | `healing_received` | 받는 치유량 증가 | percentSmall |
-| `shield_effect` | 보호막 효과 증가 | percentSmall |
+| `shield_effect` | 보호막 효과 증가 | statusPercent |
 | `threat_up` | 위협 수치 증가 | threatPercent |
 | `threat_down` | 위협 수치 감소 | threatPercent |
 
+### 19.6 스탯 특성 (5종) — 신규
+
+| ID | 이름 | 스케일 | 효과 |
+|----|------|:---:|------|
+| `stat_str_up` | STR 증가 | statFlat | HP +3N, ATK +0.2N |
+| `stat_con_up` | CON 증가 | statFlat | HP +10N |
+| `stat_int_up` | INT 증가 | statFlat | MP +10N, ATK +0.3N |
+| `stat_agi_up` | AGI 증가 | statFlat | SP +10N, 행동순서 +2N, 크리확률 +0.25N% |
+| `stat_sense_up` | SENSE 증가 | statFlat | MP +3N, SP +3N, 명중률 +0.5N%, 크리확률 +0.25N% |
+
 ---
 
-## 20. 특성 효과 수치 (등급별 %)
+## 20. 특성 효과 수치 (등급별)
 
 ### percentSmall (물리/마법 피해감소, 물리/마법 피해 증가, 치유)
 
@@ -685,7 +746,7 @@ passiveMods: {
 |------|:---:|:---:|:---:|:---:|:---:|:---:|
 | **효과(%)** | 2 | 4 | 6 | 8 | 10 | 12 |
 
-**적용 특성**: 8종 속성 피해(fire/water/ice/earth/wind/lightning/light/dark_damage), 8종 속성 저항(fire/water/ice/earth/wind/lightning/light/dark_resist), 4종 상태이상 부여(poison/bleed/burn/curse_apply), 4종 상태이상 저항(poison/bleed/burn/curse_resist), shield_effect
+**적용 특성**: 8종 속성 피해(fire/water/ice/earth/wind/lightning/light/dark_damage), 8종 속성 저항(fire/water/ice/earth/wind/lightning/light/dark_resist), 12종 상태이상 부여(poison/bleed/burn/curse/stun/bind/sleep/silence/slow/blind/freeze/paralyze_apply), 12종 상태이상 저항(poison/bleed/burn/curse/stun/bind/sleep/silence/slow/blind/freeze/paralyze_resist), shield_effect
 
 ### critChance (크리티컬 확률)
 
@@ -721,6 +782,16 @@ passiveMods: {
 
 > **중요**: defenseFlat은 **퍼센트가 아닌 고정 수치**. DEF에 직접 더해짐.
 
+### statFlat (스탯 증가) — 고정값, 신규
+
+| 등급 | E | D | C | B | A | S |
+|------|:---:|:---:|:---:|:---:|:---:|:---:|
+| **고정값** | +2 | +4 | +6 | +8 | +11 | +14 |
+
+**적용 특성**: stat_str_up, stat_con_up, stat_int_up, stat_agi_up, stat_sense_up
+
+> 스탯 고정 수치가 전투 시작 시 해당 스탯에 직접 합산됨.
+
 ---
 
 ## 21. 특성 티어 분류 (TRAIT_TIER_MAP)
@@ -729,10 +800,10 @@ passiveMods: {
 
 | 티어 | 특성 | 설명 |
 |:---:|------|------|
-| **1** | crit_chance, crit_damage, physical_damage, magic_damage | 최고가치 (공격 핵심) |
-| **2** | 8종 속성 피해, 4종 상태이상 부여 | 고가치 (속성/상태이상) |
-| **3** | physical_defense, magic_defense, healing_done, shield_effect, pdef_flat, mdef_flat | 중가치 (방어/지원) |
-| **4** | 8종 속성 저항, 4종 상태이상 저항, healing_received, threat_up, threat_down | 저가치 (저항/유틸) |
+| **1** | crit_chance, crit_damage, physical_damage, magic_damage, stun/freeze/paralyze/sleep_apply | 최고가치 (공격 핵심 + 행동불가 부여) |
+| **2** | 8종 속성 피해, poison/bleed/burn/curse/bind/silence/blind_apply, 5종 스탯 증가 | 고가치 (속성/상태이상/스탯) |
+| **3** | physical_defense, magic_defense, healing_done, shield_effect, pdef_flat, mdef_flat, slow_apply, stun/freeze/paralyze/sleep_resist | 중가치 (방어/지원 + 행동불가 저항) |
+| **4** | 8종 속성 저항, poison/bleed/burn/curse/bind/silence/blind/slow_resist, healing_received, threat_up, threat_down | 저가치 (저항/유틸) |
 
 ### 레어리티 판정 규칙
 
@@ -755,47 +826,26 @@ passiveMods: {
 
 ---
 
-## 23. 특수효과 시스템 (Special Material Effects)
+## 23. 디버프 가능 특성 (10종)
 
-### 23.1 버프 전용 효과 (20종)
+> 통합 특성 58종 중 피해 증가 계열 10종만 디버프로 전환 가능 (`TRAIT_CAN_DEBUFF`).
+> 디버프 시 적에게 해당 속성 "받는 피해 증가" 효과를 적용합니다.
 
-| ID | 이름 | 설명 |
-|----|------|------|
-| physical_damage_up | 물리 피해 증가 | +N% 물리 피해 |
-| magic_damage_up | 마법 피해 증가 | +N% 마법 피해 |
-| fire_damage_up | 화염 피해 증가 | +N% 화염 피해 |
-| ice_damage_up | 빙결 피해 증가 | +N% 빙결 피해 |
-| lightning_damage_up | 번개 피해 증가 | +N% 번개 피해 |
-| dark_damage_up | 암흑 피해 증가 | +N% 암흑 피해 |
-| light_damage_up | 빛 피해 증가 | +N% 빛 피해 |
-| crit_chance_up | 치명타 확률 증가 | +N% 치확 |
-| crit_damage_up | 치명타 피해 증가 | +N% 치피 |
-| physical_defense_up | 물리 방어 증가 | +N% 물리 방어 |
-| magic_defense_up | 마법 방어 증가 | +N% 마법 방어 |
-| healing_up | 회복량 증가 | +N% 회복량 |
-| shield_up | 보호막 효과 증가 | +N% 보호막 효과 |
-| stat_str_up | STR 증가 | STR +N |
-| stat_con_up | CON 증가 | CON +N |
-| stat_int_up | INT 증가 | INT +N |
-| stat_agi_up | AGI 증가 | AGI +N |
-| stat_sense_up | SENSE 증가 | SENSE +N |
-| bleed_apply | 출혈 부여 | 출혈 부여 +N% |
-| burn_apply | 화상 부여 | 화상 부여 +N% |
-| curse_apply | 저주 부여 | 저주 부여 +N% |
+| ID | 버프 효과 | 디버프 효과 |
+|----|-----------|-------------|
+| `physical_damage` | +N% 물리 피해 | +N% 받는 물리 피해 증가 |
+| `magic_damage` | +N% 마법 피해 | +N% 받는 마법 피해 증가 |
+| `fire_damage` | +N% 화염 피해 | +N% 받는 화염 피해 증가 |
+| `water_damage` | +N% 물 피해 | +N% 받는 물 피해 증가 |
+| `ice_damage` | +N% 빙결 피해 | +N% 받는 빙결 피해 증가 |
+| `earth_damage` | +N% 대지 피해 | +N% 받는 대지 피해 증가 |
+| `wind_damage` | +N% 바람 피해 | +N% 받는 바람 피해 증가 |
+| `lightning_damage` | +N% 번개 피해 | +N% 받는 번개 피해 증가 |
+| `light_damage` | +N% 빛 피해 | +N% 받는 빛 피해 증가 |
+| `dark_damage` | +N% 암흑 피해 | +N% 받는 암흑 피해 증가 |
 
-### 23.2 디버프 가능 효과 (canDebuff: true, 7종)
-
-| ID | 디버프 설명 |
-|----|------------|
-| physical_damage_up | +N% 받는 물리 피해 증가 |
-| magic_damage_up | +N% 받는 마법 피해 증가 |
-| fire_damage_up | +N% 받는 화염 피해 증가 |
-| ice_damage_up | +N% 받는 빙결 피해 증가 |
-| lightning_damage_up | +N% 받는 번개 피해 증가 |
-| dark_damage_up | +N% 받는 암흑 피해 증가 |
-| light_damage_up | +N% 받는 빛 피해 증가 |
-
-> 디버프는 **피해 증가 계열만** 가능 (방어/치유/스탯 디버프는 불가)
+> 방어/치유/스탯/상태이상 특성은 디버프로 사용 불가.
+> 레거시 `_up` 접미사 ID (예: `physical_damage_up`)는 자동으로 통합 ID로 변환됩니다.
 
 ---
 
@@ -803,10 +853,17 @@ passiveMods: {
 
 ### 24.1 일일 사용 제한
 
-```
-일일 사용 횟수: 최대 5회 (100% 효율)
-6번째부터: 20% 효율로 제한
-```
+**일반 회복 포션 (HP/MP/SP)**
+- 1~5회: 정상 (100% 효율)
+- 6회: 효율 20%만 적용
+- 7회+: 사용 불가
+
+**버프 포션**
+- 1~3회: 정상 (100% 효율)
+- 4회+: 사용 불가
+
+**해제 포션 (해독/CC회복/저주해제)**
+- 무제한: 사용 제한 없음
 
 ### 24.2 포션 종류 (42종)
 
@@ -859,6 +916,20 @@ passiveMods: {
 | S | 9.22 | 5.35 |
 
 > 밸런스 기준: 직접피해 + 상태이상 효과 총합 ≥ 순수공격 상한계수
+
+### 26.4 힐 전용 스킬 계수
+
+> 힐 스킬은 공격 계수와 **별도** 범위를 사용합니다.  
+> 힐 기본값 = `MainStat × 0.5` (공격의 `2×MainStat + 3×ATK`과 다름)
+
+| 등급 | 단일힐 계수 | 광역힐 (×0.58) |
+|:----:|:----------:|:-------------:|
+| E | 1.2 ~ 1.3 | 0.70 ~ 0.75 |
+| D | 1.4 ~ 1.5 | 0.81 ~ 0.87 |
+| C | 1.6 ~ 1.7 | 0.93 ~ 0.99 |
+| B | 1.8 ~ 2.0 | 1.04 ~ 1.16 |
+| A | 2.1 ~ 2.3 | 1.22 ~ 1.33 |
+| S | 2.4 ~ 2.6 | 1.39 ~ 1.51 |
 
 ---
 

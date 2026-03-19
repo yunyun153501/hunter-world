@@ -1,3295 +1,6062 @@
-{
-  "skills": [
-    {
-      "id": "energyBolt",
-      "name": "에너지볼트",
-      "grade": "E",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 30,
-        "sp": 0
-      },
-      "coef": 1.5,
-      "statTypes": [
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "none",
-      "desc": "기본 단일 마법 공격."
-    },
-    {
-      "id": "energyShower",
-      "name": "에너지샤워",
-      "grade": "E",
-      "category": "aoeAttack",
-      "target": "allEnemies",
-      "costs": {
-        "mp": 40,
-        "sp": 0
-      },
-      "coef": 0.875,
-      "statTypes": [
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "none",
-      "desc": "기본 광역 마법 공격."
-    },
-    {
-      "id": "shieldBash",
-      "name": "실드강타",
-      "grade": "E",
-      "category": "singleCC",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 20,
-        "sp": 20
-      },
-      "coef": 0.875,
-      "statTypes": [
-        "con"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "cc": {
-        "type": "stun",
-        "turns": 1
-      },
-      "desc": "단일 CC. 1턴 기절."
-    },
-    {
-      "id": "shockwave",
-      "name": "충격파",
-      "grade": "E",
-      "category": "aoeCC",
-      "target": "allEnemies",
-      "coef": 0.4375,
-      "costs": {
-        "mp": 40,
-        "sp": 40
-      },
-      "statTypes": [
-        "con"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "cc": {
-        "type": "stun",
-        "turns": 1
-      },
-      "desc": "광역 CC. 계수 0.4375, MP 40 / SP 40. 1턴 기절."
-    },
-    {
-      "id": "haste",
-      "name": "헤이스트",
-      "grade": "D",
-      "category": "buff",
-      "target": "allAllies",
-      "costs": {
-        "mp": 25,
-        "sp": 0
-      },
-      "duration": 3,
-      "statTypes": [
-        "int",
-        "sense"
-      ],
-      "buff": {
-        "stats": {
-          "agi": 4
-        }
-      },
-      "desc": "3턴 동안 파티원 AGI +4."
-    },
-    {
-      "id": "heal",
-      "name": "힐",
-      "grade": "D",
-      "category": "singleHeal",
-      "target": "singleAlly",
-      "costs": {
-        "mp": 40,
-        "sp": 0
-      },
-      "coef": 2,
-      "statTypes": [
-        "int"
-      ],
-      "desc": "기본 단일 회복."
-    },
-    {
-      "id": "pray",
-      "name": "기도",
-      "grade": "D",
-      "category": "singleHeal",
-      "target": "singleAlly",
-      "costs": {
-        "mp": 45,
-        "sp": 0
-      },
-      "coef": 2.2,
-      "statTypes": [
-        "int"
-      ],
-      "desc": "힐보다 조금 강한 단일 회복."
-    },
-    {
-      "id": "blessingOfLight",
-      "name": "빛의 축복",
-      "grade": "D",
-      "category": "buff",
-      "target": "allAllies",
-      "costs": {
-        "mp": 25,
-        "sp": 0
-      },
-      "duration": 3,
-      "statTypes": [
-        "int",
-        "sense"
-      ],
-      "buff": {
-        "stats": {
-          "int": 4
-        }
-      },
-      "desc": "3턴 동안 전 아군 INT +4."
-    },
-    {
-      "id": "powerShot",
-      "name": "파워샷",
-      "grade": "E",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 20,
-        "sp": 20
-      },
-      "coef": 1.5,
-      "statTypes": [
-        "agi"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "desc": "집중 화살. 단일 고계수."
-    },
-    {
-      "id": "quickShot",
-      "name": "퀵샷",
-      "grade": "E",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 0,
-        "sp": 15
-      },
-      "coef": 1.2,
-      "statTypes": [
-        "agi"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "desc": "저비용 단일 공격."
-    },
-    {
-      "id": "fullArrowRecovery",
-      "name": "전탄회수",
-      "grade": "E",
-      "rarity": "rare",
-      "category": "aoeAttack",
-      "target": "allEnemies",
-      "statTypes": [
-        "agi"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "resourceRestore": {
-        "sp": 25
-      },
-      "byRank": {
-        "E": {
-          "coef": 0.875,
-          "costs": {
-            "mp": 40,
-            "sp": 0
-          }
-        },
-        "D": {
-          "coef": 1.4,
-          "costs": {
-            "mp": 50,
-            "sp": 0
-          }
-        },
-        "C": {
-          "coef": 2.1,
-          "costs": {
-            "mp": 60,
-            "sp": 0
-          }
-        },
-        "B": {
-          "coef": 3.5,
-          "costs": {
-            "mp": 70,
-            "sp": 0
-          }
-        },
-        "A": {
-          "coef": 5.6,
-          "costs": {
-            "mp": 80,
-            "sp": 0
-          }
-        },
-        "S": {
-          "coef": 8.4,
-          "costs": {
-            "mp": 100,
-            "sp": 0
-          }
-        }
-      },
-      "desc": "성장형 전탄회수. 화살 회수 + 전체 적 광역 피해. SP 25 회복."
-    },
-    {
-      "id": "tripleShot",
-      "name": "트리플샷",
-      "grade": "E",
-      "rarity": "rare",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "statTypes": [
-        "agi"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "byRank": {
-        "E": {
-          "coef": 1.5,
-          "costs": {
-            "mp": 15,
-            "sp": 15
-          }
-        },
-        "D": {
-          "coef": 2.4,
-          "costs": {
-            "mp": 15,
-            "sp": 15
-          }
-        },
-        "C": {
-          "coef": 3.6,
-          "costs": {
-            "mp": 18,
-            "sp": 18
-          }
-        },
-        "B": {
-          "coef": 6,
-          "costs": {
-            "mp": 25,
-            "sp": 25
-          }
-        },
-        "A": {
-          "coef": 9.6,
-          "costs": {
-            "mp": 30,
-            "sp": 30
-          }
-        },
-        "S": {
-          "coef": 14.4,
-          "costs": {
-            "mp": 40,
-            "sp": 40
-          }
-        }
-      },
-      "desc": "성장형 3연타. 총계수만 적용."
-    },
-    {
-      "id": "quickThrow",
-      "name": "퀵스로",
-      "grade": "E",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 0,
-        "sp": 40
-      },
-      "coef": 1.5,
-      "statTypes": [
-        "agi",
-        "sense"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "desc": "투척 단일 공격."
-    },
-    {
-      "id": "knifeRecall",
-      "name": "무기회수",
-      "grade": "E",
-      "category": "utility",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 20,
-        "sp": 0
-      },
-      "coef": 1.5,
-      "procChance": 0.3,
-      "statTypes": [
-        "agi",
-        "sense"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "resourceRestore": {
-        "sp": 10
-      },
-      "desc": "무기회수 + 30% 확률로 x1.5 계수 공격."
-    },
-    {
-      "id": "preciseAim",
-      "name": "민첩한 조준",
-      "grade": "E",
-      "rarity": "rare",
-      "category": "buff",
-      "target": "allAllies",
-      "duration": 3,
-      "statTypes": [
-        "agi",
-        "sense"
-      ],
-      "byRank": {
-        "E": {
-          "costs": {
-            "mp": 25,
-            "sp": 0
-          },
-          "buff": {
-            "stats": {
-              "agi": 2,
-              "sense": 2
-            }
-          }
-        },
-        "D": {
-          "costs": {
-            "mp": 30,
-            "sp": 0
-          },
-          "buff": {
-            "stats": {
-              "agi": 4,
-              "sense": 4
-            }
-          }
-        },
-        "C": {
-          "costs": {
-            "mp": 40,
-            "sp": 0
-          },
-          "buff": {
-            "stats": {
-              "agi": 6,
-              "sense": 6
-            }
-          }
-        },
-        "B": {
-          "costs": {
-            "mp": 50,
-            "sp": 0
-          },
-          "buff": {
-            "stats": {
-              "agi": 8,
-              "sense": 8
-            }
-          }
-        },
-        "A": {
-          "costs": {
-            "mp": 65,
-            "sp": 0
-          },
-          "buff": {
-            "stats": {
-              "agi": 10,
-              "sense": 10
-            }
-          }
-        },
-        "S": {
-          "costs": {
-            "mp": 85,
-            "sp": 0
-          },
-          "buff": {
-            "stats": {
-              "agi": 12,
-              "sense": 12
-            }
-          }
-        }
-      },
-      "desc": "성장형 광역버프. 3턴 파티원 AGI·SENSE 증가."
-    },
-    {
-      "id": "smallGarden",
-      "name": "작은 정원",
-      "grade": "E",
-      "rarity": "rare",
-      "category": "aoeHeal",
-      "target": "allAllies",
-      "statTypes": [
-        "int"
-      ],
-      "byRank": {
-        "E": {
-          "coef": 0.875,
-          "costs": {
-            "mp": 30,
-            "sp": 0
-          }
-        },
-        "D": {
-          "coef": 1.4,
-          "costs": {
-            "mp": 35,
-            "sp": 0
-          }
-        },
-        "C": {
-          "coef": 2.1,
-          "costs": {
-            "mp": 40,
-            "sp": 0
-          }
-        },
-        "B": {
-          "coef": 3.5,
-          "costs": {
-            "mp": 50,
-            "sp": 0
-          }
-        },
-        "A": {
-          "coef": 5.6,
-          "costs": {
-            "mp": 65,
-            "sp": 0
-          }
-        },
-        "S": {
-          "coef": 8.4,
-          "costs": {
-            "mp": 90,
-            "sp": 0
-          }
-        }
-      },
-      "desc": "성장형 광역 회복. 각 대상에게 계수 기반 회복."
-    },
-    {
-      "id": "steelAnvil",
-      "name": "강철 모루",
-      "grade": "E",
-      "rarity": "rare",
-      "category": "passive",
-      "statTypes": [
-        "con"
-      ],
-      "byRank": {
-        "E": {
-          "passiveBonuses": {
-            "pdef": 1,
-            "mdef": 1
-          }
-        },
-        "D": {
-          "passiveBonuses": {
-            "pdef": 3,
-            "mdef": 3
-          }
-        },
-        "C": {
-          "passiveBonuses": {
-            "pdef": 5,
-            "mdef": 5
-          }
-        },
-        "B": {
-          "passiveBonuses": {
-            "pdef": 7,
-            "mdef": 7
-          }
-        },
-        "A": {
-          "passiveBonuses": {
-            "pdef": 9,
-            "mdef": 9
-          }
-        },
-        "S": {
-          "passiveBonuses": {
-            "pdef": 11,
-            "mdef": 11
-          }
-        }
-      },
-      "desc": "물리방어/마법방어 증가."
-    },
-    {
-      "id": "shieldProficiency",
-      "name": "방패숙련",
-      "grade": "E",
-      "category": "passive",
-      "statTypes": [
-        "con"
-      ],
-      "passiveMods": {
-        "shieldSpMul": 0.9
-      },
-      "desc": "방패 계열 SP 10% 감소."
-    },
-    {
-      "id": "daggerHandling",
-      "name": "단검숙련",
-      "grade": "E",
-      "category": "passive",
-      "statTypes": [
-        "agi",
-        "sense"
-      ],
-      "passiveMods": {
-        "daggerSpMul": 0.9
-      },
-      "desc": "단검/투척 계열 SP 10% 감소."
-    },
-    {
-      "id": "fistStrike",
-      "name": "정권",
-      "grade": "E",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 20,
-        "sp": 20
-      },
-      "coef": 1.5,
-      "statTypes": [
-        "str",
-        "con"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "desc": "근접 단일 공격."
-    },
-    {
-      "id": "hiddenMight",
-      "name": "이면의 완력",
-      "grade": "E",
-      "rarity": "rare",
-      "category": "passive",
-      "statTypes": [
-        "str"
-      ],
-      "byRank": {
-        "E": {
-          "passiveBonuses": {
-            "str": 1
-          }
-        },
-        "D": {
-          "passiveBonuses": {
-            "str": 2
-          }
-        },
-        "C": {
-          "passiveBonuses": {
-            "str": 3
-          }
-        },
-        "B": {
-          "passiveBonuses": {
-            "str": 4
-          }
-        },
-        "A": {
-          "passiveBonuses": {
-            "str": 5
-          }
-        },
-        "S": {
-          "passiveBonuses": {
-            "str": 6
-          }
-        }
-      },
-      "desc": "STR 증가."
-    },
-    {
-      "id": "taunt",
-      "name": "도발",
-      "grade": "E",
-      "category": "buff",
-      "target": "self",
-      "costs": {
-        "mp": 0,
-        "sp": 20
-      },
-      "duration": 3,
-      "statTypes": [
-        "con"
-      ],
-      "buff": {
-        "threatBonus": 5
-      },
-      "desc": "3턴 동안 위협 수치 크게 증가."
-    },
-    {
-      "id": "spotlight",
-      "name": "이목집중",
-      "grade": "E",
-      "rarity": "rare",
-      "category": "buff",
-      "target": "self",
-      "duration": 3,
-      "statTypes": [
-        "con"
-      ],
-      "byRank": {
-        "E": {
-          "costs": {
-            "mp": 30,
-            "sp": 0
-          },
-          "buff": {
-            "threatBonus": 10
-          }
-        },
-        "D": {
-          "costs": {
-            "mp": 35,
-            "sp": 0
-          },
-          "buff": {
-            "threatBonus": 20
-          }
-        },
-        "C": {
-          "costs": {
-            "mp": 45,
-            "sp": 0
-          },
-          "buff": {
-            "threatBonus": 30
-          }
-        },
-        "B": {
-          "costs": {
-            "mp": 55,
-            "sp": 0
-          },
-          "buff": {
-            "threatBonus": 40
-          }
-        },
-        "A": {
-          "costs": {
-            "mp": 70,
-            "sp": 0
-          },
-          "buff": {
-            "threatBonus": 50
-          }
-        },
-        "S": {
-          "costs": {
-            "mp": 90,
-            "sp": 0
-          },
-          "buff": {
-            "threatBonus": 60
-          }
-        }
-      },
-      "desc": "성장형 광역도발. 위협 수치 대폭 증가."
-    },
-    {
-      "id": "holdTheLine",
-      "name": "방어선 유지",
-      "grade": "D",
-      "category": "buff",
-      "target": "self",
-      "costs": {
-        "mp": 0,
-        "sp": 40
-      },
-      "duration": 3,
-      "statTypes": [
-        "con"
-      ],
-      "buff": {
-        "ccImmunity": true
-      },
-      "desc": "3턴 CC 완전 면역."
-    },
-    {
-      "id": "holyProvocation",
-      "name": "신성한 도발",
-      "grade": "D",
-      "category": "buff",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 15,
-        "sp": 15
-      },
-      "duration": 2,
-      "statTypes": [
-        "con"
-      ],
-      "buff": {
-        "forcedTaunt": true
-      },
-      "cooldown": 3,
-      "desc": "대상 1체를 2턴 강제 도발. 해제 후 3턴 면역."
-    },
-    {
-      "id": "divineProtection",
-      "name": "신의 보호",
-      "grade": "D",
-      "category": "singleHeal",
-      "target": "singleAlly",
-      "costs": {
-        "mp": 30,
-        "sp": 0
-      },
-      "coef": 2,
-      "statTypes": [
-        "int"
-      ],
-      "desc": "치유 + 만HP 시 보호막 전환 (최대 HP 20%)."
-    },
-    {
-      "id": "holyLight",
-      "name": "성스러운 빛",
-      "grade": "D",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 30,
-        "sp": 0
-      },
-      "coef": 1.92,
-      "statTypes": [
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "light",
-      "desc": "빛 속성 단일 공격. 언데드/암흑 ×1.3."
-    },
-    {
-      "id": "fragmentOfAthena",
-      "name": "아테나의 파편",
-      "grade": "D",
-      "rarity": "unique",
-      "category": "passive",
-      "statTypes": [
-        "con"
-      ],
-      "desc": "잠재/미발현. 진화 경로: Fragment → Successor → Avatar of Athena."
-    },
-    {
-      "id": "fightingSpiritBoost",
-      "name": "투심 향상",
-      "grade": "C",
-      "rarity": "rare",
-      "category": "buff",
-      "target": "allAllies",
-      "duration": 3,
-      "statTypes": [
-        "con"
-      ],
-      "byRank": {
-        "C": {
-          "costs": {
-            "mp": 30,
-            "sp": 0
-          },
-          "buff": {
-            "stats": {
-              "str": 3,
-              "agi": 3
-            }
-          }
-        },
-        "B": {
-          "costs": {
-            "mp": 40,
-            "sp": 0
-          },
-          "buff": {
-            "stats": {
-              "str": 4,
-              "agi": 4
-            }
-          }
-        },
-        "A": {
-          "costs": {
-            "mp": 55,
-            "sp": 0
-          },
-          "buff": {
-            "stats": {
-              "str": 5,
-              "agi": 5
-            }
-          }
-        },
-        "S": {
-          "costs": {
-            "mp": 70,
-            "sp": 0
-          },
-          "buff": {
-            "stats": {
-              "str": 8,
-              "agi": 7
-            }
-          }
-        }
-      },
-      "desc": "성장형 광역버프. 3턴 파티원 STR·AGI 증가."
-    },
-    {
-      "id": "formationCommand",
-      "name": "진형 지휘",
-      "grade": "C",
-      "category": "passive",
-      "statTypes": [
-        "con"
-      ],
-      "passiveMods": {
-        "formationDmgReduce": 0.08
-      },
-      "desc": "전투 시작 2턴 전 아군 피해감소 +8%. 전열 위치 시."
-    },
-    {
-      "id": "moraleManagement",
-      "name": "사기관리",
-      "grade": "C",
-      "category": "passive",
-      "statTypes": [
-        "con"
-      ],
-      "passiveMods": {
-        "moraleCostReduce": 0.12
-      },
-      "desc": "전투 시작 2턴 전 아군 SP/MP 소모 -12%."
-    },
-    {
-      "id": "shieldSmash",
-      "name": "방패강타",
-      "grade": "C",
-      "category": "singleCC",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 25,
-        "sp": 25
-      },
-      "coef": 2.88,
-      "statTypes": [
-        "con",
-        "str"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "cc": {
-        "type": "stun",
-        "turns": 1,
-        "chance": 0.2
-      },
-      "desc": "C급 단일 CC. 20% 기절 1턴."
-    },
-    {
-      "id": "battleCry",
-      "name": "도발함성",
-      "grade": "C",
-      "category": "buff",
-      "target": "self",
-      "costs": {
-        "mp": 0,
-        "sp": 30
-      },
-      "duration": 3,
-      "statTypes": [
-        "con"
-      ],
-      "buff": {
-        "threatBonus": 8
-      },
-      "desc": "광역 도발. 위협 +8, 3턴."
-    },
-    {
-      "id": "charge",
-      "name": "돌진",
-      "grade": "C",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 20,
-        "sp": 30
-      },
-      "coef": 3.2,
-      "statTypes": [
-        "str"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "desc": "단일 공격. 후열 적 ×1.2."
-    },
-    {
-      "id": "vampiricInstinct",
-      "name": "흡혈 본능",
-      "grade": "C",
-      "rarity": "curse",
-      "category": "passive",
-      "statTypes": [
-        "int"
-      ],
-      "passiveMods": {
-        "vampiricDrain": 0.05
-      },
-      "desc": "MP 10% 이하 시 다음 공격이 대상 HP 5% 흡수. 발동 후 INT -3 3턴."
-    },
-    {
-      "id": "bloodSense",
-      "name": "피의 감각",
-      "grade": "C",
-      "rarity": "curse",
-      "category": "passive",
-      "statTypes": [
-        "sense"
-      ],
-      "passiveMods": {
-        "ambushEvasion": 0.15
-      },
-      "desc": "출혈 대상 감지 + 기습 회피 +15%."
-    },
-    {
-      "id": "potionCraft",
-      "name": "포션제조",
-      "grade": "E",
-      "rarity": "rare",
-      "category": "utility",
-      "target": "self",
-      "statTypes": [
-        "int",
-        "sense"
-      ],
-      "byRank": {
-        "E": {
-          "costs": {
-            "mp": 0,
-            "sp": 0
-          }
-        },
-        "D": {
-          "costs": {
-            "mp": 0,
-            "sp": 0
-          }
-        },
-        "C": {
-          "costs": {
-            "mp": 0,
-            "sp": 0
-          }
-        },
-        "B": {
-          "costs": {
-            "mp": 0,
-            "sp": 0
-          }
-        },
-        "A": {
-          "costs": {
-            "mp": 0,
-            "sp": 0
-          }
-        },
-        "S": {
-          "costs": {
-            "mp": 0,
-            "sp": 0
-          }
-        }
-      },
-      "desc": "성장형 포션제조. 자신 등급 이하 포션 제조 가능. 전투 외 전용."
-    },
-    {
-      "id": "potionToss",
-      "name": "포션던지기",
-      "grade": "C",
-      "category": "utility",
-      "target": "singleAlly",
-      "costs": {
-        "mp": 0,
-        "sp": 0
-      },
-      "statTypes": [
-        "agi"
-      ],
-      "desc": "아군 1체에 포션 투척. 자가 제조 포션은 부작용 면제."
-    },
-    {
-      "id": "materialAnalysis",
-      "name": "재료분석",
-      "grade": "C",
-      "category": "passive",
-      "statTypes": [
-        "sense"
-      ],
-      "desc": "게이트 내 채집물/드랍 재료 등급·속성·용도 자동 감별."
-    },
-    {
-      "id": "bodyReinforce",
-      "name": "신체강화",
-      "grade": "C",
-      "rarity": "rare",
-      "category": "buff",
-      "target": "self",
-      "duration": 3,
-      "statTypes": [
-        "str",
-        "agi"
-      ],
-      "byRank": {
-        "C": {
-          "costs": {
-            "mp": 25,
-            "sp": 0
-          },
-          "buff": {
-            "stats": {
-              "str": 3,
-              "agi": 3
-            }
-          }
-        },
-        "B": {
-          "costs": {
-            "mp": 35,
-            "sp": 0
-          },
-          "buff": {
-            "stats": {
-              "str": 4,
-              "agi": 4
-            }
-          }
-        },
-        "A": {
-          "costs": {
-            "mp": 50,
-            "sp": 0
-          },
-          "buff": {
-            "stats": {
-              "str": 5,
-              "agi": 5
-            }
-          }
-        },
-        "S": {
-          "costs": {
-            "mp": 65,
-            "sp": 0
-          },
-          "buff": {
-            "stats": {
-              "str": 7,
-              "agi": 7
-            }
-          }
-        }
-      },
-      "desc": "성장형 자가버프. 3턴 STR·AGI 증가."
-    },
-    {
-      "id": "crushingKick",
-      "name": "파쇄격",
-      "grade": "C",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 20,
-        "sp": 30
-      },
-      "coef": 3.4,
-      "statTypes": [
-        "str",
-        "agi"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "desc": "근접 고계수 단일 공격."
-    },
-    {
-      "id": "spinSweep",
-      "name": "회전축격",
-      "grade": "C",
-      "category": "aoeAttack",
-      "target": "allEnemies",
-      "costs": {
-        "mp": 30,
-        "sp": 35
-      },
-      "coef": 2,
-      "statTypes": [
-        "str",
-        "agi"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "desc": "전열 적 전체 광역 공격."
-    },
-    {
-      "id": "vitalStrike",
-      "name": "급소가격",
-      "grade": "C",
-      "category": "singleCC",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 20,
-        "sp": 25
-      },
-      "coef": 2,
-      "statTypes": [
-        "agi",
-        "sense"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "cc": {
-        "type": "bind",
-        "turns": 2,
-        "chance": 0.22
-      },
-      "desc": "단일 CC. 22% 속박 2턴."
-    },
-    {
-      "id": "flameLance",
-      "name": "화염창",
-      "grade": "B",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 50,
-        "sp": 0
-      },
-      "coef": 5.6,
-      "statTypes": [
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "fire",
-      "desc": "단일 고계수 화염. 빙결 대상 ×1.3."
-    },
-    {
-      "id": "meteorBarrage",
-      "name": "유성포격",
-      "grade": "B",
-      "category": "aoeAttack",
-      "target": "allEnemies",
-      "costs": {
-        "mp": 55,
-        "sp": 0
-      },
-      "coef": 3.2,
-      "statTypes": [
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "fire",
-      "desc": "광역 화염 공격."
-    },
-    {
-      "id": "flameWall",
-      "name": "화염벽",
-      "grade": "B",
-      "category": "aoeCC",
-      "target": "allEnemies",
-      "costs": {
-        "mp": 45,
-        "sp": 45
-      },
-      "coef": 1.6,
-      "statTypes": [
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "fire",
-      "cc": {
-        "type": "burn",
-        "turns": 5,
-        "chance": 0.32
-      },
-      "desc": "광역 CC. 32% 화상 5턴(최대 5중첩)."
-    },
-    {
-      "id": "manaFocus",
-      "name": "마나집중",
-      "grade": "B",
-      "category": "buff",
-      "target": "self",
-      "costs": {
-        "mp": 40,
-        "sp": 0
-      },
-      "duration": 3,
-      "statTypes": [
-        "int"
-      ],
-      "buff": {
-        "stats": {
-          "int": 8
-        }
-      },
-      "desc": "자가 INT +8, 3턴."
-    },
-    {
-      "id": "summonZephyr",
-      "name": "정령소환: 제피르",
-      "grade": "B",
-      "category": "buff",
-      "target": "allAllies",
-      "costs": {
-        "mp": 45,
-        "sp": 0
-      },
-      "duration": 5,
-      "statTypes": [
-        "int",
-        "agi"
-      ],
-      "buff": {
-        "stats": {
-          "agi": 6
-        },
-        "summon": "zephyr"
-      },
-      "desc": "바람 정령 소환 5턴. 전 아군 AGI +6. 질풍격 ×1.2."
-    },
-    {
-      "id": "summonBark",
-      "name": "정령소환: 바크",
-      "grade": "B",
-      "category": "buff",
-      "target": "allAllies",
-      "costs": {
-        "mp": 45,
-        "sp": 0
-      },
-      "duration": 5,
-      "statTypes": [
-        "int",
-        "con"
-      ],
-      "buff": {
-        "stats": {
-          "con": 4
-        },
-        "summon": "bark"
-      },
-      "desc": "나무 정령 소환 5턴. 전 아군 CON +4. 뿌리속박 CC +10%."
-    },
-    {
-      "id": "galeStrike",
-      "name": "질풍격",
-      "grade": "B",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 40,
-        "sp": 20
-      },
-      "coef": 5.2,
-      "statTypes": [
-        "int",
-        "agi"
-      ],
-      "damageType": "magic",
-      "element": "wind",
-      "desc": "바람 속성 단일 공격. 제피르 시 ×1.2 (6.24)."
-    },
-    {
-      "id": "rootBind",
-      "name": "뿌리속박",
-      "grade": "B",
-      "category": "aoeCC",
-      "target": "allEnemies",
-      "costs": {
-        "mp": 50,
-        "sp": 40
-      },
-      "coef": 1.5,
-      "statTypes": [
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "earth",
-      "cc": {
-        "type": "bind",
-        "turns": 2,
-        "chance": 0.22
-      },
-      "desc": "광역 CC. 22% 속박 2턴. 바크 시 32%."
-    },
-    {
-      "id": "earthHeal",
-      "name": "대지의 치유",
-      "grade": "B",
-      "category": "aoeHeal",
-      "target": "allAllies",
-      "costs": {
-        "mp": 50,
-        "sp": 0
-      },
-      "coef": 3.8,
-      "statTypes": [
-        "int"
-      ],
-      "desc": "정령 소환 시 사용 가능. 광역 회복."
-    },
-    {
-      "id": "terrainShift",
-      "name": "지형 전환",
-      "grade": "B",
-      "category": "utility",
-      "target": "self",
-      "costs": {
-        "mp": 55,
-        "sp": 0
-      },
-      "statTypes": [
-        "int"
-      ],
-      "cooldown": 99,
-      "desc": "전장 숲/초원 변경 3턴. 식물 +15%, 화염 -10%. 1전투 1회."
-    },
-    {
-      "id": "exceptionalDexterity",
-      "name": "탁월한 손재주",
-      "grade": "E",
-      "rarity": "rare",
-      "category": "passive",
-      "statTypes": [
-        "sense"
-      ],
-      "byRank": {
-        "E": {
-          "passiveBonuses": {
-            "sense": 1
-          }
-        },
-        "D": {
-          "passiveBonuses": {
-            "sense": 2
-          }
-        },
-        "C": {
-          "passiveBonuses": {
-            "sense": 3
-          }
-        },
-        "B": {
-          "passiveBonuses": {
-            "sense": 4
-          }
-        },
-        "A": {
-          "passiveBonuses": {
-            "sense": 5
-          }
-        },
-        "S": {
-          "passiveBonuses": {
-            "sense": 6
-          }
-        }
-      },
-      "desc": "성장형 SEN 증가 + 상위 등급 장비 수리 지원 범위 확대."
-    },
-    {
-      "id": "fieldMaintenance",
-      "name": "현장정비",
-      "grade": "E",
-      "category": "passive",
-      "statTypes": [
-        "sense"
-      ],
-      "passiveMods": {
-        "durabilityReduce": 0.5
-      },
-      "desc": "파티원 장비 내구도 소모 50% 감소. 안도현 파티 편성 시."
-    },
-    {
-      "id": "quickRepair",
-      "name": "빠른수리",
-      "grade": "E",
-      "category": "utility",
-      "target": "singleAlly",
-      "costs": {
-        "mp": 0,
-        "sp": 0
-      },
-      "statTypes": [
-        "sense"
-      ],
-      "desc": "장비 1개 내구도 +10. 게이트 내 장비당 1회."
-    },
-    {
-      "id": "fieldAidSupport",
-      "name": "응급처치지원",
-      "grade": "E",
-      "category": "passive",
-      "statTypes": [
-        "sense"
-      ],
-      "passiveMods": {
-        "campHealBonus": 0.1
-      },
-      "desc": "야영 시 HP/MP/SP 회복 +10%."
-    },
-    {
-      "id": "equipmentCraft",
-      "name": "장비제작",
-      "grade": "D",
-      "rarity": "rare",
-      "category": "utility",
-      "target": "self",
-      "statTypes": [
-        "str",
-        "sense"
-      ],
-      "byRank": {
-        "D": {
-          "passiveBonuses": {
-            "str": 1
-          }
-        },
-        "C": {
-          "passiveBonuses": {
-            "str": 2
-          }
-        },
-        "B": {
-          "passiveBonuses": {
-            "str": 3
-          }
-        },
-        "A": {
-          "passiveBonuses": {
-            "str": 4
-          }
-        },
-        "S": {
-          "passiveBonuses": {
-            "str": 5
-          }
-        }
-      },
-      "desc": "성장형 장비 제조. 등급별 제작 가능 범위 확대. 전투 외 전용."
-    },
-    {
-      "id": "appraisal",
-      "name": "감정",
-      "grade": "D",
-      "rarity": "rare",
-      "category": "passive",
-      "statTypes": [
-        "sense"
-      ],
-      "byRank": {
-        "D": {
-          "passiveBonuses": {
-            "sense": 1
-          }
-        },
-        "C": {
-          "passiveBonuses": {
-            "sense": 2
-          }
-        },
-        "B": {
-          "passiveBonuses": {
-            "sense": 3
-          }
-        },
-        "A": {
-          "passiveBonuses": {
-            "sense": 4
-          }
-        },
-        "S": {
-          "passiveBonuses": {
-            "sense": 5
-          }
-        }
-      },
-      "desc": "성장형 장비/재료 감정. 등급별 상세도 증가."
-    },
-    {
-      "id": "battlefieldRepair",
-      "name": "전장 응급수선",
-      "grade": "D",
-      "category": "utility",
-      "target": "singleAlly",
-      "costs": {
-        "mp": 0,
-        "sp": 30
-      },
-      "statTypes": [
-        "str",
-        "sense"
-      ],
-      "desc": "전투 중 장비 내구도 +15. 대상당 1회."
-    },
-    {
-      "id": "firepowerTuning",
-      "name": "화력 최적화",
-      "grade": "D",
-      "category": "buff",
-      "target": "singleAlly",
-      "costs": {
-        "mp": 20,
-        "sp": 20
-      },
-      "duration": 3,
-      "statTypes": [
-        "str",
-        "sense"
-      ],
-      "buff": {
-        "stats": {
-          "atk": 5
-        }
-      },
-      "desc": "대상 무기 ATK +5, 3턴."
-    },
-    {
-      "id": "cargoSupport",
-      "name": "하역지원",
-      "grade": "E",
-      "category": "passive",
-      "statTypes": [
-        "str",
-        "con"
-      ],
-      "passiveMods": {
-        "cargoCapacity": 0.2
-      },
-      "desc": "파티 아이템 운반량 +20%. 채굴 속도 +10%."
-    },
-    {
-      "id": "emergencyDodge",
-      "name": "긴급회피",
-      "grade": "E",
-      "category": "utility",
-      "target": "self",
-      "costs": {
-        "mp": 0,
-        "sp": 25
-      },
-      "statTypes": [
-        "agi"
-      ],
-      "cooldown": 5,
-      "buff": {
-        "evasionNext": 1
-      },
-      "desc": "다음 1회 공격 100% 회피. 쿨 5턴."
-    },
-    {
-      "id": "auraMastery",
-      "name": "오라 마스터리",
-      "grade": "A",
-      "rarity": "unique",
-      "category": "passive",
-      "statTypes": [
-        "str",
-        "agi"
-      ],
-      "desc": "오라 제어 정밀도 극대화 — 안정적 중거리 투사."
-    },
-    {
-      "id": "shadowDraw",
-      "name": "그림자 발도",
-      "grade": "A",
-      "rarity": "rare",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 40,
-        "sp": 40
-      },
-      "coef": 8.5,
-      "statTypes": [
-        "agi",
-        "str"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "desc": "선제 발도 — 우선 행동."
-    },
-    {
-      "id": "auraSlash",
-      "name": "오라 참격",
-      "grade": "A",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 35,
-        "sp": 25
-      },
-      "coef": 7.8,
-      "statTypes": [
-        "str"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "desc": "중거리 검기 투사."
-    },
-    {
-      "id": "auraArc",
-      "name": "오라 호",
-      "grade": "A",
-      "category": "aoeAttack",
-      "target": "allEnemies",
-      "costs": {
-        "mp": 45,
-        "sp": 0
-      },
-      "coef": 4.5,
-      "statTypes": [
-        "str"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "desc": "중거리 반원 검기."
-    },
-    {
-      "id": "impactReduction",
-      "name": "충격 감소",
-      "grade": "A",
-      "rarity": "rare",
-      "category": "passive",
-      "statTypes": [
-        "con"
-      ],
-      "passiveMods": {
-        "physicalDmgReduce": 0.15
-      },
-      "desc": "받는 물리 피해 -15% 상시."
-    },
-    {
-      "id": "defensiveStance",
-      "name": "방어 태세",
-      "grade": "A",
-      "category": "buff",
-      "target": "self",
-      "costs": {
-        "mp": 30,
-        "sp": 30
-      },
-      "duration": 3,
-      "statTypes": [
-        "con"
-      ],
-      "buff": {
-        "stats": {
-          "con": 8
-        },
-        "immobile": true
-      },
-      "desc": "CON +8, 3턴. 이동불가."
-    },
-    {
-      "id": "tauntA",
-      "name": "도발",
-      "grade": "A",
-      "category": "buff",
-      "target": "self",
-      "costs": {
-        "mp": 0,
-        "sp": 30
-      },
-      "duration": 3,
-      "statTypes": [
-        "con"
-      ],
-      "buff": {
-        "threatBonus": 10
-      },
-      "desc": "3턴 위협 +10."
-    },
-    {
-      "id": "chargeA",
-      "name": "돌진",
-      "grade": "A",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 30,
-        "sp": 40
-      },
-      "coef": 7.2,
-      "statTypes": [
-        "con"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "desc": "단일 공격. 후열 적 ×1.2."
-    },
-    {
-      "id": "shieldMastery",
-      "name": "방패숙련",
-      "grade": "A",
-      "category": "passive",
-      "statTypes": [
-        "con"
-      ],
-      "passiveMods": {
-        "shieldSpMul": 0.85
-      },
-      "desc": "방패 SP -15%."
-    },
-    {
-      "id": "conBoost",
-      "name": "체력증강",
-      "grade": "A",
-      "category": "passive",
-      "statTypes": [
-        "con"
-      ],
-      "passiveBonuses": {
-        "con": 6
-      },
-      "desc": "CON +6 상시."
-    },
-    {
-      "id": "staminaRecovery",
-      "name": "스태미나 회복",
-      "grade": "A",
-      "category": "passive",
-      "statTypes": [
-        "con"
-      ],
-      "passiveMods": {
-        "spRegenPct": 0.05
-      },
-      "desc": "턴 시작 SP +5% 자연 회복."
-    },
-    {
-      "id": "senBoost",
-      "name": "감각증강",
-      "grade": "A",
-      "category": "passive",
-      "statTypes": [
-        "sense"
-      ],
-      "passiveBonuses": {
-        "sense": 4
-      },
-      "desc": "SEN +4 상시."
-    },
-    {
-      "id": "spiritArmor",
-      "name": "혼령 갑주",
-      "grade": "A",
-      "category": "buff",
-      "target": "self",
-      "costs": {
-        "mp": 50,
-        "sp": 0
-      },
-      "duration": 5,
-      "statTypes": [
-        "int",
-        "con"
-      ],
-      "buff": {
-        "stats": {
-          "pdef": 12,
-          "mdef": 8
-        }
-      },
-      "desc": "P.DEF +12, M.DEF +8, 5턴."
-    },
-    {
-      "id": "weaponManifestation",
-      "name": "무장 구현",
-      "grade": "A",
-      "category": "buff",
-      "target": "self",
-      "costs": {
-        "mp": 45,
-        "sp": 0
-      },
-      "duration": 5,
-      "statTypes": [
-        "int",
-        "str"
-      ],
-      "buff": {
-        "stats": {
-          "atk": 15
-        }
-      },
-      "desc": "ATK +15, 물리/영적 듀얼 속성, 5턴."
-    },
-    {
-      "id": "crescentSlash",
-      "name": "삼일월",
-      "grade": "A",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 30,
-        "sp": 35
-      },
-      "coef": 8.2,
-      "statTypes": [
-        "str",
-        "agi"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "desc": "고계수 단일 참격."
-    },
-    {
-      "id": "spiritSever",
-      "name": "귀혼참",
-      "grade": "A",
-      "rarity": "rare",
-      "category": "singleCC",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 40,
-        "sp": 40
-      },
-      "coef": 5,
-      "statTypes": [
-        "int",
-        "str"
-      ],
-      "damageType": "magic",
-      "element": "none",
-      "cc": {
-        "type": "sleep",
-        "turns": 2,
-        "chance": 0.18
-      },
-      "desc": "수면 18% 2턴."
-    },
-    {
-      "id": "iceMaker",
-      "name": "아이스 메이커",
-      "grade": "A",
-      "rarity": "unique",
-      "category": "utility",
-      "target": "self",
-      "costs": {
-        "mp": 40,
-        "sp": 0
-      },
-      "statTypes": [
-        "int"
-      ],
-      "desc": "자유 형태 빙결 조형 — 무기/방벽/지형 생성."
-    },
-    {
-      "id": "icicleLance",
-      "name": "얼음창 투사",
-      "grade": "A",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 45,
-        "sp": 0
-      },
-      "coef": 8.8,
-      "statTypes": [
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "ice",
-      "desc": "빙결 속성 단일 고계수."
-    },
-    {
-      "id": "frostFlower",
-      "name": "서리꽃",
-      "grade": "A",
-      "category": "aoeCC",
-      "target": "allEnemies",
-      "costs": {
-        "mp": 55,
-        "sp": 30
-      },
-      "coef": 2.5,
-      "statTypes": [
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "ice",
-      "cc": {
-        "type": "bind",
-        "turns": 2,
-        "chance": 0.2
-      },
-      "desc": "광역 CC. 속박 20% 2턴."
-    },
-    {
-      "id": "stairAndSlide",
-      "name": "계단&미끄럼틀",
-      "grade": "A",
-      "category": "utility",
-      "target": "self",
-      "costs": {
-        "mp": 35,
-        "sp": 0
-      },
-      "duration": 3,
-      "statTypes": [
-        "int"
-      ],
-      "desc": "전술 이동로 생성, 3턴 유지."
-    },
-    {
-      "id": "auraOfJudge",
-      "name": "심판자의 기운",
-      "grade": "S",
-      "rarity": "rare",
-      "category": "passive",
-      "statTypes": [
-        "int"
-      ],
-      "passiveMods": {
-        "enemySkillCostMul": 1.1
-      },
-      "desc": "적 스킬 비용 +10%."
-    },
-    {
-      "id": "heliosNova",
-      "name": "헬리오스 노바",
-      "grade": "S",
-      "category": "aoeAttack",
-      "target": "allEnemies",
-      "costs": {
-        "mp": 90,
-        "sp": 50
-      },
-      "coef": 12,
-      "statTypes": [
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "light",
-      "desc": "빛/열 광역 섬멸."
-    },
-    {
-      "id": "shacklesOfRadiance",
-      "name": "빛의 속박",
-      "grade": "S",
-      "rarity": "rare",
-      "category": "singleCC",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 70,
-        "sp": 0
-      },
-      "coef": 8,
-      "statTypes": [
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "light",
-      "cc": {
-        "type": "silence",
-        "turns": 3
-      },
-      "desc": "마법 완전 봉인 3턴."
-    },
-    {
-      "id": "trueGaze",
-      "name": "진실의 시선",
-      "grade": "S",
-      "rarity": "unique",
-      "category": "passive",
-      "statTypes": [
-        "sense"
-      ],
-      "desc": "연속 시각 집중으로 대상 스탯/약점 해석."
-    },
-    {
-      "id": "barrierManipulation",
-      "name": "결계 조작",
-      "grade": "S",
-      "rarity": "rare",
-      "category": "buff",
-      "target": "allAllies",
-      "costs": {
-        "mp": 80,
-        "sp": 0
-      },
-      "duration": 3,
-      "statTypes": [
-        "int",
-        "sense"
-      ],
-      "buff": {
-        "stats": {
-          "pdef": 10,
-          "mdef": 10
-        }
-      },
-      "desc": "다층 방벽 생성. 전 아군 P.DEF/M.DEF +10, 3턴."
-    },
-    {
-      "id": "healingMagic",
-      "name": "치유 마법",
-      "grade": "S",
-      "category": "singleHeal",
-      "target": "singleAlly",
-      "costs": {
-        "mp": 45,
-        "sp": 0
-      },
-      "coef": 2.4,
-      "statTypes": [
-        "int"
-      ],
-      "desc": "경상 즉시 회복."
-    },
-    {
-      "id": "byeokryeokjang",
-      "name": "벽력장",
-      "grade": "S",
-      "category": "buff",
-      "target": "self",
-      "costs": {
-        "mp": 80,
-        "sp": 60
-      },
-      "duration": 5,
-      "statTypes": [
-        "con",
-        "str"
-      ],
-      "buff": {
-        "stats": {
-          "pdef": 20,
-          "mdef": 15
-        },
-        "onContactStun": {
-          "chance": 0.25,
-          "turns": 1
-        }
-      },
-      "desc": "번개 갑주. P.DEF +20, M.DEF +15, 접촉 stun 25% 1턴, 5턴."
-    },
-    {
-      "id": "uraegyeok",
-      "name": "우레격",
-      "grade": "S",
-      "category": "aoeCC",
-      "target": "allEnemies",
-      "costs": {
-        "mp": 100,
-        "sp": 80
-      },
-      "coef": 9,
-      "statTypes": [
-        "con",
-        "str"
-      ],
-      "damageType": "physical",
-      "element": "electric",
-      "cc": {
-        "type": "stun",
-        "turns": 1,
-        "chance": 0.2
-      },
-      "cooldown": 8,
-      "desc": "광역 stun 20% 1턴. 쿨 8턴."
-    },
-    {
-      "id": "shunpo",
-      "name": "순보",
-      "grade": "S",
-      "rarity": "rare",
-      "category": "utility",
-      "target": "self",
-      "costs": {
-        "mp": 0,
-        "sp": 40
-      },
-      "statTypes": [
-        "agi"
-      ],
-      "desc": "초고속 이동."
-    },
-    {
-      "id": "wolseomTriple",
-      "name": "월섬 \"삼월\"",
-      "grade": "S",
-      "rarity": "rare",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 50,
-        "sp": 60
-      },
-      "coef": 13.5,
-      "statTypes": [
-        "agi",
-        "str"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "desc": "3연참 고계수."
-    },
-    {
-      "id": "parry",
-      "name": "받아치기",
-      "grade": "S",
-      "category": "utility",
-      "target": "self",
-      "costs": {
-        "mp": 0,
-        "sp": 25
-      },
-      "statTypes": [
-        "agi",
-        "sense"
-      ],
-      "buff": {
-        "parryStance": true,
-        "parryCoef": 4
-      },
-      "desc": "피격 직전 반격 자세 — 회피 성공 시 반격 계수 4.0."
-    },
-    {
-      "id": "insight",
-      "name": "통찰",
-      "grade": "S",
-      "category": "passive",
-      "statTypes": [
-        "sense"
-      ],
-      "passiveMods": {
-        "evasionBonus": 0.1
-      },
-      "desc": "적 의도/궤적 선읽기 — 회피율 +10% 상시."
-    },
-    {
-      "id": "slowTime",
-      "name": "시간 감속",
-      "grade": "A",
-      "category": "aoeCC",
-      "target": "allEnemies",
-      "costs": {
-        "mp": 65,
-        "sp": 0
-      },
-      "duration": 3,
-      "statTypes": [
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "none",
-      "cc": {
-        "type": "slow",
-        "turns": 3
-      },
-      "buff": {
-        "stats": {
-          "agi": -8
-        }
-      },
-      "desc": "적 전체 둔화 3턴 (명중률 -30%, 회피율 -50%) + AGI -8 디버프."
-    },
-    {
-      "id": "hasteTime",
-      "name": "시간 가속",
-      "grade": "A",
-      "category": "buff",
-      "target": "allAllies",
-      "costs": {
-        "mp": 55,
-        "sp": 0
-      },
-      "duration": 2,
-      "statTypes": [
-        "int"
-      ],
-      "buff": {
-        "stats": {
-          "agi": 8
-        }
-      },
-      "desc": "전 아군 AGI +8, 2턴."
-    },
-    {
-      "id": "temporalSense",
-      "name": "시간 감지",
-      "grade": "A",
-      "category": "passive",
-      "statTypes": [
-        "sense",
-        "int"
-      ],
-      "desc": "유사 시간 능력 탐지 및 분석적 교란."
-    },
-    {
-      "id": "itemExtension",
-      "name": "소모품 연장",
-      "grade": "A",
-      "rarity": "unique",
-      "category": "passive",
-      "statTypes": [
-        "int"
-      ],
-      "passiveMods": {
-        "itemDurationMul": 1.2
-      },
-      "desc": "소모품 효과 지속시간 +20%."
-    },
-    {
-      "id": "reverseSummon",
-      "name": "반전 소환",
-      "grade": "A",
-      "category": "utility",
-      "target": "self",
-      "costs": {
-        "mp": 30,
-        "sp": 0
-      },
-      "statTypes": [
-        "int"
-      ],
-      "desc": "야간/그림자 근처 포탈 개방 — 존재가 올지는 랜덤, 장기 지속."
-    },
-    {
-      "id": "nightsVeil",
-      "name": "밤의 장막",
-      "grade": "A",
-      "category": "passive",
-      "statTypes": [
-        "int",
-        "sense"
-      ],
-      "desc": "비전투 시 은폐 + 어그로 감소."
-    },
-    {
-      "id": "sharedLethargy",
-      "name": "공유된 나른함",
-      "grade": "A",
-      "category": "passive",
-      "statTypes": [
-        "int"
-      ],
-      "desc": "어둡거나 조용한 환경에서 적 경계심 감소."
-    },
-    {
-      "id": "partialTransform",
-      "name": "늑대 변신 (부분)",
-      "grade": "S",
-      "category": "buff",
-      "target": "self",
-      "costs": {
-        "mp": 60,
-        "sp": 0
-      },
-      "duration": 5,
-      "statTypes": [
-        "str",
-        "agi",
-        "con"
-      ],
-      "buff": {
-        "stats": {
-          "str": 12,
-          "agi": 10,
-          "con": 8
-        }
-      },
-      "desc": "부분 변신. STR +12, AGI +10, CON +8, 5턴."
-    },
-    {
-      "id": "fullTransform",
-      "name": "늑대 변신 (완전)",
-      "grade": "S",
-      "category": "buff",
-      "target": "self",
-      "costs": {
-        "mp": 100,
-        "sp": 80
-      },
-      "duration": 3,
-      "statTypes": [
-        "str",
-        "agi",
-        "con"
-      ],
-      "buff": {
-        "stats": {
-          "str": 20,
-          "agi": 18,
-          "con": 15,
-          "int": 5,
-          "sense": 10
-        }
-      },
-      "desc": "완전 변신. 전 스탯 대폭 증가, 3턴."
-    },
-    {
-      "id": "gluttonousInstinct",
-      "name": "탐식 본능",
-      "grade": "S",
-      "rarity": "unique",
-      "category": "passive",
-      "statTypes": [
-        "str",
-        "con"
-      ],
-      "desc": "적 출혈/사망 시 전 스탯 비례 증가 — 과부하 시 폭주 위험."
-    },
-    {
-      "id": "devastatingBlow",
-      "name": "분쇄격",
-      "grade": "S",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 0,
-        "sp": 80
-      },
-      "coef": 13,
-      "statTypes": [
-        "str"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "desc": "순수 주먹. 고계수 단일 물리."
-    },
-    {
-      "id": "quakeStrike",
-      "name": "지진타",
-      "grade": "S",
-      "category": "aoeAttack",
-      "target": "allEnemies",
-      "costs": {
-        "mp": 30,
-        "sp": 70
-      },
-      "coef": 7.5,
-      "statTypes": [
-        "str",
-        "con"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "desc": "지면 충격파 광역."
-    },
-    {
-      "id": "martialAwakening",
-      "name": "무투가의 각성",
-      "grade": "S",
-      "category": "buff",
-      "target": "self",
-      "costs": {
-        "mp": 50,
-        "sp": 50
-      },
-      "duration": 3,
-      "statTypes": [
-        "str",
-        "agi"
-      ],
-      "buff": {
-        "stats": {
-          "str": 15,
-          "agi": 10
-        }
-      },
-      "desc": "STR +15, AGI +10, 3턴."
-    },
-    {
-      "id": "instinctRead",
-      "name": "본능 읽기",
-      "grade": "S",
-      "category": "passive",
-      "statTypes": [
-        "sense",
-        "agi"
-      ],
-      "passiveMods": {
-        "evasionBonus": 0.12
-      },
-      "desc": "적 미세 움직임 선읽기 — 회피율 +12%."
-    },
-    {
-      "id": "stealth",
-      "name": "은밀",
-      "grade": "C",
-      "category": "passive",
-      "statTypes": [
-        "agi",
-        "sense"
-      ],
-      "desc": "전투 외 존재감 억제 — 감지 난이도 상승."
-    },
-    {
-      "id": "ambush",
-      "name": "기습",
-      "grade": "C",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 0,
-        "sp": 35
-      },
-      "coef": 3.6,
-      "statTypes": [
-        "agi"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "desc": "은신 상태 시 자동 치명타."
-    },
-    {
-      "id": "poisonBlade",
-      "name": "독도포",
-      "grade": "C",
-      "category": "singleCC",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 15,
-        "sp": 25
-      },
-      "coef": 2.5,
-      "statTypes": [
-        "agi"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "cc": {
-        "type": "poison",
-        "turns": 3,
-        "chance": 0.35
-      },
-      "desc": "독 35% 3턴."
-    },
-    {
-      "id": "escape",
-      "name": "도주",
-      "grade": "C",
-      "category": "utility",
-      "target": "self",
-      "costs": {
-        "mp": 0,
-        "sp": 40
-      },
-      "statTypes": [
-        "agi"
-      ],
-      "desc": "전투 이탈 — 다음 턴 전투장 벗어남."
-    },
-    {
-      "id": "suggestion",
-      "name": "암시",
-      "grade": "B",
-      "rarity": "rare",
-      "category": "singleCC",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 45,
-        "sp": 0
-      },
-      "statTypes": [
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "none",
-      "cc": {
-        "type": "confuse",
-        "turns": 1
-      },
-      "desc": "대상 판단력 교란 — 1턴 혼란 (non-boss)."
-    },
-    {
-      "id": "phantomStep",
-      "name": "환영보",
-      "grade": "B",
-      "rarity": "rare",
-      "category": "utility",
-      "target": "self",
-      "costs": {
-        "mp": 0,
-        "sp": 35
-      },
-      "statTypes": [
-        "agi"
-      ],
-      "desc": "단거리 무음 이동 — 은신+회피."
-    },
-    {
-      "id": "knifeStrike",
-      "name": "단검 일격",
-      "grade": "B",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 0,
-        "sp": 40
-      },
-      "coef": 5,
-      "statTypes": [
-        "agi"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "desc": "단검 단일 물리 공격."
-    },
-    {
-      "id": "darknessManipulation",
-      "name": "어둠 조작",
-      "grade": "A",
-      "category": "utility",
-      "target": "self",
-      "costs": {
-        "mp": 60,
-        "sp": 0
-      },
-      "statTypes": [
-        "int",
-        "str"
-      ],
-      "desc": "암흑 형태 자유 생성 (무기/장벽/올가미)."
-    },
-    {
-      "id": "shadowMeld",
-      "name": "그림자 융합",
-      "grade": "A",
-      "category": "utility",
-      "target": "self",
-      "costs": {
-        "mp": 0,
-        "sp": 40
-      },
-      "statTypes": [
-        "agi",
-        "int"
-      ],
-      "desc": "그림자 속 잠복 → 기습 + 회피."
-    },
-    {
-      "id": "abyssalBlade",
-      "name": "심연검",
-      "grade": "A",
-      "rarity": "rare",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 45,
-        "sp": 45
-      },
-      "coef": 9,
-      "statTypes": [
-        "str",
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "dark",
-      "desc": "암흑 속성. 빛 속성 ×0.7."
-    },
-    {
-      "id": "erebosCloak",
-      "name": "에레보스의 외투",
-      "grade": "A",
-      "category": "passive",
-      "statTypes": [
-        "int",
-        "con"
-      ],
-      "passiveMods": {
-        "darkEnvStatBonus": 5,
-        "darkEnvDmgReduce": 0.1
-      },
-      "desc": "어둠 환경 시 전 스탯 +5, 피해 감소 +10%."
-    },
-    {
-      "id": "curseImmunity",
-      "name": "저주 면역",
-      "grade": "A",
-      "rarity": "unique",
-      "category": "passive",
-      "statTypes": [
-        "con",
-        "sense"
-      ],
-      "desc": "저주형 아이템 페널티 무시 또는 대폭 감소."
-    },
-    {
-      "id": "bloodletterDagger",
-      "name": "피식자의 단검",
-      "grade": "A",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 0,
-        "sp": 45
-      },
-      "coef": 8.5,
-      "statTypes": [
-        "agi"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "passiveMods": {
-        "lifesteal": 0.05
-      },
-      "desc": "적중 시 HP 흡수 5%."
-    },
-    {
-      "id": "shroudOfNonexistence",
-      "name": "비존재의 장막",
-      "grade": "A",
-      "category": "passive",
-      "statTypes": [
-        "sense"
-      ],
-      "desc": "마나 신호 은폐 — 감지 극히 어려움. 패널티: 주변 불운 유발."
-    },
-    {
-      "id": "corruptedResonance",
-      "name": "오염된 공명",
-      "grade": "A",
-      "rarity": "curse",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 40,
-        "sp": 0
-      },
-      "coef": 7.5,
-      "statTypes": [
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "dark",
-      "desc": "오염 마정석 소모. 폭발/촉수/저주 효과. 출력 = 석 품질 비례."
-    },
-    {
-      "id": "monsterKinship",
-      "name": "몬스터 친화",
-      "grade": "E",
-      "rarity": "curse",
-      "category": "passive",
-      "statTypes": [
-        "sense"
-      ],
-      "desc": "몬스터 비공격 · 기본 의사소통."
-    },
-    {
-      "id": "corruptSpread",
-      "name": "오염 확산",
-      "grade": "A",
-      "rarity": "curse",
-      "category": "aoeCC",
-      "target": "allEnemies",
-      "costs": {
-        "mp": 50,
-        "sp": 0
-      },
-      "coef": 2,
-      "statTypes": [
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "dark",
-      "cc": {
-        "type": "curse",
-        "turns": 3,
-        "chance": 0.28
-      },
-      "desc": "범위 내 저주 28% 3턴 + 독 28% 3턴."
-    },
-    {
-      "id": "whisperOfFear",
-      "name": "공포의 속삭임",
-      "grade": "A",
-      "rarity": "rare",
-      "category": "singleCC",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 50,
-        "sp": 0
-      },
-      "statTypes": [
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "none",
-      "cc": {
-        "type": "sleep",
-        "turns": 2,
-        "chance": 0.2
-      },
-      "desc": "수면 20% 2턴 or 속박 25% 2턴."
-    },
-    {
-      "id": "corrosiveMist",
-      "name": "부식의 안개",
-      "grade": "A",
-      "category": "aoeCC",
-      "target": "allEnemies",
-      "costs": {
-        "mp": 55,
-        "sp": 35
-      },
-      "coef": 2,
-      "statTypes": [
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "none",
-      "cc": {
-        "type": "poison",
-        "turns": 3,
-        "chance": 0.3
-      },
-      "desc": "독 30% 3턴 + 저주 26% 3턴."
-    },
-    {
-      "id": "manaSight",
-      "name": "마나 시야",
-      "grade": "A",
-      "rarity": "curse",
-      "category": "passive",
-      "statTypes": [
-        "sense",
-        "int"
-      ],
-      "desc": "시각 대신 마나/감정 패턴 감지 — 은폐 무력화."
-    },
-    {
-      "id": "fearInfusion",
-      "name": "공포 주입",
-      "grade": "A",
-      "rarity": "rare",
-      "category": "singleCC",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 60,
-        "sp": 0
-      },
-      "statTypes": [
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "none",
-      "cc": {
-        "type": "fear",
-        "turns": 2
-      },
-      "desc": "대상 공포 상태 2턴 (행동 30% 확률 실패)."
-    },
-    {
-      "id": "manaBullet",
-      "name": "마나 탄환",
-      "grade": "C",
-      "rarity": "rare",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 20,
-        "sp": 0
-      },
-      "coef": 3,
-      "statTypes": [
-        "int",
-        "agi"
-      ],
-      "damageType": "magic",
-      "element": "none",
-      "desc": "탄환 형태 변형 가능 (폭발/관통/추적)."
-    },
-    {
-      "id": "piercingRound",
-      "name": "관통탄",
-      "grade": "C",
-      "rarity": "rare",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 25,
-        "sp": 0
-      },
-      "coef": 3.2,
-      "statTypes": [
-        "agi"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "passiveMods": {
-        "bonusDamage": 0.3
-      },
-      "desc": "관통 효과로 최종 피해 +30%."
-    },
-    {
-      "id": "explosiveRound",
-      "name": "폭발탄",
-      "grade": "C",
-      "rarity": "rare",
-      "category": "aoeAttack",
-      "target": "allEnemies",
-      "costs": {
-        "mp": 30,
-        "sp": 0
-      },
-      "coef": 1.8,
-      "statTypes": [
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "none",
-      "desc": "소범위 폭발."
-    },
-    {
-      "id": "homingRound",
-      "name": "추적탄",
-      "grade": "C",
-      "rarity": "rare",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 35,
-        "sp": 0
-      },
-      "coef": 2.5,
-      "statTypes": [
-        "sense"
-      ],
-      "damageType": "magic",
-      "element": "none",
-      "desc": "회피 불가 (은신 대상 추적)."
-    },
-    {
-      "id": "manaDrain",
-      "name": "마나 드레인",
-      "grade": "D",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 25,
-        "sp": 0
-      },
-      "coef": 2,
-      "statTypes": [
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "none",
-      "desc": "접촉 시 대상 마나 흡수. 과사용 시 자해 위험."
-    },
-    {
-      "id": "lordOfAdversity",
-      "name": "역경의 군주",
-      "grade": "D",
-      "rarity": "unique",
-      "category": "singleCC",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 40,
-        "sp": 0
-      },
-      "coef": 1.2,
-      "statTypes": [
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "none",
-      "cc": {
-        "type": "silence",
-        "turns": 2
-      },
-      "desc": "대상 스킬 일시 봉인(침묵). 강한 사용 시 반동."
-    },
-    {
-      "id": "shadowCloak",
-      "name": "그림자 은폐",
-      "grade": "B",
-      "category": "buff",
-      "target": "self",
-      "costs": {
-        "mp": 30,
-        "sp": 20
-      },
-      "duration": 3,
-      "statTypes": [
-        "agi"
-      ],
-      "buff": {
-        "stats": {
-          "agi": 8
-        }
-      },
-      "desc": "어둠 속 존재감 제거. AGI +8, 3턴."
-    },
-    {
-      "id": "shadowStrike",
-      "name": "그림자 기습",
-      "grade": "B",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 25,
-        "sp": 35
-      },
-      "coef": 5.5,
-      "statTypes": [
-        "agi"
-      ],
-      "damageType": "physical",
-      "element": "dark",
-      "desc": "그림자를 통한 순간 기습. 후열 공격 가능."
-    },
-    {
-      "id": "twinDaggerSlash",
-      "name": "쌍검 난무",
-      "grade": "B",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 0,
-        "sp": 45
-      },
-      "coef": 5,
-      "statTypes": [
-        "agi",
-        "sense"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "desc": "쌍 단검 연속 공격."
-    },
-    {
-      "id": "quickStep",
-      "name": "퀵 스텝",
-      "grade": "A",
-      "rarity": "rare",
-      "category": "buff",
-      "target": "self",
-      "costs": {
-        "mp": 20,
-        "sp": 35
-      },
-      "duration": 2,
-      "statTypes": [
-        "agi"
-      ],
-      "buff": {
-        "stats": {
-          "agi": 10
-        }
-      },
-      "desc": "고속 이동. AGI +10, 2턴."
-    },
-    {
-      "id": "counterStance",
-      "name": "카운터",
-      "grade": "A",
-      "rarity": "rare",
-      "category": "utility",
-      "target": "self",
-      "costs": {
-        "mp": 0,
-        "sp": 30
-      },
-      "statTypes": [
-        "agi",
-        "sense"
-      ],
-      "buff": {
-        "parryStance": true,
-        "parryCoef": 3.5
-      },
-      "desc": "회피/패리 성공 후 반격. 계수 3.5."
-    },
-    {
-      "id": "risingSpirit",
-      "name": "투지 상승",
-      "grade": "A",
-      "rarity": "rare",
-      "category": "buff",
-      "target": "self",
-      "costs": {
-        "mp": 40,
-        "sp": 30
-      },
-      "duration": 3,
-      "statTypes": [
-        "str",
-        "agi"
-      ],
-      "buff": {
-        "stats": {
-          "str": 10,
-          "agi": 8
-        }
-      },
-      "desc": "전투 의지 고양. STR +10, AGI +8, 3턴."
-    },
-    {
-      "id": "redThread",
-      "name": "홍선",
-      "grade": "B",
-      "rarity": "unique",
-      "category": "buff",
-      "target": "allAllies",
-      "costs": {
-        "mp": 50,
-        "sp": 0
-      },
-      "duration": 5,
-      "statTypes": [
-        "sense"
-      ],
-      "buff": {
-        "stats": {
-          "sense": 4
-        }
-      },
-      "desc": "최대 5명에 투명한 실 연결. 위치·상태 감지. SENSE +4, 5턴."
-    },
-    {
-      "id": "tacticalCommand",
-      "name": "전술 지시",
-      "grade": "B",
-      "category": "buff",
-      "target": "allAllies",
-      "costs": {
-        "mp": 35,
-        "sp": 0
-      },
-      "duration": 2,
-      "statTypes": [
-        "int",
-        "sense"
-      ],
-      "buff": {
-        "stats": {
-          "agi": 4,
-          "sense": 4
-        }
-      },
-      "desc": "전술 지시. 전 아군 AGI +4, SENSE +4, 2턴."
-    },
-    {
-      "id": "exorcismExplosion",
-      "name": "폭파부",
-      "grade": "A",
-      "rarity": "unique",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 55,
-        "sp": 0
-      },
-      "coef": 8,
-      "statTypes": [
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "light",
-      "desc": "퇴마부: 폭파부. 집중 마법 폭발."
-    },
-    {
-      "id": "exorcismLightning",
-      "name": "전격부",
-      "grade": "A",
-      "rarity": "unique",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 45,
-        "sp": 0
-      },
-      "coef": 7.68,
-      "statTypes": [
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "electric",
-      "desc": "퇴마부: 전격부. 신속 전격."
-    },
-    {
-      "id": "exorcismBinding",
-      "name": "속박부",
-      "grade": "A",
-      "rarity": "unique",
-      "category": "singleCC",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 50,
-        "sp": 0
-      },
-      "coef": 4,
-      "statTypes": [
-        "int"
-      ],
-      "damageType": "magic",
-      "element": "none",
-      "cc": {
-        "type": "bind",
-        "turns": 2
-      },
-      "desc": "퇴마부: 속박부. 단기 속박 사슬."
-    },
-    {
-      "id": "exorcismBarrier",
-      "name": "결계부",
-      "grade": "A",
-      "rarity": "unique",
-      "category": "buff",
-      "target": "singleAlly",
-      "costs": {
-        "mp": 45,
-        "sp": 0
-      },
-      "duration": 2,
-      "statTypes": [
-        "int"
-      ],
-      "buff": {
-        "stats": {
-          "con": 8
-        }
-      },
-      "desc": "퇴마부: 결계부. 단기 방어 결계. CON +8, 2턴."
-    },
-    {
-      "id": "commandOrder",
-      "name": "전술 명령",
-      "grade": "A",
-      "category": "buff",
-      "target": "allAllies",
-      "costs": {
-        "mp": 50,
-        "sp": 0
-      },
-      "duration": 2,
-      "statTypes": [
-        "int",
-        "sense"
-      ],
-      "buff": {
-        "stats": {
-          "str": 6,
-          "agi": 6,
-          "con": 4
-        }
-      },
-      "desc": "전술 명령. 전 아군 STR +6, AGI +6, CON +4, 2턴."
-    },
-    {
-      "id": "infoLink",
-      "name": "정보 공유",
-      "grade": "A",
-      "rarity": "unique",
-      "category": "buff",
-      "target": "allAllies",
-      "costs": {
-        "mp": 40,
-        "sp": 0
-      },
-      "duration": 3,
-      "statTypes": [
-        "int",
-        "sense"
-      ],
-      "buff": {
-        "stats": {
-          "sense": 8
-        }
-      },
-      "desc": "정보 흐름 공유. 전 아군 SENSE +8, 3턴."
-    },
-    {
-      "id": "repositioning",
-      "name": "재배치",
-      "grade": "A",
-      "category": "utility",
-      "target": "singleAlly",
-      "costs": {
-        "mp": 30,
-        "sp": 0
-      },
-      "statTypes": [
-        "sense"
-      ],
-      "desc": "포지셔닝 컨트롤. 대상 아군 전열 변경."
-    },
-    {
-      "id": "soulHold",
-      "name": "소울 홀드",
-      "grade": "B",
-      "rarity": "unique",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 30,
-        "sp": 30
-      },
-      "coef": 5,
-      "statTypes": [
-        "str",
-        "agi"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "desc": "첫 타격 시 대상 스탯 10~20% 탈취, 숨 참는 동안 지속."
-    },
-    {
-      "id": "blackThornSlash",
-      "name": "검은 가시 참격",
-      "grade": "B",
-      "category": "singleAttack",
-      "target": "singleEnemy",
-      "costs": {
-        "mp": 0,
-        "sp": 40
-      },
-      "coef": 5.5,
-      "statTypes": [
-        "str",
-        "agi"
-      ],
-      "damageType": "physical",
-      "element": "none",
-      "desc": "검은 가시 롱소드의 긴 리치 활용 참격."
+[
+  {
+    "id": "singleAttackPhysE",
+    "name": "타격",
+    "grade": "E",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 1.2,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "desc": "무속성 물리 단일 공격 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleAttackMagE",
+    "name": "마탄",
+    "grade": "E",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 1.2,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "desc": "무속성 마법 단일 공격 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeAttackPhysE",
+    "name": "연타",
+    "grade": "E",
+    "category": "aoeAttack",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 0.7,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "desc": "무속성 물리 광역 공격 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeAttackMagE",
+    "name": "마력파",
+    "grade": "E",
+    "category": "aoeAttack",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 0.7,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "desc": "무속성 마법 광역 공격 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackFireE",
+    "name": "화염탄",
+    "grade": "E",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 1.2,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "fire",
+    "desc": "화염 속성 마법 단일 공격 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackIceE",
+    "name": "빙침",
+    "grade": "E",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 1.2,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "ice",
+    "desc": "빙결 속성 마법 단일 공격 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackWaterE",
+    "name": "수류탄",
+    "grade": "E",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 1.2,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "water",
+    "desc": "수류 속성 마법 단일 공격 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackWindE",
+    "name": "풍인",
+    "grade": "E",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 1.2,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "wind",
+    "desc": "질풍 속성 마법 단일 공격 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackEarthE",
+    "name": "암석탄",
+    "grade": "E",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 1.2,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "earth",
+    "desc": "대지 속성 마법 단일 공격 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackElectricE",
+    "name": "전격",
+    "grade": "E",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 1.2,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "electric",
+    "desc": "전격 속성 마법 단일 공격 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackLightE",
+    "name": "섬광탄",
+    "grade": "E",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 1.2,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "light",
+    "desc": "성광 속성 마법 단일 공격 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackDarkE",
+    "name": "암영탄",
+    "grade": "E",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 1.2,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "dark",
+    "desc": "암흑 속성 마법 단일 공격 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcStunE",
+    "name": "타격파",
+    "grade": "E",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 0.96,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "stun",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "단일 대상 기절 타격 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcFreezeE",
+    "name": "냉기술",
+    "grade": "E",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 0.96,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "ice",
+    "cc": {
+      "type": "freeze",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "단일 대상 빙결 마법 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcParalyzeE",
+    "name": "감전",
+    "grade": "E",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 0.96,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "electric",
+    "cc": {
+      "type": "paralyze",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "단일 대상 마비 전격 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcSleepE",
+    "name": "졸음",
+    "grade": "E",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 0.96,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "sleep",
+      "turns": 3,
+      "chance": 0.16
+    },
+    "desc": "단일 대상 수면 마법 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcBindE",
+    "name": "올가미",
+    "grade": "E",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 0.96,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "bind",
+      "turns": 2,
+      "chance": 0.18
+    },
+    "desc": "단일 대상 속박 타격 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcCurseE",
+    "name": "주술",
+    "grade": "E",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 0.96,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "dark",
+    "cc": {
+      "type": "curse",
+      "turns": 3,
+      "chance": 0.18
+    },
+    "desc": "단일 대상 저주 마법 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcSilenceE",
+    "name": "침묵",
+    "grade": "E",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 0.96,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "silence",
+      "turns": 2,
+      "chance": 0.2
+    },
+    "desc": "단일 대상 침묵 마법 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcSlowE",
+    "name": "감속",
+    "grade": "E",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 0.96,
+    "statTypes": [
+      "agi"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "slow",
+      "turns": 3,
+      "chance": 0.25
+    },
+    "desc": "단일 대상 둔화 타격 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcBlindE",
+    "name": "눈부심",
+    "grade": "E",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 0.96,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "blind",
+      "turns": 3,
+      "chance": 0.2
+    },
+    "desc": "단일 대상 실명 마법 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcPoisonE",
+    "name": "독침",
+    "grade": "E",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 0.96,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "poison",
+      "turns": 3,
+      "chance": 0.23
+    },
+    "desc": "단일 대상 독 마법 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcBleedE",
+    "name": "할퀴기",
+    "grade": "E",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 0.96,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "bleed",
+      "turns": 3,
+      "chance": 0.23
+    },
+    "desc": "단일 대상 출혈 타격 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcBurnE",
+    "name": "불씨",
+    "grade": "E",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 0.96,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "fire",
+    "cc": {
+      "type": "burn",
+      "turns": 5,
+      "chance": 0.23
+    },
+    "desc": "단일 대상 화상 마법 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeCcStunE",
+    "name": "대지진동",
+    "grade": "E",
+    "category": "aoeCC",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 0.56,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "stun",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "광역 대상 광역 기절 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeCcFreezeE",
+    "name": "냉기방출",
+    "grade": "E",
+    "category": "aoeCC",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 0.56,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "ice",
+    "cc": {
+      "type": "freeze",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "광역 대상 광역 빙결 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeCcPoisonE",
+    "name": "독연기",
+    "grade": "E",
+    "category": "aoeCC",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 0.56,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "poison",
+      "turns": 3,
+      "chance": 0.23
+    },
+    "desc": "광역 대상 광역 독 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeCcBurnE",
+    "name": "불꽃비",
+    "grade": "E",
+    "category": "aoeCC",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 0.56,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "fire",
+    "cc": {
+      "type": "burn",
+      "turns": 5,
+      "chance": 0.23
+    },
+    "desc": "광역 대상 광역 화상 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleHealE",
+    "name": "응급치료",
+    "grade": "E",
+    "category": "singleHeal",
+    "target": "singleAlly",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 1.2,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "desc": "단일 대상 회복 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeHealE",
+    "name": "치유의 바람",
+    "grade": "E",
+    "category": "aoeHeal",
+    "target": "allAllies",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 0.7,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "desc": "광역 회복 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffStrE",
+    "name": "힘 강화",
+    "grade": "E",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 0,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "str": 2
+      }
+    },
+    "duration": 3,
+    "desc": "STR 강화 버프 3턴 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffConE",
+    "name": "체력 강화",
+    "grade": "E",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 0,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "con": 2
+      }
+    },
+    "duration": 3,
+    "desc": "CON 강화 버프 3턴 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffIntE",
+    "name": "지력 강화",
+    "grade": "E",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 0,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "int": 2
+      }
+    },
+    "duration": 3,
+    "desc": "INT 강화 버프 3턴 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffAgiE",
+    "name": "민첩 강화",
+    "grade": "E",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 0,
+    "statTypes": [
+      "agi"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "agi": 2
+      }
+    },
+    "duration": 3,
+    "desc": "AGI 강화 버프 3턴 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffSenseE",
+    "name": "감각 강화",
+    "grade": "E",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 0,
+    "statTypes": [
+      "sense"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "sense": 2
+      }
+    },
+    "duration": 3,
+    "desc": "SENSE 강화 버프 3턴 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffPdefE",
+    "name": "방어 강화",
+    "grade": "E",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 0,
+    "statTypes": [
+      "pDef"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "pdef": 2
+      }
+    },
+    "duration": 3,
+    "desc": "PDEF 강화 버프 3턴 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffMdefE",
+    "name": "마방 강화",
+    "grade": "E",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 0,
+    "statTypes": [
+      "mDef"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "mdef": 2
+      }
+    },
+    "duration": 3,
+    "desc": "MDEF 강화 버프 3턴 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffTauntE",
+    "name": "위협",
+    "grade": "E",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 20,
+      "sp": 15
+    },
+    "coef": 0,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "buff": {
+      "stats": {},
+      "threatBonus": 3
+    },
+    "duration": 3,
+    "desc": "도발 버프 3턴, 위협 +3 (E랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "passiveStrE",
+    "name": "기초 근력",
+    "grade": "E",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "STR 패시브 영구 보너스 (E랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "str": 2
     }
-  ]
-}
+  },
+  {
+    "id": "passiveConE",
+    "name": "기초 체력",
+    "grade": "E",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "CON 패시브 영구 보너스 (E랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "con": 2
+    }
+  },
+  {
+    "id": "passiveIntE",
+    "name": "기초 지력",
+    "grade": "E",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "INT 패시브 영구 보너스 (E랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "int": 2
+    }
+  },
+  {
+    "id": "passiveAgiE",
+    "name": "기초 민첩",
+    "grade": "E",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "agi"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "AGI 패시브 영구 보너스 (E랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "agi": 2
+    }
+  },
+  {
+    "id": "passiveSenseE",
+    "name": "기초 감각",
+    "grade": "E",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "sense"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "SENSE 패시브 영구 보너스 (E랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "sense": 2
+    }
+  },
+  {
+    "id": "passivePdefE",
+    "name": "기초 방어",
+    "grade": "E",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "pDef"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "PDEF 패시브 영구 보너스 (E랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "pdef": 2
+    }
+  },
+  {
+    "id": "passiveMdefE",
+    "name": "기초 마방",
+    "grade": "E",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "mDef"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "MDEF 패시브 영구 보너스 (E랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "mdef": 2
+    }
+  },
+  {
+    "id": "singleAttackPhysD",
+    "name": "강타",
+    "grade": "D",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 1.92,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "desc": "무속성 물리 단일 공격 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleAttackMagD",
+    "name": "마력탄",
+    "grade": "D",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 1.92,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "desc": "무속성 마법 단일 공격 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeAttackPhysD",
+    "name": "난무",
+    "grade": "D",
+    "category": "aoeAttack",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 50,
+      "sp": 40
+    },
+    "coef": 1.11,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "desc": "무속성 물리 광역 공격 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeAttackMagD",
+    "name": "마력진",
+    "grade": "D",
+    "category": "aoeAttack",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 50,
+      "sp": 40
+    },
+    "coef": 1.11,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "desc": "무속성 마법 광역 공격 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackFireD",
+    "name": "화염구",
+    "grade": "D",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 1.92,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "fire",
+    "desc": "화염 속성 마법 단일 공격 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackIceD",
+    "name": "빙결탄",
+    "grade": "D",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 1.92,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "ice",
+    "desc": "빙결 속성 마법 단일 공격 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackWaterD",
+    "name": "수압포",
+    "grade": "D",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 1.92,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "water",
+    "desc": "수류 속성 마법 단일 공격 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackWindD",
+    "name": "질풍타",
+    "grade": "D",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 1.92,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "wind",
+    "desc": "질풍 속성 마법 단일 공격 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackEarthD",
+    "name": "지진격",
+    "grade": "D",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 1.92,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "earth",
+    "desc": "대지 속성 마법 단일 공격 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackElectricD",
+    "name": "방전",
+    "grade": "D",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 1.92,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "electric",
+    "desc": "전격 속성 마법 단일 공격 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackLightD",
+    "name": "성광격",
+    "grade": "D",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 1.92,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "light",
+    "desc": "성광 속성 마법 단일 공격 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackDarkD",
+    "name": "명침",
+    "grade": "D",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 1.92,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "dark",
+    "desc": "암흑 속성 마법 단일 공격 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcStunD",
+    "name": "충격파",
+    "grade": "D",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 1.54,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "stun",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "단일 대상 기절 타격 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcFreezeD",
+    "name": "동결술",
+    "grade": "D",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 1.54,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "ice",
+    "cc": {
+      "type": "freeze",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "단일 대상 빙결 마법 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcParalyzeD",
+    "name": "전류속박",
+    "grade": "D",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 1.54,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "electric",
+    "cc": {
+      "type": "paralyze",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "단일 대상 마비 전격 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcSleepD",
+    "name": "수면술",
+    "grade": "D",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 1.54,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "sleep",
+      "turns": 3,
+      "chance": 0.16
+    },
+    "desc": "단일 대상 수면 마법 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcBindD",
+    "name": "사슬결박",
+    "grade": "D",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 1.54,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "bind",
+      "turns": 2,
+      "chance": 0.18
+    },
+    "desc": "단일 대상 속박 타격 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcCurseD",
+    "name": "저주술",
+    "grade": "D",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 1.54,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "dark",
+    "cc": {
+      "type": "curse",
+      "turns": 3,
+      "chance": 0.18
+    },
+    "desc": "단일 대상 저주 마법 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcSilenceD",
+    "name": "봉인술",
+    "grade": "D",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 1.54,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "silence",
+      "turns": 2,
+      "chance": 0.2
+    },
+    "desc": "단일 대상 침묵 마법 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcSlowD",
+    "name": "둔중술",
+    "grade": "D",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 1.54,
+    "statTypes": [
+      "agi"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "slow",
+      "turns": 3,
+      "chance": 0.25
+    },
+    "desc": "단일 대상 둔화 타격 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcBlindD",
+    "name": "암막술",
+    "grade": "D",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 1.54,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "blind",
+      "turns": 3,
+      "chance": 0.2
+    },
+    "desc": "단일 대상 실명 마법 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcPoisonD",
+    "name": "독안개",
+    "grade": "D",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 1.54,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "poison",
+      "turns": 3,
+      "chance": 0.23
+    },
+    "desc": "단일 대상 독 마법 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcBleedD",
+    "name": "열상격",
+    "grade": "D",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 1.54,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "bleed",
+      "turns": 3,
+      "chance": 0.23
+    },
+    "desc": "단일 대상 출혈 타격 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcBurnD",
+    "name": "점화술",
+    "grade": "D",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 1.54,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "fire",
+    "cc": {
+      "type": "burn",
+      "turns": 5,
+      "chance": 0.23
+    },
+    "desc": "단일 대상 화상 마법 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeCcStunD",
+    "name": "지진파",
+    "grade": "D",
+    "category": "aoeCC",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 50,
+      "sp": 40
+    },
+    "coef": 0.89,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "stun",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "광역 대상 광역 기절 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeCcFreezeD",
+    "name": "동결진",
+    "grade": "D",
+    "category": "aoeCC",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 50,
+      "sp": 40
+    },
+    "coef": 0.89,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "ice",
+    "cc": {
+      "type": "freeze",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "광역 대상 광역 빙결 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeCcPoisonD",
+    "name": "독무",
+    "grade": "D",
+    "category": "aoeCC",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 50,
+      "sp": 40
+    },
+    "coef": 0.89,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "poison",
+      "turns": 3,
+      "chance": 0.23
+    },
+    "desc": "광역 대상 광역 독 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeCcBurnD",
+    "name": "화염비",
+    "grade": "D",
+    "category": "aoeCC",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 50,
+      "sp": 40
+    },
+    "coef": 0.89,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "fire",
+    "cc": {
+      "type": "burn",
+      "turns": 5,
+      "chance": 0.23
+    },
+    "desc": "광역 대상 광역 화상 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleHealD",
+    "name": "치유의 빛",
+    "grade": "D",
+    "category": "singleHeal",
+    "target": "singleAlly",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 1.4,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "desc": "단일 대상 회복 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeHealD",
+    "name": "생명의 노래",
+    "grade": "D",
+    "category": "aoeHeal",
+    "target": "allAllies",
+    "costs": {
+      "mp": 50,
+      "sp": 40
+    },
+    "coef": 0.81,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "desc": "광역 회복 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffStrD",
+    "name": "투사의 함성",
+    "grade": "D",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 0,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "str": 4
+      }
+    },
+    "duration": 3,
+    "desc": "STR 강화 버프 3턴 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffConD",
+    "name": "강철 의지",
+    "grade": "D",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 0,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "con": 4
+      }
+    },
+    "duration": 3,
+    "desc": "CON 강화 버프 3턴 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffIntD",
+    "name": "명석의 비전",
+    "grade": "D",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 0,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "int": 4
+      }
+    },
+    "duration": 3,
+    "desc": "INT 강화 버프 3턴 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffAgiD",
+    "name": "질풍 보법",
+    "grade": "D",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 0,
+    "statTypes": [
+      "agi"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "agi": 4
+      }
+    },
+    "duration": 3,
+    "desc": "AGI 강화 버프 3턴 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffSenseD",
+    "name": "매의 눈",
+    "grade": "D",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 0,
+    "statTypes": [
+      "sense"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "sense": 4
+      }
+    },
+    "duration": 3,
+    "desc": "SENSE 강화 버프 3턴 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffPdefD",
+    "name": "석갑 부여",
+    "grade": "D",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 0,
+    "statTypes": [
+      "pDef"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "pdef": 4
+      }
+    },
+    "duration": 3,
+    "desc": "PDEF 강화 버프 3턴 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffMdefD",
+    "name": "마력 방벽",
+    "grade": "D",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 0,
+    "statTypes": [
+      "mDef"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "mdef": 4
+      }
+    },
+    "duration": 3,
+    "desc": "MDEF 강화 버프 3턴 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffTauntD",
+    "name": "도발",
+    "grade": "D",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 25,
+      "sp": 20
+    },
+    "coef": 0,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "buff": {
+      "stats": {},
+      "threatBonus": 5
+    },
+    "duration": 3,
+    "desc": "도발 버프 3턴, 위협 +5 (D랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "passiveStrD",
+    "name": "근력 단련",
+    "grade": "D",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "STR 패시브 영구 보너스 (D랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "str": 4
+    }
+  },
+  {
+    "id": "passiveConD",
+    "name": "체력 단련",
+    "grade": "D",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "CON 패시브 영구 보너스 (D랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "con": 4
+    }
+  },
+  {
+    "id": "passiveIntD",
+    "name": "지력 수련",
+    "grade": "D",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "INT 패시브 영구 보너스 (D랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "int": 4
+    }
+  },
+  {
+    "id": "passiveAgiD",
+    "name": "신속 수련",
+    "grade": "D",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "agi"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "AGI 패시브 영구 보너스 (D랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "agi": 4
+    }
+  },
+  {
+    "id": "passiveSenseD",
+    "name": "감각 연마",
+    "grade": "D",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "sense"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "SENSE 패시브 영구 보너스 (D랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "sense": 4
+    }
+  },
+  {
+    "id": "passivePdefD",
+    "name": "방어 숙련",
+    "grade": "D",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "pDef"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "PDEF 패시브 영구 보너스 (D랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "pdef": 4
+    }
+  },
+  {
+    "id": "passiveMdefD",
+    "name": "마법 내성",
+    "grade": "D",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "mDef"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "MDEF 패시브 영구 보너스 (D랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "mdef": 4
+    }
+  },
+  {
+    "id": "singleAttackPhysC",
+    "name": "분쇄격",
+    "grade": "C",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 2.88,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "desc": "무속성 물리 단일 공격 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleAttackMagC",
+    "name": "마력포",
+    "grade": "C",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 2.88,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "desc": "무속성 마법 단일 공격 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeAttackPhysC",
+    "name": "질풍연타",
+    "grade": "C",
+    "category": "aoeAttack",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 60,
+      "sp": 50
+    },
+    "coef": 1.67,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "desc": "무속성 물리 광역 공격 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeAttackMagC",
+    "name": "마력폭발",
+    "grade": "C",
+    "category": "aoeAttack",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 60,
+      "sp": 50
+    },
+    "coef": 1.67,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "desc": "무속성 마법 광역 공격 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackFireC",
+    "name": "폭염",
+    "grade": "C",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 2.88,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "fire",
+    "desc": "화염 속성 마법 단일 공격 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackIceC",
+    "name": "동결파",
+    "grade": "C",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 2.88,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "ice",
+    "desc": "빙결 속성 마법 단일 공격 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackWaterC",
+    "name": "해류격",
+    "grade": "C",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 2.88,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "water",
+    "desc": "수류 속성 마법 단일 공격 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackWindC",
+    "name": "열풍격",
+    "grade": "C",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 2.88,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "wind",
+    "desc": "질풍 속성 마법 단일 공격 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackEarthC",
+    "name": "암쇄",
+    "grade": "C",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 2.88,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "earth",
+    "desc": "대지 속성 마법 단일 공격 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackElectricC",
+    "name": "낙뢰",
+    "grade": "C",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 2.88,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "electric",
+    "desc": "전격 속성 마법 단일 공격 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackLightC",
+    "name": "광명격",
+    "grade": "C",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 2.88,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "light",
+    "desc": "성광 속성 마법 단일 공격 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackDarkC",
+    "name": "암흑파",
+    "grade": "C",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 2.88,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "dark",
+    "desc": "암흑 속성 마법 단일 공격 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcStunC",
+    "name": "지축격",
+    "grade": "C",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 2.3,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "stun",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "단일 대상 기절 타격 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcFreezeC",
+    "name": "빙쇄파",
+    "grade": "C",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 2.3,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "ice",
+    "cc": {
+      "type": "freeze",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "단일 대상 빙결 마법 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcParalyzeC",
+    "name": "마비전류",
+    "grade": "C",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 2.3,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "electric",
+    "cc": {
+      "type": "paralyze",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "단일 대상 마비 전격 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcSleepC",
+    "name": "자장가",
+    "grade": "C",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 2.3,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "sleep",
+      "turns": 3,
+      "chance": 0.16
+    },
+    "desc": "단일 대상 수면 마법 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcBindC",
+    "name": "속박진",
+    "grade": "C",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 2.3,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "bind",
+      "turns": 2,
+      "chance": 0.18
+    },
+    "desc": "단일 대상 속박 타격 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcCurseC",
+    "name": "원혼의 저주",
+    "grade": "C",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 2.3,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "dark",
+    "cc": {
+      "type": "curse",
+      "turns": 3,
+      "chance": 0.18
+    },
+    "desc": "단일 대상 저주 마법 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcSilenceC",
+    "name": "마력봉인",
+    "grade": "C",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 2.3,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "silence",
+      "turns": 2,
+      "chance": 0.2
+    },
+    "desc": "단일 대상 침묵 마법 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcSlowC",
+    "name": "시간지연",
+    "grade": "C",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 2.3,
+    "statTypes": [
+      "agi"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "slow",
+      "turns": 3,
+      "chance": 0.25
+    },
+    "desc": "단일 대상 둔화 타격 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcBlindC",
+    "name": "시야차단",
+    "grade": "C",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 2.3,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "blind",
+      "turns": 3,
+      "chance": 0.2
+    },
+    "desc": "단일 대상 실명 마법 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcPoisonC",
+    "name": "맹독술",
+    "grade": "C",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 2.3,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "poison",
+      "turns": 3,
+      "chance": 0.23
+    },
+    "desc": "단일 대상 독 마법 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcBleedC",
+    "name": "출혈참",
+    "grade": "C",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 2.3,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "bleed",
+      "turns": 3,
+      "chance": 0.23
+    },
+    "desc": "단일 대상 출혈 타격 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcBurnC",
+    "name": "발화",
+    "grade": "C",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 2.3,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "fire",
+    "cc": {
+      "type": "burn",
+      "turns": 5,
+      "chance": 0.23
+    },
+    "desc": "단일 대상 화상 마법 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeCcStunC",
+    "name": "파쇄충격",
+    "grade": "C",
+    "category": "aoeCC",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 60,
+      "sp": 50
+    },
+    "coef": 1.33,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "stun",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "광역 대상 광역 기절 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeCcFreezeC",
+    "name": "빙결의 파동",
+    "grade": "C",
+    "category": "aoeCC",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 60,
+      "sp": 50
+    },
+    "coef": 1.33,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "ice",
+    "cc": {
+      "type": "freeze",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "광역 대상 광역 빙결 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeCcPoisonC",
+    "name": "독안개진",
+    "grade": "C",
+    "category": "aoeCC",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 60,
+      "sp": 50
+    },
+    "coef": 1.33,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "poison",
+      "turns": 3,
+      "chance": 0.23
+    },
+    "desc": "광역 대상 광역 독 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeCcBurnC",
+    "name": "업화",
+    "grade": "C",
+    "category": "aoeCC",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 60,
+      "sp": 50
+    },
+    "coef": 1.33,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "fire",
+    "cc": {
+      "type": "burn",
+      "turns": 5,
+      "chance": 0.23
+    },
+    "desc": "광역 대상 광역 화상 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleHealC",
+    "name": "생명의 손길",
+    "grade": "C",
+    "category": "singleHeal",
+    "target": "singleAlly",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 1.6,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "desc": "단일 대상 회복 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeHealC",
+    "name": "대지의 은혜",
+    "grade": "C",
+    "category": "aoeHeal",
+    "target": "allAllies",
+    "costs": {
+      "mp": 60,
+      "sp": 50
+    },
+    "coef": 0.93,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "desc": "광역 회복 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffStrC",
+    "name": "전투격려",
+    "grade": "C",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 0,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "str": 6
+      }
+    },
+    "duration": 3,
+    "desc": "STR 강화 버프 3턴 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffConC",
+    "name": "견고한 방벽",
+    "grade": "C",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 0,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "con": 6
+      }
+    },
+    "duration": 3,
+    "desc": "CON 강화 버프 3턴 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffIntC",
+    "name": "지혜의 각성",
+    "grade": "C",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 0,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "int": 6
+      }
+    },
+    "duration": 3,
+    "desc": "INT 강화 버프 3턴 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffAgiC",
+    "name": "그림자 걸음",
+    "grade": "C",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 0,
+    "statTypes": [
+      "agi"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "agi": 6
+      }
+    },
+    "duration": 3,
+    "desc": "AGI 강화 버프 3턴 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffSenseC",
+    "name": "천리안",
+    "grade": "C",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 0,
+    "statTypes": [
+      "sense"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "sense": 6
+      }
+    },
+    "duration": 3,
+    "desc": "SENSE 강화 버프 3턴 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffPdefC",
+    "name": "철벽방어",
+    "grade": "C",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 0,
+    "statTypes": [
+      "pDef"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "pdef": 6
+      }
+    },
+    "duration": 3,
+    "desc": "PDEF 강화 버프 3턴 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffMdefC",
+    "name": "마법저항",
+    "grade": "C",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 0,
+    "statTypes": [
+      "mDef"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "mdef": 6
+      }
+    },
+    "duration": 3,
+    "desc": "MDEF 강화 버프 3턴 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffTauntC",
+    "name": "전장의 포효",
+    "grade": "C",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 30,
+      "sp": 25
+    },
+    "coef": 0,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "buff": {
+      "stats": {},
+      "threatBonus": 7
+    },
+    "duration": 3,
+    "desc": "도발 버프 3턴, 위협 +7 (C랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "passiveStrC",
+    "name": "전사의 힘",
+    "grade": "C",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "STR 패시브 영구 보너스 (C랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "str": 6
+    }
+  },
+  {
+    "id": "passiveConC",
+    "name": "전사의 체력",
+    "grade": "C",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "CON 패시브 영구 보너스 (C랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "con": 6
+    }
+  },
+  {
+    "id": "passiveIntC",
+    "name": "학자의 지식",
+    "grade": "C",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "INT 패시브 영구 보너스 (C랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "int": 6
+    }
+  },
+  {
+    "id": "passiveAgiC",
+    "name": "암살자의 발걸음",
+    "grade": "C",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "agi"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "AGI 패시브 영구 보너스 (C랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "agi": 6
+    }
+  },
+  {
+    "id": "passiveSenseC",
+    "name": "사냥꾼의 감각",
+    "grade": "C",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "sense"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "SENSE 패시브 영구 보너스 (C랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "sense": 6
+    }
+  },
+  {
+    "id": "passivePdefC",
+    "name": "철벽 수호",
+    "grade": "C",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "pDef"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "PDEF 패시브 영구 보너스 (C랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "pdef": 6
+    }
+  },
+  {
+    "id": "passiveMdefC",
+    "name": "마력 차단",
+    "grade": "C",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "mDef"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "MDEF 패시브 영구 보너스 (C랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "mdef": 6
+    }
+  },
+  {
+    "id": "singleAttackPhysB",
+    "name": "파쇄일섬",
+    "grade": "B",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 4.8,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "desc": "무속성 물리 단일 공격 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleAttackMagB",
+    "name": "섬멸의 탄환",
+    "grade": "B",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 4.8,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "desc": "무속성 마법 단일 공격 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeAttackPhysB",
+    "name": "광풍난무",
+    "grade": "B",
+    "category": "aoeAttack",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 80,
+      "sp": 60
+    },
+    "coef": 2.78,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "desc": "무속성 물리 광역 공격 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeAttackMagB",
+    "name": "마기의 폭류",
+    "grade": "B",
+    "category": "aoeAttack",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 80,
+      "sp": 60
+    },
+    "coef": 2.78,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "desc": "무속성 마법 광역 공격 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackFireB",
+    "name": "업화격",
+    "grade": "B",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 4.8,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "fire",
+    "desc": "화염 속성 마법 단일 공격 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackIceB",
+    "name": "빙폭",
+    "grade": "B",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 4.8,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "ice",
+    "desc": "빙결 속성 마법 단일 공격 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackWaterB",
+    "name": "격류",
+    "grade": "B",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 4.8,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "water",
+    "desc": "수류 속성 마법 단일 공격 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackWindB",
+    "name": "폭풍참",
+    "grade": "B",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 4.8,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "wind",
+    "desc": "질풍 속성 마법 단일 공격 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackEarthB",
+    "name": "지각붕괴",
+    "grade": "B",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 4.8,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "earth",
+    "desc": "대지 속성 마법 단일 공격 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackElectricB",
+    "name": "뇌전",
+    "grade": "B",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 4.8,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "electric",
+    "desc": "전격 속성 마법 단일 공격 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackLightB",
+    "name": "성스러운 빛",
+    "grade": "B",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 4.8,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "light",
+    "desc": "성광 속성 마법 단일 공격 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackDarkB",
+    "name": "심연의 손길",
+    "grade": "B",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 4.8,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "dark",
+    "desc": "암흑 속성 마법 단일 공격 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcStunB",
+    "name": "뇌진격",
+    "grade": "B",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 3.84,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "stun",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "단일 대상 기절 타격 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcFreezeB",
+    "name": "극한동파",
+    "grade": "B",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 3.84,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "ice",
+    "cc": {
+      "type": "freeze",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "단일 대상 빙결 마법 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcParalyzeB",
+    "name": "신경차단",
+    "grade": "B",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 3.84,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "electric",
+    "cc": {
+      "type": "paralyze",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "단일 대상 마비 전격 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcSleepB",
+    "name": "깊은 잠",
+    "grade": "B",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 3.84,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "sleep",
+      "turns": 3,
+      "chance": 0.16
+    },
+    "desc": "단일 대상 수면 마법 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcBindB",
+    "name": "구속쇄",
+    "grade": "B",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 3.84,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "bind",
+      "turns": 2,
+      "chance": 0.18
+    },
+    "desc": "단일 대상 속박 타격 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcCurseB",
+    "name": "파멸의 저주",
+    "grade": "B",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 3.84,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "dark",
+    "cc": {
+      "type": "curse",
+      "turns": 3,
+      "chance": 0.18
+    },
+    "desc": "단일 대상 저주 마법 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcSilenceB",
+    "name": "정신쇄",
+    "grade": "B",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 3.84,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "silence",
+      "turns": 2,
+      "chance": 0.2
+    },
+    "desc": "단일 대상 침묵 마법 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcSlowB",
+    "name": "중력구속",
+    "grade": "B",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 3.84,
+    "statTypes": [
+      "agi"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "slow",
+      "turns": 3,
+      "chance": 0.25
+    },
+    "desc": "단일 대상 둔화 타격 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcBlindB",
+    "name": "암흑안개",
+    "grade": "B",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 3.84,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "blind",
+      "turns": 3,
+      "chance": 0.2
+    },
+    "desc": "단일 대상 실명 마법 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcPoisonB",
+    "name": "독사의 이빨",
+    "grade": "B",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 3.84,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "poison",
+      "turns": 3,
+      "chance": 0.23
+    },
+    "desc": "단일 대상 독 마법 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcBleedB",
+    "name": "혈풍참",
+    "grade": "B",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 3.84,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "bleed",
+      "turns": 3,
+      "chance": 0.23
+    },
+    "desc": "단일 대상 출혈 타격 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcBurnB",
+    "name": "화염방사",
+    "grade": "B",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 3.84,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "fire",
+    "cc": {
+      "type": "burn",
+      "turns": 5,
+      "chance": 0.23
+    },
+    "desc": "단일 대상 화상 마법 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeCcStunB",
+    "name": "충격파동",
+    "grade": "B",
+    "category": "aoeCC",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 80,
+      "sp": 60
+    },
+    "coef": 2.23,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "stun",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "광역 대상 광역 기절 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeCcFreezeB",
+    "name": "빙하의 포효",
+    "grade": "B",
+    "category": "aoeCC",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 80,
+      "sp": 60
+    },
+    "coef": 2.23,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "ice",
+    "cc": {
+      "type": "freeze",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "광역 대상 광역 빙결 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeCcPoisonB",
+    "name": "역병의 숨결",
+    "grade": "B",
+    "category": "aoeCC",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 80,
+      "sp": 60
+    },
+    "coef": 2.23,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "poison",
+      "turns": 3,
+      "chance": 0.23
+    },
+    "desc": "광역 대상 광역 독 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeCcBurnB",
+    "name": "화염폭풍",
+    "grade": "B",
+    "category": "aoeCC",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 80,
+      "sp": 60
+    },
+    "coef": 2.23,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "fire",
+    "cc": {
+      "type": "burn",
+      "turns": 5,
+      "chance": 0.23
+    },
+    "desc": "광역 대상 광역 화상 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleHealB",
+    "name": "신성한 치유",
+    "grade": "B",
+    "category": "singleHeal",
+    "target": "singleAlly",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 1.8,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "desc": "단일 대상 회복 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeHealB",
+    "name": "성스러운 비",
+    "grade": "B",
+    "category": "aoeHeal",
+    "target": "allAllies",
+    "costs": {
+      "mp": 80,
+      "sp": 60
+    },
+    "coef": 1.04,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "desc": "광역 회복 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffStrB",
+    "name": "광전사의 분노",
+    "grade": "B",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 0,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "str": 8
+      }
+    },
+    "duration": 3,
+    "desc": "STR 강화 버프 3턴 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffConB",
+    "name": "불굴의 의지",
+    "grade": "B",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 0,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "con": 8
+      }
+    },
+    "duration": 3,
+    "desc": "CON 강화 버프 3턴 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffIntB",
+    "name": "마력 해방",
+    "grade": "B",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 0,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "int": 8
+      }
+    },
+    "duration": 3,
+    "desc": "INT 강화 버프 3턴 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffAgiB",
+    "name": "번개 발걸음",
+    "grade": "B",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 0,
+    "statTypes": [
+      "agi"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "agi": 8
+      }
+    },
+    "duration": 3,
+    "desc": "AGI 강화 버프 3턴 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffSenseB",
+    "name": "예지의 눈",
+    "grade": "B",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 0,
+    "statTypes": [
+      "sense"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "sense": 8
+      }
+    },
+    "duration": 3,
+    "desc": "SENSE 강화 버프 3턴 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffPdefB",
+    "name": "난공불락",
+    "grade": "B",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 0,
+    "statTypes": [
+      "pDef"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "pdef": 8
+      }
+    },
+    "duration": 3,
+    "desc": "PDEF 강화 버프 3턴 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffMdefB",
+    "name": "마법반사",
+    "grade": "B",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 0,
+    "statTypes": [
+      "mDef"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "mdef": 8
+      }
+    },
+    "duration": 3,
+    "desc": "MDEF 강화 버프 3턴 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffTauntB",
+    "name": "왕의 위엄",
+    "grade": "B",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 40,
+      "sp": 30
+    },
+    "coef": 0,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "buff": {
+      "stats": {},
+      "threatBonus": 10
+    },
+    "duration": 3,
+    "desc": "도발 버프 3턴, 위협 +10 (B랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "passiveStrB",
+    "name": "강인한 근력",
+    "grade": "B",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "STR 패시브 영구 보너스 (B랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "str": 8
+    }
+  },
+  {
+    "id": "passiveConB",
+    "name": "강인한 체력",
+    "grade": "B",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "CON 패시브 영구 보너스 (B랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "con": 8
+    }
+  },
+  {
+    "id": "passiveIntB",
+    "name": "현자의 지혜",
+    "grade": "B",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "INT 패시브 영구 보너스 (B랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "int": 8
+    }
+  },
+  {
+    "id": "passiveAgiB",
+    "name": "바람의 민첩",
+    "grade": "B",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "agi"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "AGI 패시브 영구 보너스 (B랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "agi": 8
+    }
+  },
+  {
+    "id": "passiveSenseB",
+    "name": "예리한 감각",
+    "grade": "B",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "sense"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "SENSE 패시브 영구 보너스 (B랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "sense": 8
+    }
+  },
+  {
+    "id": "passivePdefB",
+    "name": "요새의 몸",
+    "grade": "B",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "pDef"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "PDEF 패시브 영구 보너스 (B랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "pdef": 8
+    }
+  },
+  {
+    "id": "passiveMdefB",
+    "name": "마법저항 체질",
+    "grade": "B",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "mDef"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "MDEF 패시브 영구 보너스 (B랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "mdef": 8
+    }
+  },
+  {
+    "id": "singleAttackPhysA",
+    "name": "멸살참",
+    "grade": "A",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 7.68,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "desc": "무속성 물리 단일 공격 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleAttackMagA",
+    "name": "마멸포",
+    "grade": "A",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 7.68,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "desc": "무속성 마법 단일 공격 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeAttackPhysA",
+    "name": "천격연무",
+    "grade": "A",
+    "category": "aoeAttack",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 110,
+      "sp": 80
+    },
+    "coef": 4.45,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "desc": "무속성 물리 광역 공격 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeAttackMagA",
+    "name": "성마의 진",
+    "grade": "A",
+    "category": "aoeAttack",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 110,
+      "sp": 80
+    },
+    "coef": 4.45,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "desc": "무속성 마법 광역 공격 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackFireA",
+    "name": "홍련의 불꽃",
+    "grade": "A",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 7.68,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "fire",
+    "desc": "화염 속성 마법 단일 공격 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackIceA",
+    "name": "영겁의 서리",
+    "grade": "A",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 7.68,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "ice",
+    "desc": "빙결 속성 마법 단일 공격 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackWaterA",
+    "name": "폭류의 파도",
+    "grade": "A",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 7.68,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "water",
+    "desc": "수류 속성 마법 단일 공격 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackWindA",
+    "name": "진공의 칼날",
+    "grade": "A",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 7.68,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "wind",
+    "desc": "질풍 속성 마법 단일 공격 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackEarthA",
+    "name": "산악의 진노",
+    "grade": "A",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 7.68,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "earth",
+    "desc": "대지 속성 마법 단일 공격 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackElectricA",
+    "name": "뇌신의 번개",
+    "grade": "A",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 7.68,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "electric",
+    "desc": "전격 속성 마법 단일 공격 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackLightA",
+    "name": "천광의 창",
+    "grade": "A",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 7.68,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "light",
+    "desc": "성광 속성 마법 단일 공격 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackDarkA",
+    "name": "황혼의 칼날",
+    "grade": "A",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 7.68,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "dark",
+    "desc": "암흑 속성 마법 단일 공격 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcStunA",
+    "name": "공명파괴",
+    "grade": "A",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 6.14,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "stun",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "단일 대상 기절 타격 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcFreezeA",
+    "name": "빙하의 감옥",
+    "grade": "A",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 6.14,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "ice",
+    "cc": {
+      "type": "freeze",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "단일 대상 빙결 마법 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcParalyzeA",
+    "name": "전신마비",
+    "grade": "A",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 6.14,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "electric",
+    "cc": {
+      "type": "paralyze",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "단일 대상 마비 전격 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcSleepA",
+    "name": "천년의 안식",
+    "grade": "A",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 6.14,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "sleep",
+      "turns": 3,
+      "chance": 0.16
+    },
+    "desc": "단일 대상 수면 마법 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcBindA",
+    "name": "천쇄의 감옥",
+    "grade": "A",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 6.14,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "bind",
+      "turns": 2,
+      "chance": 0.18
+    },
+    "desc": "단일 대상 속박 타격 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcCurseA",
+    "name": "사신의 낙인",
+    "grade": "A",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 6.14,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "dark",
+    "cc": {
+      "type": "curse",
+      "turns": 3,
+      "chance": 0.18
+    },
+    "desc": "단일 대상 저주 마법 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcSilenceA",
+    "name": "영혼봉인",
+    "grade": "A",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 6.14,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "silence",
+      "turns": 2,
+      "chance": 0.2
+    },
+    "desc": "단일 대상 침묵 마법 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcSlowA",
+    "name": "시간왜곡",
+    "grade": "A",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 6.14,
+    "statTypes": [
+      "agi"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "slow",
+      "turns": 3,
+      "chance": 0.25
+    },
+    "desc": "단일 대상 둔화 타격 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcBlindA",
+    "name": "무한어둠",
+    "grade": "A",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 6.14,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "blind",
+      "turns": 3,
+      "chance": 0.2
+    },
+    "desc": "단일 대상 실명 마법 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcPoisonA",
+    "name": "치명독",
+    "grade": "A",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 6.14,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "poison",
+      "turns": 3,
+      "chance": 0.23
+    },
+    "desc": "단일 대상 독 마법 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcBleedA",
+    "name": "피의 광풍",
+    "grade": "A",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 6.14,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "bleed",
+      "turns": 3,
+      "chance": 0.23
+    },
+    "desc": "단일 대상 출혈 타격 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcBurnA",
+    "name": "홍련격",
+    "grade": "A",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 6.14,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "fire",
+    "cc": {
+      "type": "burn",
+      "turns": 5,
+      "chance": 0.23
+    },
+    "desc": "단일 대상 화상 마법 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeCcStunA",
+    "name": "천둥의 진",
+    "grade": "A",
+    "category": "aoeCC",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 110,
+      "sp": 80
+    },
+    "coef": 3.56,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "stun",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "광역 대상 광역 기절 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeCcFreezeA",
+    "name": "동토의 결계",
+    "grade": "A",
+    "category": "aoeCC",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 110,
+      "sp": 80
+    },
+    "coef": 3.56,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "ice",
+    "cc": {
+      "type": "freeze",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "광역 대상 광역 빙결 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeCcPoisonA",
+    "name": "만독의 진",
+    "grade": "A",
+    "category": "aoeCC",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 110,
+      "sp": 80
+    },
+    "coef": 3.56,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "poison",
+      "turns": 3,
+      "chance": 0.23
+    },
+    "desc": "광역 대상 광역 독 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeCcBurnA",
+    "name": "불꽃지옥",
+    "grade": "A",
+    "category": "aoeCC",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 110,
+      "sp": 80
+    },
+    "coef": 3.56,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "fire",
+    "cc": {
+      "type": "burn",
+      "turns": 5,
+      "chance": 0.23
+    },
+    "desc": "광역 대상 광역 화상 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleHealA",
+    "name": "천사의 가호",
+    "grade": "A",
+    "category": "singleHeal",
+    "target": "singleAlly",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 2.1,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "desc": "단일 대상 회복 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeHealA",
+    "name": "천사의 찬가",
+    "grade": "A",
+    "category": "aoeHeal",
+    "target": "allAllies",
+    "costs": {
+      "mp": 110,
+      "sp": 80
+    },
+    "coef": 1.22,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "desc": "광역 회복 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffStrA",
+    "name": "영웅의 함성",
+    "grade": "A",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 0,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "str": 11
+      }
+    },
+    "duration": 3,
+    "desc": "STR 강화 버프 3턴 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffConA",
+    "name": "불사의 육체",
+    "grade": "A",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 0,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "con": 11
+      }
+    },
+    "duration": 3,
+    "desc": "CON 강화 버프 3턴 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffIntA",
+    "name": "대현자의 지혜",
+    "grade": "A",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 0,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "int": 11
+      }
+    },
+    "duration": 3,
+    "desc": "INT 강화 버프 3턴 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffAgiA",
+    "name": "잔상보법",
+    "grade": "A",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 0,
+    "statTypes": [
+      "agi"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "agi": 11
+      }
+    },
+    "duration": 3,
+    "desc": "AGI 강화 버프 3턴 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffSenseA",
+    "name": "만물감지",
+    "grade": "A",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 0,
+    "statTypes": [
+      "sense"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "sense": 11
+      }
+    },
+    "duration": 3,
+    "desc": "SENSE 강화 버프 3턴 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffPdefA",
+    "name": "무적의 방패",
+    "grade": "A",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 0,
+    "statTypes": [
+      "pDef"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "pdef": 11
+      }
+    },
+    "duration": 3,
+    "desc": "PDEF 강화 버프 3턴 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffMdefA",
+    "name": "마력무효화",
+    "grade": "A",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 0,
+    "statTypes": [
+      "mDef"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "mdef": 11
+      }
+    },
+    "duration": 3,
+    "desc": "MDEF 강화 버프 3턴 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffTauntA",
+    "name": "공포의 기운",
+    "grade": "A",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 55,
+      "sp": 40
+    },
+    "coef": 0,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "buff": {
+      "stats": {},
+      "threatBonus": 13
+    },
+    "duration": 3,
+    "desc": "도발 버프 3턴, 위협 +13 (A랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "passiveStrA",
+    "name": "초인의 힘",
+    "grade": "A",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "STR 패시브 영구 보너스 (A랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "str": 11
+    }
+  },
+  {
+    "id": "passiveConA",
+    "name": "초인의 체력",
+    "grade": "A",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "CON 패시브 영구 보너스 (A랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "con": 11
+    }
+  },
+  {
+    "id": "passiveIntA",
+    "name": "대마도사의 지력",
+    "grade": "A",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "INT 패시브 영구 보너스 (A랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "int": 11
+    }
+  },
+  {
+    "id": "passiveAgiA",
+    "name": "번개의 몸놀림",
+    "grade": "A",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "agi"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "AGI 패시브 영구 보너스 (A랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "agi": 11
+    }
+  },
+  {
+    "id": "passiveSenseA",
+    "name": "초감각",
+    "grade": "A",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "sense"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "SENSE 패시브 영구 보너스 (A랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "sense": 11
+    }
+  },
+  {
+    "id": "passivePdefA",
+    "name": "강철 피부",
+    "grade": "A",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "pDef"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "PDEF 패시브 영구 보너스 (A랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "pdef": 11
+    }
+  },
+  {
+    "id": "passiveMdefA",
+    "name": "마력 면역",
+    "grade": "A",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "mDef"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "MDEF 패시브 영구 보너스 (A랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "mdef": 11
+    }
+  },
+  {
+    "id": "singleAttackPhysS",
+    "name": "천벌의 일격",
+    "grade": "S",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 11.52,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "desc": "무속성 물리 단일 공격 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleAttackMagS",
+    "name": "성천의 마탄",
+    "grade": "S",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 11.52,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "desc": "무속성 마법 단일 공격 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeAttackPhysS",
+    "name": "멸살의 광풍",
+    "grade": "S",
+    "category": "aoeAttack",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 140,
+      "sp": 100
+    },
+    "coef": 6.68,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "desc": "무속성 물리 광역 공격 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeAttackMagS",
+    "name": "궁극의 마력진",
+    "grade": "S",
+    "category": "aoeAttack",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 140,
+      "sp": 100
+    },
+    "coef": 6.68,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "desc": "무속성 마법 광역 공격 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackFireS",
+    "name": "멸화의 극염",
+    "grade": "S",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 11.52,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "fire",
+    "desc": "화염 속성 마법 단일 공격 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackIceS",
+    "name": "극한빙결",
+    "grade": "S",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 11.52,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "ice",
+    "desc": "빙결 속성 마법 단일 공격 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackWaterS",
+    "name": "심해의 포효",
+    "grade": "S",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 11.52,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "water",
+    "desc": "수류 속성 마법 단일 공격 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackWindS",
+    "name": "천공의 폭풍",
+    "grade": "S",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 11.52,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "wind",
+    "desc": "질풍 속성 마법 단일 공격 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackEarthS",
+    "name": "대지의 심판",
+    "grade": "S",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 11.52,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "earth",
+    "desc": "대지 속성 마법 단일 공격 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackElectricS",
+    "name": "만뢰의 심판",
+    "grade": "S",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 11.52,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "electric",
+    "desc": "전격 속성 마법 단일 공격 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackLightS",
+    "name": "성천의 심판",
+    "grade": "S",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 11.52,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "light",
+    "desc": "성광 속성 마법 단일 공격 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "elemAttackDarkS",
+    "name": "나락의 심판",
+    "grade": "S",
+    "category": "singleAttack",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 11.52,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "dark",
+    "desc": "암흑 속성 마법 단일 공격 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcStunS",
+    "name": "천둥의 일격",
+    "grade": "S",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 9.22,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "stun",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "단일 대상 기절 타격 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcFreezeS",
+    "name": "시간동결",
+    "grade": "S",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 9.22,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "ice",
+    "cc": {
+      "type": "freeze",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "단일 대상 빙결 마법 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcParalyzeS",
+    "name": "절대속박",
+    "grade": "S",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 9.22,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "electric",
+    "cc": {
+      "type": "paralyze",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "단일 대상 마비 전격 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcSleepS",
+    "name": "영겁의 잠",
+    "grade": "S",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 9.22,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "sleep",
+      "turns": 3,
+      "chance": 0.16
+    },
+    "desc": "단일 대상 수면 마법 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcBindS",
+    "name": "차원봉인",
+    "grade": "S",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 9.22,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "bind",
+      "turns": 2,
+      "chance": 0.18
+    },
+    "desc": "단일 대상 속박 타격 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcCurseS",
+    "name": "천벌의 저주",
+    "grade": "S",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 9.22,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "dark",
+    "cc": {
+      "type": "curse",
+      "turns": 3,
+      "chance": 0.18
+    },
+    "desc": "단일 대상 저주 마법 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcSilenceS",
+    "name": "절대침묵",
+    "grade": "S",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 9.22,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "silence",
+      "turns": 2,
+      "chance": 0.2
+    },
+    "desc": "단일 대상 침묵 마법 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcSlowS",
+    "name": "시공정지",
+    "grade": "S",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 9.22,
+    "statTypes": [
+      "agi"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "slow",
+      "turns": 3,
+      "chance": 0.25
+    },
+    "desc": "단일 대상 둔화 타격 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcBlindS",
+    "name": "심연의 눈",
+    "grade": "S",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 9.22,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "blind",
+      "turns": 3,
+      "chance": 0.2
+    },
+    "desc": "단일 대상 실명 마법 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcPoisonS",
+    "name": "멸독의 비수",
+    "grade": "S",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 9.22,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "poison",
+      "turns": 3,
+      "chance": 0.23
+    },
+    "desc": "단일 대상 독 마법 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcBleedS",
+    "name": "혈계의 참격",
+    "grade": "S",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 9.22,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "bleed",
+      "turns": 3,
+      "chance": 0.23
+    },
+    "desc": "단일 대상 출혈 타격 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleCcBurnS",
+    "name": "지옥의 업화",
+    "grade": "S",
+    "category": "singleCC",
+    "target": "singleEnemy",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 9.22,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "fire",
+    "cc": {
+      "type": "burn",
+      "turns": 5,
+      "chance": 0.23
+    },
+    "desc": "단일 대상 화상 마법 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeCcStunS",
+    "name": "신벌의 지진",
+    "grade": "S",
+    "category": "aoeCC",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 140,
+      "sp": 100
+    },
+    "coef": 5.35,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "cc": {
+      "type": "stun",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "광역 대상 광역 기절 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeCcFreezeS",
+    "name": "빙결의 종말",
+    "grade": "S",
+    "category": "aoeCC",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 140,
+      "sp": 100
+    },
+    "coef": 5.35,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "ice",
+    "cc": {
+      "type": "freeze",
+      "turns": 2,
+      "chance": 0.16
+    },
+    "desc": "광역 대상 광역 빙결 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeCcPoisonS",
+    "name": "멸독의 안개",
+    "grade": "S",
+    "category": "aoeCC",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 140,
+      "sp": 100
+    },
+    "coef": 5.35,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "cc": {
+      "type": "poison",
+      "turns": 3,
+      "chance": 0.23
+    },
+    "desc": "광역 대상 광역 독 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeCcBurnS",
+    "name": "종말의 화염",
+    "grade": "S",
+    "category": "aoeCC",
+    "target": "allEnemies",
+    "costs": {
+      "mp": 140,
+      "sp": 100
+    },
+    "coef": 5.35,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "fire",
+    "cc": {
+      "type": "burn",
+      "turns": 5,
+      "chance": 0.23
+    },
+    "desc": "광역 대상 광역 화상 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "singleHealS",
+    "name": "기적의 치유",
+    "grade": "S",
+    "category": "singleHeal",
+    "target": "singleAlly",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 2.4,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "desc": "단일 대상 회복 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "aoeHealS",
+    "name": "기적의 성가",
+    "grade": "S",
+    "category": "aoeHeal",
+    "target": "allAllies",
+    "costs": {
+      "mp": 140,
+      "sp": 100
+    },
+    "coef": 1.39,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "desc": "광역 회복 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffStrS",
+    "name": "전쟁신의 축복",
+    "grade": "S",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 0,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "str": 14
+      }
+    },
+    "duration": 3,
+    "desc": "STR 강화 버프 3턴 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffConS",
+    "name": "신체의 축복",
+    "grade": "S",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 0,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "con": 14
+      }
+    },
+    "duration": 3,
+    "desc": "CON 강화 버프 3턴 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffIntS",
+    "name": "전지의 축복",
+    "grade": "S",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 0,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "int": 14
+      }
+    },
+    "duration": 3,
+    "desc": "INT 강화 버프 3턴 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffAgiS",
+    "name": "시공의 축복",
+    "grade": "S",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 0,
+    "statTypes": [
+      "agi"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "agi": 14
+      }
+    },
+    "duration": 3,
+    "desc": "AGI 강화 버프 3턴 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffSenseS",
+    "name": "전지전능의 눈",
+    "grade": "S",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 0,
+    "statTypes": [
+      "sense"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "sense": 14
+      }
+    },
+    "duration": 3,
+    "desc": "SENSE 강화 버프 3턴 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffPdefS",
+    "name": "절대방어",
+    "grade": "S",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 0,
+    "statTypes": [
+      "pDef"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "pdef": 14
+      }
+    },
+    "duration": 3,
+    "desc": "PDEF 강화 버프 3턴 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffMdefS",
+    "name": "절대마방",
+    "grade": "S",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 0,
+    "statTypes": [
+      "mDef"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "buff": {
+      "stats": {
+        "mdef": 14
+      }
+    },
+    "duration": 3,
+    "desc": "MDEF 강화 버프 3턴 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "buffTauntS",
+    "name": "절대지배",
+    "grade": "S",
+    "category": "buff",
+    "target": "self",
+    "costs": {
+      "mp": 70,
+      "sp": 50
+    },
+    "coef": 0,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "physical",
+    "element": "none",
+    "buff": {
+      "stats": {},
+      "threatBonus": 16
+    },
+    "duration": 3,
+    "desc": "도발 버프 3턴, 위협 +16 (S랭크)",
+    "cooldown": 0
+  },
+  {
+    "id": "passiveStrS",
+    "name": "신의 근력",
+    "grade": "S",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "str"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "STR 패시브 영구 보너스 (S랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "str": 14
+    }
+  },
+  {
+    "id": "passiveConS",
+    "name": "신의 체력",
+    "grade": "S",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "con"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "CON 패시브 영구 보너스 (S랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "con": 14
+    }
+  },
+  {
+    "id": "passiveIntS",
+    "name": "신의 지력",
+    "grade": "S",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "int"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "INT 패시브 영구 보너스 (S랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "int": 14
+    }
+  },
+  {
+    "id": "passiveAgiS",
+    "name": "신의 민첩",
+    "grade": "S",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "agi"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "AGI 패시브 영구 보너스 (S랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "agi": 14
+    }
+  },
+  {
+    "id": "passiveSenseS",
+    "name": "신의 감각",
+    "grade": "S",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "sense"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "SENSE 패시브 영구 보너스 (S랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "sense": 14
+    }
+  },
+  {
+    "id": "passivePdefS",
+    "name": "신의 갑옷",
+    "grade": "S",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "pDef"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "PDEF 패시브 영구 보너스 (S랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "pdef": 14
+    }
+  },
+  {
+    "id": "passiveMdefS",
+    "name": "신의 마력",
+    "grade": "S",
+    "category": "passive",
+    "target": "self",
+    "costs": {
+      "mp": 0,
+      "sp": 0
+    },
+    "coef": 0,
+    "statTypes": [
+      "mDef"
+    ],
+    "damageType": "magic",
+    "element": "none",
+    "duration": 0,
+    "desc": "MDEF 패시브 영구 보너스 (S랭크)",
+    "cooldown": 0,
+    "passiveBonuses": {
+      "mdef": 14
+    }
+  }
+]
