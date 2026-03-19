@@ -69,12 +69,13 @@ Hunter World는 **턴제 RPG 전투 시뮬레이터**입니다.
 | **HP** | `100 + (CON - 10) × 10 + (STR - 10) × 3 + (레벨 - 1) × 2` | 100 |
 | **MP** | `100 + (INT - 10) × 10 + (SENSE - 10) × 3 + (레벨 - 1) × 2` | 100 |
 | **SP** | `100 + (AGI - 10) × 10 + (SENSE - 10) × 3 + (레벨 - 1) × 2` | 100 |
-| **ATK** | 기본 **0** (장비·스킬로만 증가) | 0 |
+| **ATK** | `무기ATK + (STR - 10) × 0.2 + (AGI - 10) × 0.2 + (INT - 10) × 0.3` | 0 |
 | **물리방어(PDEF)** | 기본 **0** (장비·스킬로만 증가) | 0 |
 | **마법방어(MDEF)** | 기본 **0** (장비·스킬로만 증가) | 0 |
 
 > 레벨업 시 HP/MP/SP에 **+(레벨 - 1) × 2** 보너스 적용 (레벨 15 → +28, 레벨 120 → +238)  
-> ATK/PDEF/MDEF는 스탯과 무관 — **장비와 스킬 효과로만 변동**
+> ATK는 스탯 보너스(기준치 10 초과분)와 장비 무기 ATK의 합산  
+> PDEF/MDEF는 스탯과 무관 — **장비와 스킬 효과로만 변동**
 
 ### 2.3 등급별 기준표
 
@@ -164,10 +165,10 @@ finalDamage = rawDamage × (1 - 피해감소율)
 ### 4.2 유효 방어력 계산
 
 ```
-유효 DEF = unit.pdef(또는 mdef) + passiveBonuses.pdef(또는 mdef)
+유효 DEF = unit.pdef(또는 mdef) + passiveBonuses.pdef(또는 mdef) + traitBonuses.pdef_flat(또는 mdef_flat)
 ```
 
-> passiveBonuses는 패시브 스킬에서 온 방어 보너스
+> passiveBonuses는 패시브 스킬에서 온 방어 보너스, traitBonuses는 장비 특성에서 온 고정값 보너스
 
 ### 4.3 방어 수치 예시
 
