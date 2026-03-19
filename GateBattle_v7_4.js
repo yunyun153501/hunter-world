@@ -6682,6 +6682,9 @@ function getBuffedStat(unit, statKey) {
     if (!model.state.gate || typeof model.state.gate !== 'object') model.state.gate = buildDefaultGateState();
     if (!Array.isArray(model.state.gate.generated) || !model.state.gate.generated.length) generateGateOptions(model.state.gate.size || 'small', model.state.gate.rank || 'E');
     seedDefaultInventoryMigration();
+    // 저장된 캐릭터/페르소나의 파생 스탯(HP/MP/SP/ATK/PDEF/MDEF)을 현재 공식으로 재계산
+    (model.db.characters || []).forEach(c => { if (c.stats) recalcCharDerivedStats(c); });
+    (model.db.personas || []).forEach(p => { if (p.stats) recalcCharDerivedStats(p); });
     ensureSelections();
   }
 
@@ -9795,23 +9798,33 @@ function renderCommandPanel(runtime) {
     return entity.inventory;
   }
 
-  // 캐릭터/페르소나의 장착 무기 ATK를 포함하여 파생 스탯(HP/MP/SP/ATK/PDEF/MDEF) 재계산
+  // 캐릭터/페르소나의 장착 장비를 포함하여 파생 스탯(HP/MP/SP/ATK/PDEF/MDEF) 재계산
+  // 스탯 보너스는 기준치 10을 초과한 부분만 반영 (E급 최하 10/10/10/10/10 → HP/MP/SP=100, ATK=0)
+  // PDEF/MDEF는 장비·스킬로만 증가 (기본 0)
   function recalcCharDerivedStats(entity) {
     if (!entity || !entity.stats) return;
     const s = entity.stats;
     const lvBonus = Math.max(0, (Number(entity.level) || 1) - 1) * 2;
-    entity.hp = 100 + (Number(s.con)||0) * 10 + (Number(s.str)||0) * 3 + lvBonus;
-    entity.mp = 100 + (Number(s.int)||0) * 10 + (Number(s.sense)||0) * 3 + lvBonus;
-    entity.sp = 100 + (Number(s.agi)||0) * 10 + (Number(s.sense)||0) * 3 + lvBonus;
-    // 장착 무기 ATK 반영
+    entity.hp = 100 + ((Number(s.con)||0) - 10) * 10 + ((Number(s.str)||0) - 10) * 3 + lvBonus;
+    entity.mp = 100 + ((Number(s.int)||0) - 10) * 10 + ((Number(s.sense)||0) - 10) * 3 + lvBonus;
+    entity.sp = 100 + ((Number(s.agi)||0) - 10) * 10 + ((Number(s.sense)||0) - 10) * 3 + lvBonus;
+    // 장착 장비 ATK/PDEF/MDEF 반영
     let weaponAtk = 0;
+    let equipPdef = 0;
+    let equipMdef = 0;
     const inv = entity.inventory;
-    if (inv && inv.equipped && inv.equipped.weapon) {
-      weaponAtk = Number(inv.equipped.weapon.atk || 0);
+    if (inv && inv.equipped) {
+      if (inv.equipped.weapon) weaponAtk = Number(inv.equipped.weapon.atk || 0);
+      EQUIP_PARTS.forEach(part => {
+        const eq = inv.equipped[part];
+        if (!eq) return;
+        equipPdef += Number(eq.pdef || 0);
+        equipMdef += Number(eq.mdef || 0);
+      });
     }
-    entity.atk = Math.round(weaponAtk + (Number(s.str)||0) * 0.2 + (Number(s.agi)||0) * 0.2 + (Number(s.int)||0) * 0.3);
-    entity.pdef = Math.round((Number(s.con)||0) * 0.4);
-    entity.mdef = Math.round(((Number(s.int)||0) + (Number(s.sense)||0)) * 0.25);
+    entity.atk = Math.round(weaponAtk + ((Number(s.str)||0) - 10) * 0.2 + ((Number(s.agi)||0) - 10) * 0.2 + ((Number(s.int)||0) - 10) * 0.3);
+    entity.pdef = equipPdef;
+    entity.mdef = equipMdef;
   }
 
   // 장착 장비 스탯 합산 반환 { atk, pdef, mdef, str, con, int, agi, sense }
@@ -9851,10 +9864,11 @@ function renderCommandPanel(runtime) {
       return `${EQUIP_PART_LABELS[p]}: <strong style="${rarityStyle(eq.rarity)}">${escapeHtml(eq.name||eq.id)}</strong>${eq.enhance>0?` +${eq.enhance}`:''}${eq.rarity && eq.rarity !== 'Normal' ? ` <span class="gb-badge" style="background:${rarityColor(eq.rarity)};color:#000;font-size:9px;">${escapeHtml(eq.rarity)}</span>` : ''}`;
     }).filter(Boolean);
 
-    const baseAtk = Number(item.atk || 0);
-    const basePdef = Number(item.pdef || 0);
-    const baseMdef = Number(item.mdef || 0);
+    // 기본값: 스탯 기반 (장비 제외) — PDEF/MDEF는 기본 0, ATK는 스탯 보너스만
     const stats = item.stats || {};
+    const baseAtk = Math.round(((Number(stats.str)||0) - 10) * 0.2 + ((Number(stats.agi)||0) - 10) * 0.2 + ((Number(stats.int)||0) - 10) * 0.3);
+    const basePdef = 0;
+    const baseMdef = 0;
     const fmtDiff = (v, b) => b > 0 ? `${v} <span style="color:#34d399">+${b}</span> = <strong>${v+b}</strong>` : `<strong>${v}</strong>`;
 
     return `<div style="margin-top:10px;border-top:1px solid rgba(148,163,184,0.2);padding-top:8px;">
@@ -11447,6 +11461,9 @@ async function saveMaterialTraitFromForm() {
         getInventory();
         if (!Array.isArray(model.db.auctionListings)) model.db.auctionListings = [];
         if (!Array.isArray(model.db.hmUsedListings)) model.db.hmUsedListings = [];
+        // 불러온 캐릭터/페르소나의 파생 스탯을 현재 공식으로 재계산
+        (model.db.characters || []).forEach(c => { if (c.stats) recalcCharDerivedStats(c); });
+        (model.db.personas || []).forEach(p => { if (p.stats) recalcCharDerivedStats(p); });
         ensureSelections();
         await saveDb();
         await saveState();
