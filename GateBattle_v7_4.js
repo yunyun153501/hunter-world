@@ -10774,6 +10774,9 @@ function readPartySlotsFromUI() {
     if (existingChar.inventory) item.inventory = existingChar.inventory;
     if (!item.name) throw new Error('캐릭터 이름이 비어 있다.');
     upsertById(model.db.characters, item);
+    // 장착 무기 ATK를 포함하여 파생 스탯 재계산
+    const saved = getCharById(id);
+    if (saved && saved.stats) recalcCharDerivedStats(saved);
     model.state.selected.characters = id;
     await saveDb(); await saveState(); renderApp(); toast('캐릭터 저장 완료');
   }
@@ -11127,6 +11130,9 @@ async function saveMaterialTraitFromForm() {
     if (item.sp <= 0) item.sp = 100 + (item.stats.agi - 10) * 10 + (item.stats.sense - 10) * 3;
     if (!item.name) throw new Error('페르소나 이름이 비어 있다.');
     upsertById(model.db.personas, item);
+    // 장착 무기 ATK를 포함하여 파생 스탯 재계산
+    const saved = getPersonaById(id);
+    if (saved && saved.stats) recalcCharDerivedStats(saved);
     model.state.selected.personas = id;
     await saveDb(); await saveState(); renderApp(); toast('페르소나 저장 완료');
   }
@@ -11413,6 +11419,8 @@ async function saveMaterialTraitFromForm() {
       gd.year = d.getFullYear();
       gd.month = d.getMonth() + 1;
       gd.day = d.getDate();
+      // 날짜 변경 시 전멸 상태 자동 해제 (당일 제한만 적용)
+      model.db.lastWipeDate = null;
       // Process rent evictions
       const evictMsgs = processRentOnDateAdvance(gd);
       await saveDb(); renderApp();
